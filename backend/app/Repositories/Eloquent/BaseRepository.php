@@ -2,10 +2,10 @@
 
 namespace App\Repositories\Eloquent;
 
-use App\Repositories\Interfaces\RepositoryInterface;
+use App\Repositories\Interfaces\BaseRepositoryInterface;
 use Illuminate\Database\Eloquent\Model;
 
-class BaseRepository implements RepositoryInterface
+abstract class BaseRepository implements BaseRepositoryInterface
 {
     protected $model;
 
@@ -14,29 +14,47 @@ class BaseRepository implements RepositoryInterface
         $this->model = $model;
     }
 
-    public function all()
+    public function all(array $columns = ['*'], array $relations = [])
     {
-        return $this->model->all();
+        return $this->model->with($relations)->get($columns);
     }
 
-    public function create(array $data)
+    public function findById(int $id, array $columns = ['*'], array $relations = [], array $appends = [])
     {
-        return $this->model->create($data);
+        $model = $this->model->select($columns)->with($relations)->findOrFail($id);
+        
+        if (!empty($appends)) {
+            $model->append($appends);
+        }
+        
+        return $model;
     }
 
-    public function update(array $data, $id)
+    public function create(array $attributes)
     {
-        $record = $this->model->find($id);
-        return $record->update($data);
+        return $this->model->create($attributes);
     }
 
-    public function delete($id)
+    public function update(int $id, array $attributes)
     {
-        return $this->model->destroy($id);
+        $model = $this->findById($id);
+        $model->update($attributes);
+        return $model;
     }
 
-    public function find($id)
+    public function delete(int $id)
     {
-        return $this->model->find($id);
+        $model = $this->findById($id);
+        return $model->delete();
+    }
+
+    public function findByCondition(array $condition, array $columns = ['*'], array $relations = [])
+    {
+        return $this->model->select($columns)->with($relations)->where($condition)->get();
+    }
+
+    public function paginate(int $perPage = 10, array $columns = ['*'], array $relations = [])
+    {
+        return $this->model->select($columns)->with($relations)->paginate($perPage);
     }
 }

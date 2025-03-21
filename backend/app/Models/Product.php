@@ -4,41 +4,43 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Product extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'name', 
-        'slug', 
-        'description', 
-        'price', 
-        'stock', 
-        'category_id', 
-        'images', 
-        'featured', 
-        'active'
+        'name',
+        'description',
+        'price',
+        'stock',
+        'image',
+        'subcategory_id',
+        'status'
     ];
 
-    protected $casts = [
-        'images' => 'array',
-        'featured' => 'boolean',
-        'active' => 'boolean',
-    ];
-
-    public function category()
+    public function subcategory(): BelongsTo
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(SubCategory::class);
     }
 
-    public function reviews()
+    public function comments(): HasMany
     {
-        return $this->hasMany(Review::class);
+        return $this->hasMany(Comment::class);
     }
 
-    public function wishlists()
+    public function carts(): HasMany
     {
-        return $this->hasMany(Wishlist::class);
+        return $this->hasMany(Cart::class);
+    }
+
+    public function orders(): BelongsToMany
+    {
+        return $this->belongsToMany(Order::class, 'order_product')
+                    ->withPivot('quantity', 'price')
+                    ->withTimestamps();
     }
 }
