@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\SubCategoryController;
 use Illuminate\Http\Request;
@@ -43,6 +44,10 @@ Route::get('products/latest', [ProductController::class, 'latest']);
 Route::get('products/subcategory/{subcategoryId}', [ProductController::class, 'bySubcategory']);
 Route::get('products/price-range', [ProductController::class, 'priceRange']);
 
+// Comments
+Route::get('comments/product/{productId}', [CommentController::class, 'byProduct']);
+Route::get('comments/product/{productId}/rating', [CommentController::class, 'productRating']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('profile', [AuthController::class, 'profile']);
@@ -68,4 +73,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('cart/{productId}', [CartController::class, 'update']);
     Route::delete('cart/{productId}', [CartController::class, 'destroy']);
     Route::delete('cart', [CartController::class, 'clear']);
+    
+    // Comment routes
+    Route::post('comments', [CommentController::class, 'store']);
+    Route::put('comments/{id}', [CommentController::class, 'update']);
+    Route::delete('comments/{id}', [CommentController::class, 'destroy']);
+    Route::get('user/comments', [CommentController::class, 'byUser']);
 });
