@@ -79,4 +79,54 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('comments/{id}', [CommentController::class, 'update']);
     Route::delete('comments/{id}', [CommentController::class, 'destroy']);
     Route::get('user/comments', [CommentController::class, 'byUser']);
+
+    Route::get('orders', [OrderController::class, 'index']);
+    Route::post('orders', [OrderController::class, 'store']);
+    Route::get('orders/{id}', [OrderController::class, 'show']);
+    Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+    Route::get('user/orders', [OrderController::class, 'userOrders']);
+    Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
+    Route::get('orders/monthly', [OrderController::class, 'monthlyOrders']);
+
+
+
+    Route::middleware('admin')->group(function () {
+      // Payment Method routes
+      Route::post('payment-methods', [PaymentMethodController::class, 'store']);
+      Route::put('payment-methods/{id}', [PaymentMethodController::class, 'update']);
+      Route::delete('payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+      
+      // Coupon routes
+      Route::get('coupons', [CouponController::class, 'index']);
+      Route::post('coupons', [CouponController::class, 'store']);
+      Route::get('coupons/{id}', [CouponController::class, 'show']);
+      Route::put('coupons/{id}', [CouponController::class, 'update']);
+      Route::delete('coupons/{id}', [CouponController::class, 'destroy']);
+      Route::get('coupons/active', [CouponController::class, 'active']);
+
+      // Inside the admin middleware group in routes/api.php
+// Contact routes (admin)
+Route::get('contacts', [ContactController::class, 'index']);
+Route::get('contacts/{id}', [ContactController::class, 'show']);
+Route::put('contacts/{id}', [ContactController::class, 'update']);
+Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
+Route::get('contacts/status/{status}', [ContactController::class, 'byStatus']);
+
+// Role routes
+Route::get('roles', [RoleController::class, 'index']);
+Route::post('roles', [RoleController::class, 'store']);
+Route::get('roles/{id}', [RoleController::class, 'show']);
+Route::put('roles/{id}', [RoleController::class, 'update']);
+Route::delete('roles/{id}', [RoleController::class, 'destroy']);
+
+// User routes
+Route::get('users', [UserController::class, 'index']);
+Route::post('users', [UserController::class, 'store']);
+Route::get('users/{id}', [UserController::class, 'show']);
+Route::put('users/{id}', [UserController::class, 'update']);
+Route::delete('users/{id}', [UserController::class, 'destroy']);
+Route::get('users/search', [UserController::class, 'search']);
+Route::get('users/role/{roleId}', [UserController::class, 'byRole']);
+
+      });
 });

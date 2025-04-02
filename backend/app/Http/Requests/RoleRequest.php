@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class PaymentMethodRequest extends FormRequest
+class RoleRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,10 +21,19 @@ class PaymentMethodRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'name' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'is_active' => 'boolean',
         ];
+
+        if ($this->isMethod('post')) {
+            $rules['name'] = 'required|string|max:255|unique:roles,name';
+        }
+
+        if ($this->isMethod('put') || $this->isMethod('patch')) {
+            $rules['name'] = 'required|string|max:255|unique:roles,name,' . $this->route('id');
+        }
+        
+        return $rules;
     }
 }
