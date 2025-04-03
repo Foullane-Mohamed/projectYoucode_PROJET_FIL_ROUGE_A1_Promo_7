@@ -29,6 +29,10 @@ class CategoryService
     public function createCategory(array $attributes)
     {
         try {
+<<<<<<< HEAD
+=======
+            // Handle image upload if present
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
             if (isset($attributes['image']) && $attributes['image']) {
                 $attributes['image'] = $this->uploadImage($attributes['image']);
             }
@@ -45,9 +49,15 @@ class CategoryService
         try {
             $category = $this->categoryRepository->findById($id);
 
+<<<<<<< HEAD
             
             if (isset($attributes['image']) && $attributes['image']) {
               
+=======
+            // Handle image upload if present
+            if (isset($attributes['image']) && $attributes['image']) {
+                // Delete old image if exists
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
                 if ($category->image) {
                     Storage::delete('public/categories/' . $category->image);
                 }

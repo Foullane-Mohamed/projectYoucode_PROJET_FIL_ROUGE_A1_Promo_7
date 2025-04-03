@@ -1,10 +1,14 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+<<<<<<< HEAD
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ProductController;
+=======
+use App\Http\Controllers\CategoryController;
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 use App\Http\Controllers\SubCategoryController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -25,17 +29,24 @@ Route::post('register', [AuthController::class, 'register']);
 Route::post('login', [AuthController::class, 'login']);
 
 // Public routes
+<<<<<<< HEAD
 // Categories
+=======
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 Route::get('categories', [CategoryController::class, 'index']);
 Route::get('categories/{id}', [CategoryController::class, 'show']);
 Route::get('categories-with-subcategories', [CategoryController::class, 'withSubcategories']);
 
+<<<<<<< HEAD
 // Subcategories
+=======
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 Route::get('subcategories', [SubCategoryController::class, 'index']);
 Route::get('subcategories/{id}', [SubCategoryController::class, 'show']);
 Route::get('subcategories/category/{categoryId}', [SubCategoryController::class, 'byCategory']);
 Route::get('subcategories-with-products', [SubCategoryController::class, 'withProducts']);
 
+<<<<<<< HEAD
 // Products
 Route::get('products', [ProductController::class, 'index']);
 Route::get('products/{id}', [ProductController::class, 'show']);
@@ -48,6 +59,8 @@ Route::get('products/price-range', [ProductController::class, 'priceRange']);
 Route::get('comments/product/{productId}', [CommentController::class, 'byProduct']);
 Route::get('comments/product/{productId}/rating', [CommentController::class, 'productRating']);
 
+=======
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('profile', [AuthController::class, 'profile']);
@@ -61,6 +74,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('subcategories', [SubCategoryController::class, 'store']);
     Route::put('subcategories/{id}', [SubCategoryController::class, 'update']);
     Route::delete('subcategories/{id}', [SubCategoryController::class, 'destroy']);
+<<<<<<< HEAD
     
     // Protected product routes
     Route::post('products', [ProductController::class, 'store']);
@@ -129,4 +143,6 @@ Route::get('users/search', [UserController::class, 'search']);
 Route::get('users/role/{roleId}', [UserController::class, 'byRole']);
 
       });
+=======
+>>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 });
