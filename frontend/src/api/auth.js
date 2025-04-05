@@ -1,31 +1,48 @@
 import api from './index';
 
-export const authService = {
+const authService = {
   // Register a new user
   register: async (userData) => {
-    const response = await api.post('/register', userData);
-    return response.data;
+    try {
+      const response = await api.post('/auth/register', userData);
+      
+      if (response.data.status === 'success') {
+        // Save token and user to localStorage
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Registration error:', error);
+      throw error;
+    }
   },
 
   // Login a user
   login: async (credentials) => {
-    const response = await api.post('/login', credentials);
-    
-    if (response.data.status === 'success') {
-      // Save token and user to localStorage
-      localStorage.setItem('token', response.data.data.token);
-      localStorage.setItem('user', JSON.stringify(response.data.data.user));
+    try {
+      const response = await api.post('/auth/login', credentials);
+      
+      if (response.data.status === 'success') {
+        // Save token and user to localStorage
+        localStorage.setItem('token', response.data.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.data.user));
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Login error:', error);
+      throw error;
     }
-    
-    return response.data;
   },
 
   // Logout a user
   logout: async () => {
     try {
-      const response = await api.post('/logout');
+      const response = await api.post('/auth/logout');
       
-      // Clear local storage
+      // Clear local storage regardless of API response
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
@@ -40,13 +57,25 @@ export const authService = {
 
   // Get current user profile
   getProfile: async () => {
-    const response = await api.get('/profile');
+    const response = await api.get('/auth/profile');
     return response.data;
   },
 
   // Update user profile
   updateProfile: async (profileData) => {
-    const response = await api.put('/profile', profileData);
+    const response = await api.put('/auth/profile', profileData);
+    
+    if (response.data.status === 'success') {
+      // Update user in localStorage
+      localStorage.setItem('user', JSON.stringify(response.data.data.user));
+    }
+    
+    return response.data;
+  },
+
+  // Change password
+  changePassword: async (passwordData) => {
+    const response = await api.put('/auth/password', passwordData);
     return response.data;
   },
 
@@ -60,6 +89,18 @@ export const authService = {
   getCurrentUser: () => {
     const user = localStorage.getItem('user');
     return user ? JSON.parse(user) : null;
+  },
+  
+  // Request password reset
+  forgotPassword: async (email) => {
+    const response = await api.post('/auth/forgot-password', { email });
+    return response.data;
+  },
+  
+  // Reset password with token
+  resetPassword: async (token, passwordData) => {
+    const response = await api.post(`/auth/reset-password/${token}`, passwordData);
+    return response.data;
   }
 };
 

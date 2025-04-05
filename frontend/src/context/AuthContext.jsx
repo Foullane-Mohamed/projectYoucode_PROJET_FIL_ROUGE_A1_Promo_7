@@ -35,7 +35,14 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authService.register(userData);
-      setUser(response.data.user);
+      
+      if (response.status === 'success') {
+        // Save token and user to localStorage
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        setUser(response.data.user);
+      }
+      
       return response;
     } catch (error) {
       setError(error.response?.data?.message || 'Registration failed');
@@ -51,7 +58,11 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authService.login(credentials);
-      setUser(response.data.user);
+      
+      if (response.status === 'success') {
+        setUser(response.data.user);
+      }
+      
       return response;
     } catch (error) {
       setError(error.response?.data?.message || 'Login failed');
@@ -82,9 +93,13 @@ export const AuthProvider = ({ children }) => {
     setError(null);
     try {
       const response = await authService.updateProfile(profileData);
-      setUser(response.data.user);
-      // Update user in localStorage
-      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      if (response.status === 'success') {
+        setUser(response.data.user);
+        // Update user in localStorage
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+      }
+      
       return response;
     } catch (error) {
       setError(error.response?.data?.message || 'Profile update failed');
@@ -101,7 +116,7 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is admin
   const isAdmin = () => {
-    return user?.role?.name === 'Admin';
+    return user?.role === 'admin';
   };
 
   return (
