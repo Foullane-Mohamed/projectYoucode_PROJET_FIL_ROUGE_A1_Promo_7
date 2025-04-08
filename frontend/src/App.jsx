@@ -8,6 +8,7 @@ import Header from './components/common/Header';
 import Footer from './components/common/Footer';
 import AppRoutes from './Routes';
 import Notifications from './components/common/Notifications';
+import './index.css' 
 
 function App() {
   return (
