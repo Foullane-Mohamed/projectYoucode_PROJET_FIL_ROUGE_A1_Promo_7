@@ -30,8 +30,11 @@ class AuthController extends Controller
             ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // Get the customer role
-        $customerRole = Role::where('name', 'Customer')->first();
+        // Get the customer role or create it if it doesn't exist
+        $customerRole = Role::firstOrCreate(
+            ['name' => 'Customer'],
+            ['description' => 'Regular customer role']
+        );
 
         $user = User::create([
             'name' => $request->name,

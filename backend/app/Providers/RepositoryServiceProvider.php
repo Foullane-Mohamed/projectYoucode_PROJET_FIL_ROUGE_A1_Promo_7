@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-<<<<<<< HEAD
 use Illuminate\Support\ServiceProvider;
 use App\Repositories\Eloquent\CartRepository;
 use App\Repositories\Eloquent\RoleRepository;
@@ -25,13 +24,6 @@ use App\Repositories\Interfaces\ProductRepositoryInterface;
 use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
 use App\Repositories\Interfaces\PaymentMethodRepositoryInterface;
-=======
-use App\Repositories\Eloquent\CategoryRepository;
-use App\Repositories\Eloquent\SubCategoryRepository;
-use App\Repositories\Interfaces\CategoryRepositoryInterface;
-use App\Repositories\Interfaces\SubCategoryRepositoryInterface;
-use Illuminate\Support\ServiceProvider;
->>>>>>> ce810818542af5206cba22329376163b0ab7a46e
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -42,7 +34,6 @@ class RepositoryServiceProvider extends ServiceProvider
     {
         $this->app->bind(CategoryRepositoryInterface::class, CategoryRepository::class);
         $this->app->bind(SubCategoryRepositoryInterface::class, SubCategoryRepository::class);
-<<<<<<< HEAD
         $this->app->bind(ProductRepositoryInterface::class, ProductRepository::class);
         $this->app->bind(CartRepositoryInterface::class, CartRepository::class);
         $this->app->bind(CommentRepositoryInterface::class, CommentRepository::class);
@@ -52,8 +43,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(ContactRepositoryInterface::class, ContactRepository::class);
         $this->app->bind(RoleRepositoryInterface::class, RoleRepository::class);
         $this->app->bind(UserRepositoryInterface::class, UserRepository::class);
-=======
->>>>>>> ce810818542af5206cba22329376163b0ab7a46e
     }
 
     /**
