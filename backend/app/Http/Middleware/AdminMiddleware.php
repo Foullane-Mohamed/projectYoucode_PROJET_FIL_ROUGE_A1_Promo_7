@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class AdminMiddleware
 {
@@ -16,13 +17,13 @@ class AdminMiddleware
      */
     public function handle(Request $request, Closure $next)
     {
-        if ($request->user() && $request->user()->role === 'admin') {
+        if ($request->user() && $request->user()->role && $request->user()->role->name === 'Admin') {
             return $next($request);
         }
 
         return response()->json([
-            'success' => false,
+            'status' => 'error',
             'message' => 'Unauthorized. Admin access required.',
-        ], 403);
+        ], Response::HTTP_FORBIDDEN);
     }
 }

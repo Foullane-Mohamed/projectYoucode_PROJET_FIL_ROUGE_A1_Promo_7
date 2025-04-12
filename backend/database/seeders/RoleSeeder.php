@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Role;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class RoleSeeder extends Seeder
@@ -13,14 +12,24 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        Role::create([
-            'name' => 'Admin',
-            'description' => 'Administrator role with full access'
-        ]);
+        // Create basic roles
+        $roles = [
+            [
+                'name' => 'Admin',
+                'description' => 'Administrator with full access to all features'
+            ],
+            [
+                'name' => 'Customer',
+                'description' => 'Regular customer with shopping privileges'
+            ],
+            [
+                'name' => 'Visitor',
+                'description' => 'Unauthenticated user with limited access'
+            ]
+        ];
 
-        Role::create([
-            'name' => 'Customer',
-            'description' => 'Regular customer role'
-        ]);
+        foreach ($roles as $role) {
+            Role::create($role);
+        }
     }
 }

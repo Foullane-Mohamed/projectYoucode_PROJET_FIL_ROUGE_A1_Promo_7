@@ -4,8 +4,14 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\CouponController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\ProductController;
+use App\Http\Controllers\RoleController;
 use App\Http\Controllers\SubCategoryController;
+use App\Http\Controllers\UserController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -48,6 +54,9 @@ Route::get('products/price-range', [ProductController::class, 'priceRange']);
 Route::get('comments/product/{productId}', [CommentController::class, 'byProduct']);
 Route::get('comments/product/{productId}/rating', [CommentController::class, 'productRating']);
 
+// Contact
+Route::post('contact', [ContactController::class, 'store']);
+
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('logout', [AuthController::class, 'logout']);
     Route::get('profile', [AuthController::class, 'profile']);
@@ -80,53 +89,78 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::delete('comments/{id}', [CommentController::class, 'destroy']);
     Route::get('user/comments', [CommentController::class, 'byUser']);
 
-    Route::get('orders', [OrderController::class, 'index']);
+    // Order routes
+    Route::get('user/orders', [OrderController::class, 'userOrders']);
     Route::post('orders', [OrderController::class, 'store']);
     Route::get('orders/{id}', [OrderController::class, 'show']);
-    Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
-    Route::get('user/orders', [OrderController::class, 'userOrders']);
-    Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
-    Route::get('orders/monthly', [OrderController::class, 'monthlyOrders']);
 
-
-
+    // Admin-only routes
     Route::middleware('admin')->group(function () {
-      // Payment Method routes
-      Route::post('payment-methods', [PaymentMethodController::class, 'store']);
-      Route::put('payment-methods/{id}', [PaymentMethodController::class, 'update']);
-      Route::delete('payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
-      
-      // Coupon routes
-      Route::get('coupons', [CouponController::class, 'index']);
-      Route::post('coupons', [CouponController::class, 'store']);
-      Route::get('coupons/{id}', [CouponController::class, 'show']);
-      Route::put('coupons/{id}', [CouponController::class, 'update']);
-      Route::delete('coupons/{id}', [CouponController::class, 'destroy']);
-      Route::get('coupons/active', [CouponController::class, 'active']);
+        // Dashboard stats
+        // Route::get('admin/dashboard/stats', function () {
+        //     // Return dashboard statistics
+        //     return response()->json([
+        //         'status' => 'success',
+        //         'data' => [
+        //             'users' => \App\Models\User::count(),
+        //             'products' => \App\Models\Product::count(),
+        //             'orders' => \App\Models\Order::count(),
+        //             'revenue' => \App\Models\Order::where('status', 'completed')->sum('total'),
+        //         ]
+        //     ]);
+        // });
 
-      // Inside the admin middleware group in routes/api.php
-// Contact routes (admin)
-Route::get('contacts', [ContactController::class, 'index']);
-Route::get('contacts/{id}', [ContactController::class, 'show']);
-Route::put('contacts/{id}', [ContactController::class, 'update']);
-Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
-Route::get('contacts/status/{status}', [ContactController::class, 'byStatus']);
 
-// Role routes
-Route::get('roles', [RoleController::class, 'index']);
-Route::post('roles', [RoleController::class, 'store']);
-Route::get('roles/{id}', [RoleController::class, 'show']);
-Route::put('roles/{id}', [RoleController::class, 'update']);
-Route::delete('roles/{id}', [RoleController::class, 'destroy']);
+        Route::get('admin/dashboard/stats', [DashboardController::class, 'getStats']);
+        Route::get('admin/dashboard/recent-orders', [DashboardController::class, 'getRecentOrders']);
+        Route::get('admin/dashboard/low-stock', [DashboardController::class, 'getLowStockProducts']);
+              // Orders management
+              Route::get('orders', [OrderController::class, 'index']);
+              Route::put('orders/{id}/status', [OrderController::class, 'updateStatus']);
+              Route::get('orders/status/{status}', [OrderController::class, 'byStatus']);
+              Route::get('orders/monthly', [OrderController::class, 'monthlyOrders']);
+        
+  
+        
+        // Payment Method routes
+        Route::get('payment-methods', [PaymentMethodController::class, 'index']);
+        Route::post('payment-methods', [PaymentMethodController::class, 'store']);
+        Route::get('payment-methods/{id}', [PaymentMethodController::class, 'show']);
+        Route::put('payment-methods/{id}', [PaymentMethodController::class, 'update']);
+        Route::delete('payment-methods/{id}', [PaymentMethodController::class, 'destroy']);
+        Route::get('payment-methods/active', [PaymentMethodController::class, 'getActive']);
+        
+        // Coupon routes
+        Route::get('coupons', [CouponController::class, 'index']);
+        Route::post('coupons', [CouponController::class, 'store']);
+        Route::get('coupons/{id}', [CouponController::class, 'show']);
+        Route::put('coupons/{id}', [CouponController::class, 'update']);
+        Route::delete('coupons/{id}', [CouponController::class, 'destroy']);
+        Route::get('coupons/active', [CouponController::class, 'active']);
+        
+        // Contact routes (admin)
+        Route::get('contacts', [ContactController::class, 'index']);
+        Route::get('contacts/{id}', [ContactController::class, 'show']);
+        Route::put('contacts/{id}', [ContactController::class, 'update']);
+        Route::delete('contacts/{id}', [ContactController::class, 'destroy']);
+        Route::get('contacts/status/{status}', [ContactController::class, 'byStatus']);
+        
+        // Role routes
+        Route::get('roles', [RoleController::class, 'index']);
+        Route::post('roles', [RoleController::class, 'store']);
+        Route::get('roles/{id}', [RoleController::class, 'show']);
+        Route::put('roles/{id}', [RoleController::class, 'update']);
+        Route::delete('roles/{id}', [RoleController::class, 'destroy']);
+        
+        // User routes
+        Route::get('users', [UserController::class, 'index']);
+        Route::post('users', [UserController::class, 'store']);
+        Route::get('users/{id}', [UserController::class, 'show']);
+        Route::put('users/{id}', [UserController::class, 'update']);
+        Route::delete('users/{id}', [UserController::class, 'destroy']);
+        Route::get('users/search', [UserController::class, 'search']);
+        Route::get('users/role/{roleId}', [UserController::class, 'byRole']);
 
-// User routes
-Route::get('users', [UserController::class, 'index']);
-Route::post('users', [UserController::class, 'store']);
-Route::get('users/{id}', [UserController::class, 'show']);
-Route::put('users/{id}', [UserController::class, 'update']);
-Route::delete('users/{id}', [UserController::class, 'destroy']);
-Route::get('users/search', [UserController::class, 'search']);
-Route::get('users/role/{roleId}', [UserController::class, 'byRole']);
-
-      });
+        
+    });
 });
