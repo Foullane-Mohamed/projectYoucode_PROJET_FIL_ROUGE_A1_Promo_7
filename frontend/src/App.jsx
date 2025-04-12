@@ -9,6 +9,17 @@ import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
 import Login from './components/auth/Login';
 import Register from './components/auth/Register';
+import AdminRoute from './components/auth/AdminRoute';
+
+// Admin Components
+import {
+  AdminLayout,
+  Dashboard as AdminDashboard,
+  CategoryList,
+  ProductList,
+  UserList,
+  OrderList
+} from './components/admin';
 
 // Auth utilities
 import { isAuthenticated } from './utils/auth';
@@ -59,10 +70,10 @@ const Home = () => (
   </Box>
 );
 
-// Dashboard placeholder
-const Dashboard = () => (
+// Customer Dashboard placeholder
+const CustomerDashboard = () => (
   <Box className="flex flex-col items-center justify-center p-8">
-    <h1 className="text-3xl font-bold mb-4">Dashboard</h1>
+    <h1 className="text-3xl font-bold mb-4">Customer Dashboard</h1>
     <p className="text-center max-w-lg">
       Welcome to your dashboard. This is a placeholder page. In a complete implementation, this would show personalized content and recommendations.
     </p>
@@ -74,31 +85,110 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <BrowserRouter>
-        <div className="flex flex-col min-h-screen">
-          <Navbar />
+        <Routes>
+          {/* Admin Routes */}
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <AdminDashboard />
+                </AdminLayout>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/categories" 
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <CategoryList />
+                </AdminLayout>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/products" 
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <ProductList />
+                </AdminLayout>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/users" 
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <UserList />
+                </AdminLayout>
+              </AdminRoute>
+            } 
+          />
+          <Route 
+            path="/admin/orders" 
+            element={
+              <AdminRoute>
+                <AdminLayout>
+                  <OrderList />
+                </AdminLayout>
+              </AdminRoute>
+            } 
+          />
           
-          <Box component="main" className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route path="*" element={<Navigate to="/" />} />
-            </Routes>
-          </Box>
+          {/* Public and Customer Routes */}
+          <Route 
+            path="/" 
+            element={
+              <div className="flex flex-col min-h-screen">
+                <Navbar />
+                <Box component="main" className="flex-grow">
+                  <Home />
+                </Box>
+                <Footer />
+              </div>
+            } 
+          />
+          <Route 
+            path="/login" 
+            element={
+              <div className="flex flex-col min-h-screen">
+                <Login />
+              </div>
+            } 
+          />
+          <Route 
+            path="/register" 
+            element={
+              <div className="flex flex-col min-h-screen">
+                <Register />
+              </div>
+            } 
+          />
+          <Route 
+            path="/dashboard" 
+            element={
+              <ProtectedRoute>
+                <div className="flex flex-col min-h-screen">
+                  <Navbar />
+                  <Box component="main" className="flex-grow">
+                    <CustomerDashboard />
+                  </Box>
+                  <Footer />
+                </div>
+              </ProtectedRoute>
+            } 
+          />
           
-          <Footer />
-        </div>
+          {/* Fallback route */}
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
       </BrowserRouter>
     </ThemeProvider>
   );
 }
+
 
 export default App;
