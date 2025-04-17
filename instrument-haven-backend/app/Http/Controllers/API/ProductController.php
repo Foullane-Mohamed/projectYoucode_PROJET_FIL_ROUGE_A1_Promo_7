@@ -20,7 +20,7 @@ class ProductController extends Controller
     public function index()
     {
         $products = $this->productRepository->all();
-        return response()->json(['data' => $products]);
+        return response()->json(['data' => $products->load('category', 'tags')]);
     }
 
     public function store(Request $request)
@@ -40,7 +40,7 @@ class ProductController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $data = $request->all();
+        $data = $request->except(['images', 'tags']);
         
         if ($request->hasFile('images')) {
             $images = [];
@@ -63,7 +63,7 @@ class ProductController extends Controller
     public function show($id)
     {
         $product = $this->productRepository->find($id);
-        return response()->json(['data' => $product]);
+        return response()->json(['data' => $product->load('category', 'tags')]);
     }
 
     public function update(Request $request, $id)
@@ -83,7 +83,7 @@ class ProductController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $data = $request->all();
+        $data = $request->except(['images', 'tags']);
         $product = $this->productRepository->find($id);
         
         if ($request->hasFile('images')) {
@@ -129,19 +129,22 @@ class ProductController extends Controller
     public function getProductsByCategory($categoryId)
     {
         $products = $this->productRepository->getProductsByCategory($categoryId);
-        return response()->json(['data' => $products]);
+        return response()->json(['data' => $products->load('category', 'tags')]);
     }
 
     public function getProductsByTag($tagId)
     {
         $products = $this->productRepository->getProductsByTag($tagId);
-        return response()->json(['data' => $products]);
+        return response()->json(['data' => $products->load('category', 'tags')]);
     }
 
     public function searchProducts(Request $request)
     {
         $query = $request->input('query');
+        if (empty($query)) {
+            return response()->json(['data' => []]);
+        }
         $products = $this->productRepository->searchProducts($query);
-        return response()->json(['data' => $products]);
+        return response()->json(['data' => $products->load('category', 'tags')]);
     }
 }

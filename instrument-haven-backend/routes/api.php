@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Products management
         Route::post('/products', [ProductController::class, 'store']);
-        Route::post('/products/{id}', [ProductController::class, 'update']);
+        Route::put('/products/{id}', [ProductController::class, 'update']); // Changed from POST to PUT
         Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
         // Tags management
