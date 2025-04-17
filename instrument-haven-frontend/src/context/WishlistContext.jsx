@@ -22,7 +22,7 @@ export const WishlistProvider = ({ children }) => {
     
     setLoading(true);
     try {
-      const response = await api.get('/wishlist');
+      const response = await api.wishlist.getAll();
       setWishlist(response.data.data);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
@@ -35,9 +35,9 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return { success: false, message: 'Please log in to add to wishlist' };
     
     try {
-      await api.post('/wishlist', { product_id: productId });
+      await api.wishlist.add(productId);
       await fetchWishlist();
-      return { success: true };
+      return { success: true, message: 'Product added to wishlist' };
     } catch (error) {
       return { 
         success: false, 
@@ -50,11 +50,14 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return { success: false };
     
     try {
-      await api.delete(`/wishlist/${productId}`);
+      await api.wishlist.remove(productId);
       await fetchWishlist();
-      return { success: true };
+      return { success: true, message: 'Product removed from wishlist' };
     } catch (error) {
-      return { success: false };
+      return { 
+        success: false, 
+        message: error.response?.data?.message || 'Error removing from wishlist' 
+      };
     }
   };
 
@@ -69,7 +72,8 @@ export const WishlistProvider = ({ children }) => {
         loading,
         addToWishlist,
         removeFromWishlist,
-        isInWishlist
+        isInWishlist,
+        fetchWishlist
       }}
     >
       {children}

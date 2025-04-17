@@ -1,5 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import { CartContext } from '../../context/CartContext';
 import { WishlistContext } from '../../context/WishlistContext';
@@ -21,6 +21,7 @@ import {
   Rating,
   IconButton,
   Alert,
+  Paper,
 } from '@mui/material';
 import {
   ShoppingCart,
@@ -34,6 +35,7 @@ import { toast } from 'react-toastify';
 
 const ProductDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { addToCart } = useContext(CartContext);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useContext(WishlistContext);
   const { user } = useContext(AuthContext);
@@ -49,19 +51,26 @@ const ProductDetail = () => {
   useEffect(() => {
     const fetchProductDetails = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
-        const response = await api.get(`/products/${id}`);
-        setProduct(response.data.data);
+        const response = await api.products.getById(id);
+        const productData = response.data.data;
+        setProduct(productData);
         
         // Fetch related products from the same category
-        const relatedResponse = await api.get(
-          `/products/category/${response.data.data.category_id}`
-        );
-        setRelatedProducts(
-          relatedResponse.data.data
-            .filter((item) => item.id !== parseInt(id))
-            .slice(0, 4)
-        );
+        if (productData.category_id) {
+          try {
+            const relatedResponse = await api.products.getByCategory(productData.category_id);
+            setRelatedProducts(
+              relatedResponse.data.data
+                .filter((item) => item.id !== parseInt(id))
+                .slice(0, 4)
+            );
+          } catch (err) {
+            console.error('Error fetching related products:', err);
+          }
+        }
       } catch (err) {
         console.error('Error fetching product details:', err);
         setError('Failed to load product details. Please try again later.');
@@ -74,19 +83,22 @@ const ProductDetail = () => {
   }, [id]);
 
   const handleQuantityChange = (newQuantity) => {
-    if (newQuantity >= 1 && newQuantity <= product.stock) {
+    if (product && newQuantity >= 1 && newQuantity <= product.stock) {
       setQuantity(newQuantity);
     }
   };
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
-    toast.success(`${product.name} added to cart!`);
+    if (product) {
+      addToCart(product, quantity);
+      toast.success(`${product.name} added to cart!`);
+    }
   };
 
   const handleWishlistToggle = async () => {
     if (!user) {
       toast.error('Please login to add to wishlist');
+      navigate('/login', { state: { from: `/products/${id}` } });
       return;
     }
     
@@ -96,13 +108,15 @@ const ProductDetail = () => {
       const result = await removeFromWishlist(product.id);
       if (result.success) {
         toast.success(`${product.name} removed from wishlist!`);
+      } else {
+        toast.error(result.message || 'Failed to remove from wishlist');
       }
     } else {
       const result = await addToWishlist(product.id);
       if (result.success) {
         toast.success(`${product.name} added to wishlist!`);
       } else {
-        toast.error(result.message);
+        toast.error(result.message || 'Failed to add to wishlist');
       }
     }
   };
@@ -156,12 +170,14 @@ const ProductDetail = () => {
         <Link to="/products" style={{ textDecoration: 'none', color: 'inherit' }}>
           Products
         </Link>
-        <Link
-          to={`/categories/${product.category_id}`}
-          style={{ textDecoration: 'none', color: 'inherit' }}
-        >
-          {product.category?.name || 'Category'}
-        </Link>
+        {product.category && (
+          <Link
+            to={`/categories/${product.category_id}`}
+            style={{ textDecoration: 'none', color: 'inherit' }}
+          >
+            {product.category.name}
+          </Link>
+        )}
         <Typography color="text.primary">{product.name}</Typography>
       </Breadcrumbs>
 
@@ -175,54 +191,68 @@ const ProductDetail = () => {
               gap: 2,
             }}
           >
-            <Box
+            <Paper
+              elevation={1}
               sx={{
                 height: 400,
                 width: '100%',
-                border: '1px solid',
-                borderColor: 'divider',
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
                 borderRadius: 1,
                 overflow: 'hidden',
+                bgcolor: 'background.paper',
               }}
             >
-              <img
-                src={
-                  product.images && product.images.length > 0
-                    ? `${process.env.REACT_APP_API_URL}/storage/${product.images[currentImage]}`
-                    : '/placeholder.png'
-                }
-                alt={product.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                }}
-              />
-            </Box>
+              {product.images && product.images.length > 0 ? (
+                <img
+                  src={`http://localhost:8000/storage/${product.images[currentImage]}`}
+                  alt={product.name}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              ) : (
+                <img
+                  src="/placeholder.png"
+                  alt={product.name}
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              )}
+            </Paper>
+            
             {product.images && product.images.length > 1 && (
               <Box
                 sx={{
                   display: 'flex',
                   gap: 1,
                   overflowX: 'auto',
+                  py: 1,
                 }}
               >
                 {product.images.map((image, index) => (
-                  <Box
+                  <Paper
                     key={index}
                     onClick={() => setCurrentImage(index)}
+                    elevation={index === currentImage ? 3 : 1}
                     sx={{
                       width: 80,
                       height: 80,
-                      border: '1px solid',
-                      borderColor: index === currentImage ? 'primary.main' : 'divider',
                       borderRadius: 1,
                       overflow: 'hidden',
                       cursor: 'pointer',
+                      border: index === currentImage ? '2px solid' : '1px solid',
+                      borderColor: index === currentImage ? 'primary.main' : 'divider',
                     }}
                   >
                     <img
-                      src={`${process.env.REACT_APP_API_URL}/storage/${image}`}
+                      src={`http://localhost:8000/storage/${image}`}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       style={{
                         width: '100%',
@@ -230,7 +260,7 @@ const ProductDetail = () => {
                         objectFit: 'cover',
                       }}
                     />
-                  </Box>
+                  </Paper>
                 ))}
               </Box>
             )}
@@ -243,6 +273,7 @@ const ProductDetail = () => {
             {product.name}
           </Typography>
           
+          {/* This is placeholder, you can implement real reviews later */}
           <Box
             sx={{
               display: 'flex',
@@ -258,8 +289,8 @@ const ProductDetail = () => {
           </Box>
           
           <Typography variant="h5" color="primary" gutterBottom>
-            ${product.price.toFixed(2)}
-            </Typography>
+            ${parseFloat(product.price).toFixed(2)}
+          </Typography>
           
           <Box sx={{ my: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
@@ -272,19 +303,21 @@ const ProductDetail = () => {
               />
             </Typography>
             
-            <Typography variant="subtitle1">
-              Category:
-              <Link 
-                to={`/categories/${product.category_id}`}
-                style={{ 
-                  textDecoration: 'none', 
-                  color: 'primary.main',
-                  marginLeft: '8px'
-                }}
-              >
-                {product.category?.name || 'Category'}
-              </Link>
-            </Typography>
+            {product.category && (
+              <Typography variant="subtitle1">
+                Category:
+                <Link 
+                  to={`/categories/${product.category_id}`}
+                  style={{ 
+                    textDecoration: 'none', 
+                    color: 'primary.main',
+                    marginLeft: '8px'
+                  }}
+                >
+                  {product.category.name}
+                </Link>
+              </Typography>
+            )}
             
             {product.tags && product.tags.length > 0 && (
               <Box sx={{ mt: 1 }}>
@@ -376,7 +409,7 @@ const ProductDetail = () => {
       </Grid>
 
       {/* Product Tabs */}
-      <Box sx={{ mt: 6 }}>
+      <Paper elevation={1} sx={{ mt: 6, borderRadius: 1 }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
@@ -387,7 +420,7 @@ const ProductDetail = () => {
           <Tab label="Specifications" />
           <Tab label="Reviews" />
         </Tabs>
-        <Box sx={{ py: 3 }}>
+        <Box sx={{ p: 3 }}>
           {tabValue === 0 && (
             <Typography variant="body1">{product.description}</Typography>
           )}
@@ -413,7 +446,7 @@ const ProductDetail = () => {
                 <Grid item xs={12} sm={6}>
                   <Typography variant="subtitle2">Price:</Typography>
                   <Typography variant="body2" color="text.secondary">
-                    ${product.price.toFixed(2)}
+                    ${parseFloat(product.price).toFixed(2)}
                   </Typography>
                 </Grid>
                 <Grid item xs={12} sm={6}>
@@ -439,7 +472,7 @@ const ProductDetail = () => {
             </Box>
           )}
         </Box>
-      </Box>
+      </Paper>
 
       {/* Related Products */}
       {relatedProducts.length > 0 && (
@@ -450,47 +483,55 @@ const ProductDetail = () => {
           <Grid container spacing={3}>
             {relatedProducts.map((relatedProduct) => (
               <Grid item xs={12} sm={6} md={3} key={relatedProduct.id}>
-                <Box
+                <Paper
+                  elevation={1}
                   component={Link}
                   to={`/products/${relatedProduct.id}`}
                   sx={{
                     display: 'block',
                     textDecoration: 'none',
                     color: 'inherit',
+                    height: '100%',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    '&:hover': {
+                      transform: 'translateY(-5px)',
+                      boxShadow: 3,
+                    },
                   }}
                 >
                   <Box
                     sx={{
                       height: 200,
                       width: '100%',
-                      mb: 1,
-                      border: '1px solid',
-                      borderColor: 'divider',
-                      borderRadius: 1,
-                      overflow: 'hidden',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      p: 2,
                     }}
                   >
                     <img
                       src={
                         relatedProduct.images && relatedProduct.images.length > 0
-                          ? `${process.env.REACT_APP_API_URL}/storage/${relatedProduct.images[0]}`
+                          ? `http://localhost:8000/storage/${relatedProduct.images[0]}`
                           : '/placeholder.png'
                       }
                       alt={relatedProduct.name}
                       style={{
-                        width: '100%',
-                        height: '100%',
+                        maxWidth: '100%',
+                        maxHeight: '100%',
                         objectFit: 'contain',
                       }}
                     />
                   </Box>
-                  <Typography variant="subtitle1" noWrap>
-                    {relatedProduct.name}
-                  </Typography>
-                  <Typography variant="body2" color="primary" fontWeight="bold">
-                    ${relatedProduct.price.toFixed(2)}
-                  </Typography>
-                </Box>
+                  <Box sx={{ p: 2 }}>
+                    <Typography variant="subtitle1" noWrap>
+                      {relatedProduct.name}
+                    </Typography>
+                    <Typography variant="body2" color="primary" fontWeight="bold">
+                      ${parseFloat(relatedProduct.price).toFixed(2)}
+                    </Typography>
+                  </Box>
+                </Paper>
               </Grid>
             ))}
           </Grid>
@@ -501,5 +542,3 @@ const ProductDetail = () => {
 };
 
 export default ProductDetail;
-          
-        

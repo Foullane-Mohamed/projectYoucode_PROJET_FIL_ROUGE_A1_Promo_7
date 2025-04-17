@@ -16,9 +16,9 @@ Route::post('/login', [AuthController::class, 'login']);
 
 // Products
 Route::get('/products', [ProductController::class, 'index']);
-Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/products/category/{categoryId}', [ProductController::class, 'getProductsByCategory']);
 Route::get('/products/tag/{tagId}', [ProductController::class, 'getProductsByTag']);
+Route::get('/products/{id}', [ProductController::class, 'show']);
 Route::get('/search', [ProductController::class, 'searchProducts']);
 
 // Categories
@@ -60,7 +60,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Products management
         Route::post('/products', [ProductController::class, 'store']);
-        Route::put('/products/{id}', [ProductController::class, 'update']); // Changed from POST to PUT
+        Route::put('/products/{id}', [ProductController::class, 'update']);
         Route::delete('/products/{id}', [ProductController::class, 'destroy']);
 
         // Tags management

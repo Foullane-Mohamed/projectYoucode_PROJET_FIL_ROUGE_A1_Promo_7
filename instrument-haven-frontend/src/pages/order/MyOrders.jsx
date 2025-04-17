@@ -20,6 +20,8 @@ import {
   AccordionDetails,
   Button,
   Alert,
+  Divider,
+  Grid,
 } from '@mui/material';
 import {
   ExpandMore as ExpandMoreIcon,
@@ -37,8 +39,10 @@ const MyOrders = () => {
       if (!user) return;
       
       setLoading(true);
+      setError('');
+      
       try {
-        const response = await api.get('/my-orders');
+        const response = await api.orders.getMyOrders();
         setOrders(response.data.data);
       } catch (err) {
         console.error('Error fetching orders:', err);
@@ -50,6 +54,26 @@ const MyOrders = () => {
 
     fetchOrders();
   }, [user]);
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'processing':
+        return 'info';
+      case 'completed':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
+
+  const formatDate = (dateString) => {
+    const options = { year: 'numeric', month: 'long', day: 'numeric' };
+    return new Date(dateString).toLocaleDateString(undefined, options);
+  };
 
   if (!user) {
     return (
@@ -128,48 +152,76 @@ const MyOrders = () => {
       
       {orders.map((order) => (
         <Accordion key={order.id} sx={{ mb: 2 }}>
-          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-              <Typography variant="subtitle1">
-                Order #{order.id} - {new Date(order.created_at).toLocaleDateString()}
-              </Typography>
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls={`order-${order.id}-content`}
+            id={`order-${order.id}-header`}
+          >
+            <Box sx={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              width: '100%', 
+              alignItems: 'center',
+              flexWrap: { xs: 'wrap', sm: 'nowrap' }
+            }}>
               <Box>
+                <Typography variant="subtitle1">
+                  Order #{order.id}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {formatDate(order.created_at)}
+                </Typography>
+              </Box>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center',
+                mt: { xs: 1, sm: 0 },
+                ml: { xs: 0, sm: 'auto' }
+              }}>
                 <Chip
                   label={order.status}
-                  color={
-                    order.status === 'completed'
-                      ? 'success'
-                      : order.status === 'cancelled'
-                      ? 'error'
-                      : 'primary'
-                  }
+                  color={getStatusColor(order.status)}
                   size="small"
+                  sx={{ mr: 2 }}
                 />
-                <Typography variant="subtitle1" sx={{ ml: 2, display: 'inline' }}>
-                  ${order.total.toFixed(2)}
+                <Typography variant="subtitle1">
+                  ${parseFloat(order.total).toFixed(2)}
                 </Typography>
               </Box>
             </Box>
           </AccordionSummary>
           <AccordionDetails>
-            <Typography variant="subtitle2" gutterBottom>
-              Shipping Address:
-            </Typography>
-            <Typography variant="body2" paragraph>
-              {order.shipping_address}
-            </Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Shipping Information:
+                </Typography>
+                <Typography variant="body2">
+                  {order.shipping_address}
+                </Typography>
+              </Grid>
+              
+              <Grid item xs={12} sm={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Payment Details:
+                </Typography>
+                <Typography variant="body2">
+                  Method: {order.payment_method.replace('_', ' ').toUpperCase()}
+                </Typography>
+                {order.payment_id && (
+                  <Typography variant="body2">
+                    Transaction ID: {order.payment_id}
+                  </Typography>
+                )}
+              </Grid>
+            </Grid>
             
-            <Typography variant="subtitle2" gutterBottom>
-              Payment Method:
-            </Typography>
-            <Typography variant="body2" paragraph>
-              {order.payment_method}
-            </Typography>
+            <Divider sx={{ my: 2 }} />
             
             <Typography variant="subtitle2" gutterBottom>
               Order Items:
             </Typography>
-            <TableContainer component={Paper} variant="outlined">
+            <TableContainer component={Paper} variant="outlined" sx={{ mt: 1 }}>
               <Table size="small">
                 <TableHead>
                   <TableRow>
@@ -180,45 +232,130 @@ const MyOrders = () => {
                   </TableRow>
                 </TableHead>
                 <TableBody>
-                  {order.items.map((item) => (
+                  {order.items && order.items.map((item) => (
                     <TableRow key={item.id}>
                       <TableCell>
                         <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                          <Box
-                            sx={{
-                              width: 40,
-                              height: 40,
-                              overflow: 'hidden',
-                              borderRadius: 1,
-                              mr: 1,
-                              flexShrink: 0,
-                            }}
-                          >
-                            <img
-                              src={
-                                item.product.images && item.product.images.length > 0
-                                  ? `${process.env.REACT_APP_API_URL}/storage/${item.product.images[0]}`
-                                  : '/placeholder.png'
-                              }
-                              alt={item.product.name}
-                              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                            />
-                          </Box>
-                          <Typography variant="body2">
-                            {item.product.name}
-                          </Typography>
+                          {item.product && (
+                            <>
+                              {item.product.images && item.product.images.length > 0 ? (
+                                <Box
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    overflow: 'hidden',
+                                    borderRadius: 1,
+                                    mr: 1,
+                                    flexShrink: 0,
+                                    bgcolor: 'background.paper',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <img
+                                    src={`http://localhost:8000/storage/${item.product.images[0]}`}
+                                    alt={item.product.name}
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                  />
+                                </Box>
+                              ) : (
+                                <Box
+                                  sx={{
+                                    width: 40,
+                                    height: 40,
+                                    overflow: 'hidden',
+                                    borderRadius: 1,
+                                    mr: 1,
+                                    flexShrink: 0,
+                                    bgcolor: 'background.paper',
+                                    display: 'flex',
+                                    justifyContent: 'center',
+                                    alignItems: 'center'
+                                  }}
+                                >
+                                  <img
+                                    src="/placeholder.png"
+                                    alt={item.product.name}
+                                    style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                                  />
+                                </Box>
+                              )}
+                              <Link 
+                                to={`/products/${item.product.id}`}
+                                style={{ 
+                                  textDecoration: 'none', 
+                                  color: 'inherit'
+                                }}
+                              >
+                                <Typography variant="body2">
+                                  {item.product.name}
+                                </Typography>
+                              </Link>
+                            </>
+                          )}
                         </Box>
                       </TableCell>
-                      <TableCell align="right">${item.price.toFixed(2)}</TableCell>
+                      <TableCell align="right">${parseFloat(item.price).toFixed(2)}</TableCell>
                       <TableCell align="right">{item.quantity}</TableCell>
                       <TableCell align="right">
-                        ${(item.price * item.quantity).toFixed(2)}
+                        ${(parseFloat(item.price) * item.quantity).toFixed(2)}
                       </TableCell>
                     </TableRow>
                   ))}
+                  
+                  {/* Display coupon discount if applicable */}
+                  {order.coupon && (
+                    <TableRow>
+                      <TableCell colSpan={2}>
+                        <Typography variant="body2">
+                          Coupon: {order.coupon.code}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2">
+                          Discount:
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="right">
+                        <Typography variant="body2" color="error">
+                          -${order.coupon.type === 'percentage' 
+                            ? ((order.coupon.discount / 100) * parseFloat(order.total)).toFixed(2)
+                            : parseFloat(order.coupon.discount).toFixed(2)}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  
+                  <TableRow>
+                    <TableCell colSpan={3} align="right">
+                      <Typography variant="subtitle2">Total:</Typography>
+                    </TableCell>
+                    <TableCell align="right">
+                      <Typography variant="subtitle2">
+                        ${parseFloat(order.total).toFixed(2)}
+                      </Typography>
+                    </TableCell>
+                  </TableRow>
                 </TableBody>
               </Table>
             </TableContainer>
+            
+            {order.status === 'pending' && (
+              <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  size="small"
+                  onClick={() => {
+                    // Implement cancel order functionality
+                    alert('Cancel order functionality will be implemented in the future');
+                  }}
+                >
+                  Cancel Order
+                </Button>
+              </Box>
+            )}
           </AccordionDetails>
         </Accordion>
       ))}

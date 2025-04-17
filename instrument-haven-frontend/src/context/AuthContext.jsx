@@ -10,21 +10,21 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
-      const storedUser = localStorage.getItem('user');
-
-      if (token && storedUser) {
-        setUser(JSON.parse(storedUser));
+      
+      if (token) {
         try {
-          const response = await api.get('/profile');
+          const response = await api.auth.getProfile();
           const userData = response.data.user;
           setUser(userData);
           localStorage.setItem('user', JSON.stringify(userData));
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          // Clear storage if authentication fails
           localStorage.removeItem('token');
           localStorage.removeItem('user');
         }
       }
+      
       setLoading(false);
     };
 
@@ -33,11 +33,13 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/login', { email, password });
+      const response = await api.auth.login({ email, password });
       const { user, token } = response.data;
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
+      
       return { success: true, user };
     } catch (error) {
       return {
@@ -49,23 +51,26 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await api.post('/register', userData);
+      const response = await api.auth.register(userData);
       const { user, token } = response.data;
+      
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(user));
       setUser(user);
+      
       return { success: true, user };
     } catch (error) {
       return {
         success: false,
-        message: error.response?.data
+        message: error.response?.data?.message || 'Registration failed',
+        errors: error.response?.data?.errors
       };
     }
   };
 
   const logout = async () => {
     try {
-      await api.post('/logout');
+      await api.auth.logout();
     } catch (error) {
       console.error('Error logging out:', error);
     } finally {
@@ -77,15 +82,22 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (userData) => {
     try {
-      const response = await api.put('/profile', userData);
+      const response = await api.auth.updateProfile(userData);
       const updatedUser = response.data.user;
+      
       localStorage.setItem('user', JSON.stringify(updatedUser));
       setUser(updatedUser);
-      return { success: true, user: updatedUser };
+      
+      return { 
+        success: true, 
+        user: updatedUser, 
+        message: response.data.message || 'Profile updated successfully' 
+      };
     } catch (error) {
       return {
         success: false,
         message: error.response?.data?.message || 'Profile update failed',
+        errors: error.response?.data?.errors
       };
     }
   };

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import ProductCard from "../../components/common/ProductCard";
 import {
@@ -27,6 +27,8 @@ import {
   IconButton,
   useMediaQuery,
   useTheme,
+  Paper,
+  Alert,
 } from "@mui/material";
 import { Search, FilterList, Close } from "@mui/icons-material";
 
@@ -35,14 +37,16 @@ const ProductList = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
   const navigate = useNavigate();
+  const { id: categoryId } = useParams();
   const queryParams = new URLSearchParams(location.search);
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
-    category: queryParams.get("category") || "",
+    category: categoryId || queryParams.get("category") || "",
     tag: queryParams.get("tag") || "",
     sort: queryParams.get("sort") || "newest",
     search: queryParams.get("search") || "",
@@ -52,34 +56,51 @@ const ProductList = () => {
   });
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
+  const [currentCategory, setCurrentCategory] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
+      
       try {
         // Fetch categories
-        const categoriesResponse = await api.get("/categories");
+        const categoriesResponse = await api.categories.getAll();
         setCategories(categoriesResponse.data.data);
 
         // Fetch tags
-        const tagsResponse = await api.get("/tags");
+        const tagsResponse = await api.tags.getAll();
         setTags(tagsResponse.data.data);
 
-        // Fetch products with filters
-        let endpoint = "/products";
-
+        // Fetch products based on filters
+        let productsData = [];
+        
         if (filters.category) {
-          endpoint = `/products/category/${filters.category}`;
+          const response = await api.products.getByCategory(filters.category);
+          productsData = response.data.data;
+          
+          // Get category details
+          if (categoryId) {
+            try {
+              const categoryResponse = await api.categories.getById(categoryId);
+              setCurrentCategory(categoryResponse.data.data);
+            } catch (err) {
+              console.error("Error fetching category details:", err);
+            }
+          }
         } else if (filters.tag) {
-          endpoint = `/products/tag/${filters.tag}`;
+          const response = await api.products.getByTag(filters.tag);
+          productsData = response.data.data;
         } else if (filters.search) {
-          endpoint = `/search?query=${filters.search}`;
+          const response = await api.products.search(filters.search);
+          productsData = response.data.data;
+        } else {
+          const response = await api.products.getAll();
+          productsData = response.data.data;
         }
 
-        const productsResponse = await api.get(endpoint);
-        let filteredProducts = [...productsResponse.data.data];
-
         // Apply price filters
+        let filteredProducts = [...productsData];
         if (filters.minPrice) {
           filteredProducts = filteredProducts.filter(
             (product) => product.price >= parseFloat(filters.minPrice)
@@ -115,13 +136,14 @@ const ProductList = () => {
         setProducts(filteredProducts.slice(startIdx, endIdx));
       } catch (error) {
         console.error("Error fetching products:", error);
+        setError("Failed to load products. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [filters]);
+  }, [filters, categoryId]);
 
   const handleFilterChange = (name, value) => {
     const newFilters = { ...filters, [name]: value };
@@ -149,8 +171,14 @@ const ProductList = () => {
   return (
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
-        Products
+        {currentCategory ? currentCategory.name : "Products"}
       </Typography>
+      
+      {currentCategory && (
+        <Typography variant="body1" paragraph>
+          {currentCategory.description}
+        </Typography>
+      )}
 
       {/* Filter Bar */}
       <Box
@@ -216,14 +244,7 @@ const ProductList = () => {
       <Grid container spacing={2}>
         {/* Desktop Filters */}
         <Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
-          <Box
-            sx={{
-              p: 2,
-              bgcolor: "background.paper",
-              borderRadius: 1,
-              boxShadow: 1,
-            }}
-          >
+          <Paper sx={{ p: 2, borderRadius: 1 }}>
             <Typography variant="h6" gutterBottom>
               Filters
             </Typography>
@@ -323,11 +344,12 @@ const ProductList = () => {
                 handleFilterChange("maxPrice", "");
                 handleFilterChange("category", "");
                 handleFilterChange("tag", "");
+                handleFilterChange("search", "");
               }}
             >
               Clear Filters
             </Button>
-          </Box>
+          </Paper>
         </Grid>
 
         {/* Mobile Filters Drawer */}
@@ -447,6 +469,7 @@ const ProductList = () => {
                 handleFilterChange("maxPrice", "");
                 handleFilterChange("category", "");
                 handleFilterChange("tag", "");
+                handleFilterChange("search", "");
                 if (isMobile) toggleDrawer();
               }}
             >
@@ -468,6 +491,10 @@ const ProductList = () => {
             >
               <CircularProgress />
             </Box>
+          ) : error ? (
+            <Alert severity="error" sx={{ mb: 3 }}>
+              {error}
+            </Alert>
           ) : products.length > 0 ? (
             <>
               <Grid container spacing={3}>

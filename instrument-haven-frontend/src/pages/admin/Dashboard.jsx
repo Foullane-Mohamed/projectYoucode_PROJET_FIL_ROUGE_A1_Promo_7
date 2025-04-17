@@ -1,6 +1,5 @@
-// src/pages/admin/Dashboard.jsx
 import { useState } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   Box,
   Drawer,
@@ -16,6 +15,8 @@ import {
   CssBaseline,
   IconButton,
   Button,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Menu as MenuIcon,
@@ -32,15 +33,6 @@ import {
 import { useContext } from 'react';
 import { AuthContext } from '../../context/AuthContext';
 
-// Admin components
-import AdminHome from './AdminHome';
-import ProductManagement from './ProductManagement';
-import CategoryManagement from './CategoryManagement';
-import TagManagement from './TagManagement';
-import OrderManagement from './OrderManagement';
-import CouponManagement from './CouponManagement';
-import UserManagement from './UserManagement';
-
 const drawerWidth = 240;
 
 const Dashboard = () => {
@@ -48,6 +40,8 @@ const Dashboard = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useContext(AuthContext);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -82,8 +76,12 @@ const Dashboard = () => {
             <ListItemButton
               component={Link}
               to={item.path}
-              selected={location.pathname === item.path}
-              onClick={() => setMobileOpen(false)}
+              selected={
+                item.path === '/admin'
+                  ? location.pathname === '/admin'
+                  : location.pathname.startsWith(item.path)
+              }
+              onClick={() => isMobile && setMobileOpen(false)}
             >
               <ListItemIcon>{item.icon}</ListItemIcon>
               <ListItemText primary={item.text} />
@@ -94,7 +92,7 @@ const Dashboard = () => {
       <Divider />
       <List>
         <ListItem disablePadding>
-          <ListItemButton component={Link} to="/" onClick={() => setMobileOpen(false)}>
+          <ListItemButton component={Link} to="/" onClick={() => isMobile && setMobileOpen(false)}>
             <ListItemIcon><HomeIcon /></ListItemIcon>
             <ListItemText primary="Back to Shop" />
           </ListItemButton>
@@ -173,18 +171,14 @@ const Dashboard = () => {
       </Box>
       <Box
         component="main"
-        sx={{ flexGrow: 1, p: 3, width: { sm: `calc(100% - ${drawerWidth}px)` } }}
+        sx={{ 
+          flexGrow: 1, 
+          p: 3, 
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: { xs: 8, sm: 8 }
+        }}
       >
-        <Toolbar />
-        <Routes>
-          <Route path="/" element={<AdminHome />} />
-          <Route path="/products" element={<ProductManagement />} />
-          <Route path="/categories" element={<CategoryManagement />} />
-          <Route path="/tags" element={<TagManagement />} />
-          <Route path="/orders" element={<OrderManagement />} />
-          <Route path="/coupons" element={<CouponManagement />} />
-          <Route path="/users" element={<UserManagement />} />
-        </Routes>
+        <Outlet />
       </Box>
     </Box>
   );

@@ -9,10 +9,12 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
+import { LoadingProvider } from './context/LoadingContext';
 
 // Layout Components
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
+import ErrorBoundary from './components/common/ErrorBoundary';
 
 // Page Components
 import Home from './pages/home/Home';
@@ -27,7 +29,16 @@ import Contact from './pages/contact/Contact';
 import Profile from './pages/auth/Profile';
 import MyOrders from './pages/order/MyOrders';
 import NotFound from './pages/common/NotFound';
+
+// Admin Components
 import AdminDashboard from './pages/admin/Dashboard';
+import AdminHome from './pages/admin/AdminHome';
+import ProductManagement from './pages/admin/ProductManagement';
+import CategoryManagement from './pages/admin/CategoryManagement';
+import TagManagement from './pages/admin/TagManagement';
+import OrderManagement from './pages/admin/OrderManagement';
+import CouponManagement from './pages/admin/CouponManagement';
+import UserManagement from './pages/admin/UserManagement';
 
 // Route Guards
 import ProtectedRoute from './components/common/ProtectedRoute';
@@ -71,6 +82,20 @@ const theme = createTheme({
         },
       },
     },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        rounded: {
+          borderRadius: 8,
+        },
+      },
+    },
   },
 });
 
@@ -79,58 +104,78 @@ function App() {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDateFns}>
-        <AuthProvider>
-          <CartProvider>
-            <WishlistProvider>
-              <BrowserRouter>
-                <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-                  <Header />
-                  <main style={{ flexGrow: 1 }}>
-                    <Routes>
-                      <Route path="/" element={<Home />} />
-                      <Route path="/products" element={<ProductList />} />
-                      <Route path="/products/:id" element={<ProductDetail />} />
-                      <Route path="/categories/:id" element={<ProductList />} />
-                      <Route path="/cart" element={<Cart />} />
-                      <Route path="/checkout" element={
-                        <ProtectedRoute>
-                          <Checkout />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/wishlist" element={
-                        <ProtectedRoute>
-                          <Wishlist />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/login" element={<Login />} />
-                      <Route path="/register" element={<Register />} />
-                      <Route path="/profile" element={
-                        <ProtectedRoute>
-                          <Profile />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/my-orders" element={
-                        <ProtectedRoute>
-                          <MyOrders />
-                        </ProtectedRoute>
-                      } />
-                      <Route path="/contact" element={<Contact />} />
-                      <Route path="/admin/*" element={
-                        <AdminRoute>
-                          <AdminDashboard />
-                        </AdminRoute>
-                      } />
-                      <Route path="/404" element={<NotFound />} />
-                      <Route path="*" element={<Navigate to="/404" replace />} />
-                    </Routes>
-                  </main>
-                  <Footer />
-                </div>
-              </BrowserRouter>
-              <ToastContainer position="bottom-right" />
-            </WishlistProvider>
-          </CartProvider>
-        </AuthProvider>
+        <ErrorBoundary>
+          <AuthProvider>
+            <CartProvider>
+              <WishlistProvider>
+                <LoadingProvider>
+                  <BrowserRouter>
+                    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                      <Header />
+                      <main style={{ flexGrow: 1 }}>
+                        <Routes>
+                          {/* Public Routes */}
+                          <Route path="/" element={<Home />} />
+                          <Route path="/products" element={<ProductList />} />
+                          <Route path="/products/:id" element={<ProductDetail />} />
+                          <Route path="/categories/:id" element={<ProductList />} />
+                          <Route path="/search" element={<ProductList />} />
+                          <Route path="/cart" element={<Cart />} />
+                          <Route path="/login" element={<Login />} />
+                          <Route path="/register" element={<Register />} />
+                          <Route path="/contact" element={<Contact />} />
+                          
+                          {/* Protected Routes */}
+                          <Route path="/checkout" element={
+                            <ProtectedRoute>
+                              <Checkout />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/wishlist" element={
+                            <ProtectedRoute>
+                              <Wishlist />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/profile" element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/my-orders" element={
+                            <ProtectedRoute>
+                              <MyOrders />
+                            </ProtectedRoute>
+                          } />
+                          
+                          {/* Admin Routes */}
+                          <Route path="/admin" element={
+                            <AdminRoute>
+                              <AdminDashboard />
+                            </AdminRoute>
+                          }>
+                            <Route index element={<AdminHome />} />
+                            <Route path="products" element={<ProductManagement />} />
+                            <Route path="categories" element={<CategoryManagement />} />
+                            <Route path="tags" element={<TagManagement />} />
+                            <Route path="orders" element={<OrderManagement />} />
+                            <Route path="coupons" element={<CouponManagement />} />
+                            <Route path="users" element={<UserManagement />} />
+                          </Route>
+                          
+                          {/* Not Found */}
+                          <Route path="/404" element={<NotFound />} />
+                          <Route path="*" element={<Navigate to="/404" replace />} />
+                        </Routes>
+                      </main>
+                      <Footer />
+                    </div>
+                    <ToastContainer position="bottom-right" />
+                  </BrowserRouter>
+                </LoadingProvider>
+              </WishlistProvider>
+            </CartProvider>
+          </AuthProvider>
+        </ErrorBoundary>
       </LocalizationProvider>
     </ThemeProvider>
   );
