@@ -41,4 +41,12 @@ interface CategoryRepositoryInterface extends BaseRepositoryInterface
      * @return mixed
      */
     public function getSubcategories(int $categoryId);
+    
+    /**
+     * Get category with subcategories and products
+     *
+     * @param int $id
+     * @return mixed
+     */
+    public function getWithProductsAndSubcategories(int $id);
 }

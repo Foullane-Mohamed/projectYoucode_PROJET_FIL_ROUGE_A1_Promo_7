@@ -1,4 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { debugLog, safelyExtractData } from "../../utils/debugHelper";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import ProductCard from "../../components/common/ProductCard";
@@ -56,146 +58,216 @@ const ProductList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [currentCategory, setCurrentCategory] = useState(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      
+  // Define the fetchData function using useCallback
+  const fetchData = useCallback(async () => {
+    // Reset state before fetching
+    setError(null);
+    setLoading(true);
+    
+    try {
+      // Fetch categories
       try {
-        // Fetch categories
+        const categoriesResponse = await api.categories.getAll();
+        console.log('Categories response:', categoriesResponse);
+        
+        // Handle empty response
+        if (!categoriesResponse || !categoriesResponse.data) {
+          setCategories([]);
+          return;
+        }
+        
+        // Standardize data extraction
+        let categoriesData = [];
+        
+        if (Array.isArray(categoriesResponse.data)) {
+          categoriesData = categoriesResponse.data;
+        } else if (categoriesResponse.data.categories && Array.isArray(categoriesResponse.data.categories)) {
+          categoriesData = categoriesResponse.data.categories;
+        } else if (categoriesResponse.data.data && Array.isArray(categoriesResponse.data.data)) {
+          categoriesData = categoriesResponse.data.data;
+        } else if (categoriesResponse.data.data && categoriesResponse.data.data.categories && 
+                 Array.isArray(categoriesResponse.data.data.categories)) {
+          categoriesData = categoriesResponse.data.data.categories;
+        }
+            
+        setCategories(categoriesData);
+      } catch (error) {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+      }
+
+      // Fetch products based on filters
+      // Ensure productsData is initialized as an array
+      let productsData = [];
+      
+      if (filters.category) {
+        // Get category details and its products
         try {
-          const categoriesResponse = await api.categories.getAll();
-          console.log('Categories response:', categoriesResponse);
+          const categoryResponse = await api.categories.getById(filters.category);
+          console.log('Category response:', categoryResponse);
           
-          // Handle empty response
-          if (!categoriesResponse || !categoriesResponse.data) {
-            setCategories([]);
-            return;
+          // Extract category data with improved path handling
+          let categoryData = null;
+          
+          if (categoryResponse.data && categoryResponse.data.data && categoryResponse.data.data.category) {
+            categoryData = categoryResponse.data.data.category;
+          } else if (categoryResponse.data && categoryResponse.data.category) {
+            categoryData = categoryResponse.data.category;
+          } else if (categoryResponse.data && categoryResponse.data.data) {
+            categoryData = categoryResponse.data.data;
+          } else if (categoryResponse.data) {
+            categoryData = categoryResponse.data;
           }
           
-          // Check if the response is an array directly
-          const categoriesData = Array.isArray(categoriesResponse.data) ? 
-            categoriesResponse.data : 
-            (categoriesResponse.data.data && Array.isArray(categoriesResponse.data.data)) ? 
-              categoriesResponse.data.data : 
-              [];
-              
-          setCategories(categoriesData);
-        } catch (error) {
-          console.error('Error fetching categories:', error);
-          setCategories([]);
-        }
-
-        // Fetch products based on filters
-        let productsData = [];
-        
-        if (filters.category) {
-          // Get category details and its products
-          try {
-            const categoryResponse = await api.categories.getById(filters.category);
-            console.log('Category response:', categoryResponse);
+          setCurrentCategory(categoryData);
+          
+          // Check if products are included in the response with improved path handling
+          if (categoryData && categoryData.products && Array.isArray(categoryData.products)) {
+            productsData = categoryData.products;
+          } else {
+            // Fallback to getting all products and filtering by category
+            const allProductsResponse = await api.products.getAll({ category_id: filters.category });
+            console.log('All products response with category filter:', allProductsResponse);
             
-            // Extract category data
-            const categoryData = categoryResponse.data && categoryResponse.data.data ? 
-              categoryResponse.data.data : 
-              (categoryResponse.data ? categoryResponse.data : null);
-            
-            setCurrentCategory(categoryData);
-            
-            // Check if products are included in the response
-            if (categoryData && categoryData.products) {
-              productsData = categoryData.products;
-            } else {
-              // Fallback to getting all products and filtering by category
-              const allProductsResponse = await api.products.getAll();
-              console.log('All products response:', allProductsResponse);
-              
-              const allProducts = Array.isArray(allProductsResponse.data) ? 
-                allProductsResponse.data : 
-                (allProductsResponse.data && allProductsResponse.data.data) ? 
-                  allProductsResponse.data.data : [];
-                  
-              productsData = allProducts.filter(
-                product => product.category_id && product.category_id.toString() === filters.category
-              );
+            // Improved data extraction
+            if (allProductsResponse.data && allProductsResponse.data.data && 
+                allProductsResponse.data.data.products && Array.isArray(allProductsResponse.data.data.products)) {
+              productsData = allProductsResponse.data.data.products;
+            } else if (allProductsResponse.data && allProductsResponse.data.products && 
+                Array.isArray(allProductsResponse.data.products)) {
+              productsData = allProductsResponse.data.products;
+            } else if (allProductsResponse.data && allProductsResponse.data.data && 
+                Array.isArray(allProductsResponse.data.data)) {
+              productsData = allProductsResponse.data.data;
+            } else if (Array.isArray(allProductsResponse.data)) {
+              productsData = allProductsResponse.data;
             }
-          } catch (err) {
-            console.error("Error fetching category details:", err);
-            const allProductsResponse = await api.products.getAll();
-            console.log('All products response (fallback):', allProductsResponse);
             
-            const allProducts = Array.isArray(allProductsResponse.data) ? 
-              allProductsResponse.data : 
-              (allProductsResponse.data && allProductsResponse.data.data) ? 
-                allProductsResponse.data.data : [];
-                
-            productsData = allProducts.filter(
-              product => product.category_id && product.category_id.toString() === filters.category
+            // Additional safety filter
+            productsData = productsData.filter(
+              product => product && product.category_id && product.category_id.toString() === filters.category
             );
           }
-        } else if (filters.search) {
+        } catch (err) {
+          console.error("Error fetching category details:", err);
+          // Fallback to direct products API call with category filter
+          try {
+            const allProductsResponse = await api.products.getAll({ category_id: filters.category });
+            console.log('All products response (fallback):', allProductsResponse);
+            
+            // Improved data extraction for fallback
+            if (allProductsResponse.data && allProductsResponse.data.data && 
+                allProductsResponse.data.data.products && Array.isArray(allProductsResponse.data.data.products)) {
+              productsData = allProductsResponse.data.data.products;
+            } else if (allProductsResponse.data && allProductsResponse.data.products && 
+                Array.isArray(allProductsResponse.data.products)) {
+              productsData = allProductsResponse.data.products;
+            } else if (allProductsResponse.data && allProductsResponse.data.data && 
+                Array.isArray(allProductsResponse.data.data)) {
+              productsData = allProductsResponse.data.data;
+            } else if (Array.isArray(allProductsResponse.data)) {
+              productsData = allProductsResponse.data;
+            }
+            
+            // Additional safety filter
+            // Safely filter products with defensive null checks
+            productsData = Array.isArray(productsData) ? productsData.filter(
+              product => product && product.category_id && product.category_id.toString() === filters.category
+            ) : [];
+          } catch (error) {
+            console.error("Error in fallback product fetch:", error);
+            setError("Failed to load products. Please try again later.");
+          }
+        }
+      } else if (filters.search) {
+        try {
           const response = await api.products.search(filters.search);
           console.log('Search products response:', response);
           
-          productsData = Array.isArray(response.data) ? 
-            response.data : 
-            (response.data && response.data.data) ? 
-              response.data.data : [];
-        } else {
+          // Improved data extraction for search results
+          if (response.data && response.data.data && response.data.data.products && 
+              Array.isArray(response.data.data.products)) {
+            productsData = response.data.data.products;
+          } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
+            productsData = response.data.products;
+          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            productsData = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            productsData = response.data;
+          }
+        } catch (error) {
+          console.error("Error searching products:", error);
+          setError("Failed to search products. Please try again later.");
+        }
+      } else {
+        try {
           const response = await api.products.getAll();
           console.log('All products response:', response);
           
-          productsData = Array.isArray(response.data) ? 
-            response.data : 
-            (response.data && response.data.data) ? 
-              response.data.data : [];
+          // Improved data extraction for all products
+          if (response.data && response.data.data && response.data.data.products && 
+              Array.isArray(response.data.data.products)) {
+            productsData = response.data.data.products;
+          } else if (response.data && response.data.products && Array.isArray(response.data.products)) {
+            productsData = response.data.products;
+          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            productsData = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            productsData = response.data;
+          }
+        } catch (error) {
+          console.error("Error fetching all products:", error);
+          setError("Failed to load products. Please try again later.");
         }
-
-        // Apply price filters
-        let filteredProducts = [...productsData];
-        if (filters.minPrice) {
-          filteredProducts = filteredProducts.filter(
-            (product) => product.price >= parseFloat(filters.minPrice)
-          );
-        }
-        if (filters.maxPrice) {
-          filteredProducts = filteredProducts.filter(
-            (product) => product.price <= parseFloat(filters.maxPrice)
-          );
-        }
-
-        // Apply sorting
-        if (filters.sort === "price-asc") {
-          filteredProducts.sort((a, b) => a.price - b.price);
-        } else if (filters.sort === "price-desc") {
-          filteredProducts.sort((a, b) => b.price - a.price);
-        } else if (filters.sort === "name-asc") {
-          filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (filters.sort === "name-desc") {
-          filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
-        } else {
-          // Newest by default (id desc)
-          filteredProducts.sort((a, b) => b.id - a.id);
-        }
-
-        // Pagination
-        const itemsPerPage = 12;
-        setTotalPages(Math.ceil(filteredProducts.length / itemsPerPage));
-
-        const startIdx = (filters.page - 1) * itemsPerPage;
-        const endIdx = startIdx + itemsPerPage;
-
-        setProducts(filteredProducts.slice(startIdx, endIdx));
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setError("Failed to load products. Please try again later.");
-      } finally {
-        setLoading(false);
       }
-    };
 
-    fetchData();
+      // Apply price filters
+      let filteredProducts = [...productsData];
+      if (filters.minPrice) {
+        filteredProducts = filteredProducts.filter(
+          (product) => product.price >= parseFloat(filters.minPrice)
+        );
+      }
+      if (filters.maxPrice) {
+        filteredProducts = filteredProducts.filter(
+          (product) => product.price <= parseFloat(filters.maxPrice)
+        );
+      }
+
+      // Apply sorting
+      if (filters.sort === "price-asc") {
+        filteredProducts.sort((a, b) => a.price - b.price);
+      } else if (filters.sort === "price-desc") {
+        filteredProducts.sort((a, b) => b.price - a.price);
+      } else if (filters.sort === "name-asc") {
+        filteredProducts.sort((a, b) => a.name.localeCompare(b.name));
+      } else if (filters.sort === "name-desc") {
+        filteredProducts.sort((a, b) => b.name.localeCompare(a.name));
+      } else {
+        // Newest by default (id desc)
+        filteredProducts.sort((a, b) => b.id - a.id);
+      }
+
+      // Pagination
+      const itemsPerPage = 12;
+      setTotalPages(Math.ceil(filteredProducts.length / itemsPerPage));
+
+      const startIdx = (filters.page - 1) * itemsPerPage;
+      const endIdx = startIdx + itemsPerPage;
+
+      setProducts(filteredProducts.slice(startIdx, endIdx));
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setError("Failed to load products. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
   }, [filters, categoryId]);
+
+  // Call fetchData when component mounts or when fetchData changes
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleFilterChange = (name, value) => {
     const newFilters = { ...filters, [name]: value };
@@ -220,7 +292,26 @@ const ProductList = () => {
     setDrawerOpen(!drawerOpen);
   };
 
-  return (
+  // Reset handler for error boundary
+const handleReset = () => {
+  setError(null);
+  setLoading(false);
+  setFilters({
+    category: categoryId || "",
+    search: "",
+    sort: "newest",
+    minPrice: "",
+    maxPrice: "",
+    page: 1,
+  });
+  // Trigger refetch
+  setTimeout(() => {
+    fetchData();
+  }, 100);
+};
+
+return (
+  <ErrorBoundary onReset={handleReset}>
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom>
         {currentCategory ? currentCategory.name : "Products"}
@@ -517,9 +608,26 @@ const ProductList = () => {
               <CircularProgress />
             </Box>
           ) : error ? (
-            <Alert severity="error" sx={{ mb: 3 }}>
-              {error}
-            </Alert>
+            <Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
+              <Alert severity="error" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
+                {error}
+              </Alert>
+              <Button 
+                variant="contained" 
+                color="primary" 
+                onClick={() => {
+                  setError(null);
+                  setLoading(true);
+                  handleFilterChange("search", "");
+                  handleFilterChange("minPrice", "");
+                  handleFilterChange("maxPrice", "");
+                  handleFilterChange("category", "");
+                }}
+                sx={{ mt: 2 }}
+              >
+                Try Again
+              </Button>
+            </Box>
           ) : products.length > 0 ? (
             <>
               <Grid container spacing={3}>
@@ -575,6 +683,7 @@ const ProductList = () => {
         </Grid>
       </Grid>
     </Container>
+  </ErrorBoundary>
   );
 };
 

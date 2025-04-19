@@ -20,6 +20,11 @@ import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
+  // Defensive programming to handle null/undefined product
+  if (!product) {
+    console.error('ProductCard received null or undefined product');
+    return null;
+  }
   const { addToCart } = useContext(CartContext);
   const { addToWishlist, removeFromWishlist, isInWishlist } = useContext(WishlistContext);
   const { user } = useContext(AuthContext);
@@ -101,16 +106,16 @@ const ProductCard = ({ product }) => {
           component="img"
           height="180"
           image={
-            product.images && product.images.length > 0
+            product.images && Array.isArray(product.images) && product.images.length > 0
               ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
               : '/placeholder.png'
           }
-          alt={product.name}
+          alt={product.name || 'Product'}
           sx={{ objectFit: 'contain', p: 2, bgcolor: 'background.paper' }}
         />
         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
           <Typography gutterBottom variant="h6" component="div" noWrap>
-            {product.name}
+            {product.name || 'Unnamed Product'}
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
@@ -133,7 +138,7 @@ const ProductCard = ({ product }) => {
               height: '40px',
             }}
           >
-            {product.description}
+            {product.description || 'No description available'}
           </Typography>
           
           {product.tags && product.tags.length > 0 && (
@@ -172,7 +177,7 @@ const ProductCard = ({ product }) => {
         }}
       >
         <Typography variant="h6" color="primary">
-          ${parseFloat(product.price).toFixed(2)}
+          ${(product.price ? parseFloat(product.price) : 0).toFixed(2)}
         </Typography>
         <Button
           size="small"

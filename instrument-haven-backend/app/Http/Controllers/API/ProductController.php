@@ -28,6 +28,7 @@ class ProductController extends Controller
         $perPage = $request->input('per_page', 15);
         $products = $this->productRepository->getWithFilters($request->all(), $perPage);
 
+        // Consistent response format matching frontend expectations
         return response()->json([
             'status' => 'success',
             'data' => [

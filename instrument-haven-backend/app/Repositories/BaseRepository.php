@@ -49,10 +49,10 @@ class BaseRepository implements BaseRepositoryInterface
     /**
      * @inheritDoc
      */
-    public function update(array $data, int $id)
+    public function update(int $id, array $data)
     {
         $record = $this->model->find($id);
-        return $record->update($data);
+        return $record ? $record->update($data) : false;
     }
 
     /**

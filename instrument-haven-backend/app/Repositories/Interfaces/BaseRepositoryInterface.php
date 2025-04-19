@@ -32,11 +32,11 @@ interface BaseRepositoryInterface
     /**
      * Update resource
      *
-     * @param array $data
      * @param int $id
+     * @param array $data
      * @return mixed
      */
-    public function update(array $data, int $id);
+    public function update(int $id, array $data);
 
     /**
      * Delete resource

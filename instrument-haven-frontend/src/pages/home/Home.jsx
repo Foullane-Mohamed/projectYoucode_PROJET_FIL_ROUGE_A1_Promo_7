@@ -35,20 +35,17 @@ const Home = () => {
           const productsResponse = await api.products.getAll();
           console.log('Products response:', productsResponse);
           
-          // Handle empty response
-          if (!productsResponse || !productsResponse.data) {
+          // Properly extract products from the response structure
+          if (productsResponse && productsResponse.data && 
+              productsResponse.data.status === 'success' && 
+              productsResponse.data.data && 
+              productsResponse.data.data.products) {
+            // Extract products array from the nested structure
+            setFeaturedProducts(productsResponse.data.data.products.slice(0, 8));
+          } else {
+            console.error('Unexpected products response format:', productsResponse);
             setFeaturedProducts([]);
-            return;
           }
-          
-          // Check if the response is an array directly
-          const productsData = Array.isArray(productsResponse.data) ? 
-            productsResponse.data : 
-            (productsResponse.data.data && Array.isArray(productsResponse.data.data)) ? 
-              productsResponse.data.data : 
-              [];
-              
-          setFeaturedProducts(productsData.slice(0, 8));
         } catch (error) {
           console.error('Error fetching products:', error);
           setFeaturedProducts([]);
@@ -59,20 +56,17 @@ const Home = () => {
           const categoriesResponse = await api.categories.getParentCategories();
           console.log('Categories response:', categoriesResponse);
           
-          // Handle empty response
-          if (!categoriesResponse || !categoriesResponse.data) {
+          // Properly extract categories from the response structure
+          if (categoriesResponse && categoriesResponse.data && 
+              categoriesResponse.data.status === 'success' && 
+              categoriesResponse.data.data && 
+              categoriesResponse.data.data.categories) {
+            // Extract categories array from the nested structure
+            setCategories(categoriesResponse.data.data.categories);
+          } else {
+            console.error('Unexpected categories response format:', categoriesResponse);
             setCategories([]);
-            return;
           }
-          
-          // Check if the response is an array directly
-          const categoriesData = Array.isArray(categoriesResponse.data) ? 
-            categoriesResponse.data : 
-            (categoriesResponse.data.data && Array.isArray(categoriesResponse.data.data)) ? 
-              categoriesResponse.data.data : 
-              [];
-              
-          setCategories(categoriesData);
         } catch (error) {
           console.error('Error fetching categories:', error);
           setCategories([]);

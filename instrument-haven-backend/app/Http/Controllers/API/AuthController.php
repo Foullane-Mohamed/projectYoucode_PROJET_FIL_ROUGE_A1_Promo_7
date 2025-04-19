@@ -132,4 +132,46 @@ class AuthController extends Controller
             ]
         ]);
     }
+
+    /**
+     * Update user profile
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+        
+        $validator = Validator::make($request->all(), [
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
+            'password' => 'sometimes|string|min:8|confirmed',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $userData = $request->only(['name', 'email']);
+        
+        if ($request->has('password')) {
+            $userData['password'] = Hash::make($request->password);
+        }
+        
+        $this->userRepository->update($user->id, $userData);
+        $updatedUser = $this->userRepository->find($user->id);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Profile updated successfully',
+            'data' => [
+                'user' => $updatedUser
+            ]
+        ]);
+    }
 }

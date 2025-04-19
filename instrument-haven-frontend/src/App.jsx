@@ -14,7 +14,7 @@ import { LoadingProvider } from './context/LoadingContext';
 // Layout Components
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
-import ErrorBoundary from './components/common/ErrorBoundary';
+import ErrorBoundary from './components/common/ErrorBoundary/index';
 
 // Page Components
 import Home from './pages/home/Home';
@@ -28,6 +28,8 @@ import Register from './pages/auth/Register';
 import Contact from './pages/contact/Contact';
 import Profile from './pages/auth/Profile';
 import MyOrders from './pages/order/MyOrders';
+import OrderDetail from './pages/order/OrderDetail';
+import OrderSuccess from './pages/order/OrderSuccess';
 import NotFound from './pages/common/NotFound';
 
 // Admin Components
@@ -142,10 +144,20 @@ function App() {
                             </ProtectedRoute>
                           } />
                           <Route path="/my-orders" element={
-                            <ProtectedRoute>
-                              <MyOrders />
-                            </ProtectedRoute>
+                          <ProtectedRoute>
+                          <MyOrders />
+                          </ProtectedRoute>
                           } />
+          <Route path="/orders/:id" element={
+            <ProtectedRoute>
+              <OrderDetail />
+            </ProtectedRoute>
+          } />
+          <Route path="/order-success" element={
+            <ProtectedRoute>
+              <OrderSuccess />
+            </ProtectedRoute>
+          } />
                           
                           {/* Admin Routes */}
                           <Route path="/admin" element={

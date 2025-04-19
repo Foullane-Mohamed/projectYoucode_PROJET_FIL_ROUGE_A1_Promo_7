@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -34,6 +35,17 @@ api.interceptors.response.use(
   (response) => {
     // Log successful responses for debugging
     console.log(`Response from ${response.config.url}:`, response.status);
+    
+    // Check if the response is valid and has expected format
+    if (response.data === null || response.data === undefined) {
+      console.warn(`Empty response data from ${response.config.url}`);
+      // Return a standardized empty response rather than null/undefined
+      return {
+        ...response,
+        data: { status: 'success', data: [] }
+      };
+    }
+    
     return response;
   },
   (error) => {
@@ -68,11 +80,13 @@ api.interceptors.response.use(
     } else if (error.request) {
       // The request was made but no response was received
       console.error('No response received:', error.request);
+      toast.error('Network error. Please check your connection and try again.');
     } else {
       // Something happened in setting up the request
       console.error('Request setup error:', error.message);
     }
     
+    // Return the error so it can be caught and handled by the calling component
     return Promise.reject(error);
   }
 );
@@ -83,7 +97,9 @@ const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/user'),
-  updateProfile: (userData) => api.put('/auth/user', userData), // Corrected from '/profile' to '/auth/user'
+  // Since there's no specific endpoint for updating profile in the API documentation,
+  // we'll need to create one on the backend. For now, we'll use a custom endpoint.
+  updateProfile: (userData) => api.put('/auth/user/update', userData),
 };
 
 // Products API calls
@@ -91,13 +107,17 @@ const productsAPI = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
   getByCategory: (categoryId) => api.get(`/categories/${categoryId}`, { params: { include: 'products' } }),
-  search: (query) => api.get('/products', { params: { search: query } }),
+  search: (query) => {
+    // Support both string and object formats for search parameter
+    const params = typeof query === 'string' ? { search: query } : query;
+    return api.get('/products', { params });
+  },
   create: (formData) => api.post('/admin/products', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
   update: (id, formData) => api.put(`/admin/products/${id}`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
-  }), // Changed from POST with X-HTTP-Method-Override to PUT
+  }),
   delete: (id) => api.delete(`/admin/products/${id}`),
 };
 
@@ -105,10 +125,15 @@ const productsAPI = {
 const categoriesAPI = {
   getAll: () => api.get('/categories'),
   getById: (id) => api.get(`/categories/${id}`),
-  getParentCategories: () => api.get('/categories', { params: { parent_id: 'null' } }),
+  // Simplified to fetch all categories, as the API doesn't specify parent categories
+  getParentCategories: () => api.get('/categories'),
   // Admin routes for category management
-  create: (data) => api.post('/admin/categories', data),
-  update: (id, data) => api.put(`/admin/categories/${id}`, data),
+  create: (data) => api.post('/admin/categories', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  update: (id, data) => api.put(`/admin/categories/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   delete: (id) => api.delete(`/admin/categories/${id}`),
 };
 
@@ -138,6 +163,16 @@ const reviewsAPI = {
 // Contact form
 const contactAPI = {
   send: (data) => api.post('/contact', data),
+};
+
+// Cart API calls
+const cartAPI = {
+  getItems: () => api.get('/cart'),
+  addItem: (productId, quantity = 1) => api.post('/cart/items', { product_id: productId, quantity }),
+  updateItem: (itemId, quantity) => api.put(`/cart/items/${itemId}`, { quantity }),
+  removeItem: (itemId) => api.delete(`/cart/items/${itemId}`),
+  applyCoupon: (code) => api.post('/cart/apply-coupon', { code }),
+  removeCoupon: () => api.post('/cart/remove-coupon'),
 };
 
 // Admin APIs
@@ -171,8 +206,12 @@ const adminAPI = {
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   
   // Admin Categories - same as categoriesAPI but explicitly defined for clarity
-  createCategory: (data) => api.post('/admin/categories', data),
-  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
+  createCategory: (data) => api.post('/admin/categories', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
   deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
 };
 
@@ -184,5 +223,6 @@ export default {
   orders: ordersAPI,
   reviews: reviewsAPI,
   contact: contactAPI,
+  cart: cartAPI,
   admin: adminAPI
 };

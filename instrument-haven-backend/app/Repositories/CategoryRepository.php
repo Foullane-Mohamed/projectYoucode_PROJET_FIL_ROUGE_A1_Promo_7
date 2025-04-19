@@ -39,6 +39,18 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
             ->with('subcategories')
             ->find($id);
     }
+    
+    /**
+     * @inheritDoc
+     */
+    public function getWithProductsAndSubcategories(int $id)
+    {
+        return $this->model
+            ->with(['subcategories', 'products' => function($query) {
+                $query->where('is_active', true);
+            }])
+            ->find($id);
+    }
 
     /**
      * @inheritDoc

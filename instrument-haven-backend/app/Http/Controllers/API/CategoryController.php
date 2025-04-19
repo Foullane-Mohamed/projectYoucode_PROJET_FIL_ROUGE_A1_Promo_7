@@ -42,7 +42,14 @@ class CategoryController extends Controller
      */
     public function show($id)
     {
-        $category = $this->categoryRepository->getWithSubcategories($id);
+        // Check if we should include products
+        $includeProducts = request('include') === 'products';
+        
+        if ($includeProducts) {
+            $category = $this->categoryRepository->getWithProductsAndSubcategories($id);
+        } else {
+            $category = $this->categoryRepository->getWithSubcategories($id);
+        }
 
         if (!$category) {
             return response()->json([

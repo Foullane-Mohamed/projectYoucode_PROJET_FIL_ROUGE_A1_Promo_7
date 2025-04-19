@@ -43,6 +43,7 @@ Route::prefix('v1')->group(function () {
         // Auth
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/user', [AuthController::class, 'user']);
+        Route::put('/auth/user/update', [AuthController::class, 'updateProfile']);
 
         // Cart
         Route::get('/cart', [CartController::class, 'index']);
