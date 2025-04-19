@@ -53,32 +53,19 @@ const UserManagement = () => {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // In a real app, you would fetch users from your API
-      // Here we'll simulate with some dummy data
-      setTimeout(() => {
-        const dummyUsers = [
-          { 
-            id: 1, 
-            name: 'Admin User', 
-            email: 'admin@example.com', 
-            role: 'admin', 
-            created_at: '2023-01-01',
-            address: '123 Admin St',
-            phone: '555-1234'
-          },
-          { 
-            id: 2, 
-            name: 'Test User', 
-            email: 'user@example.com', 
-            role: 'customer', 
-            created_at: '2023-01-02',
-            address: '456 Customer Ave',
-            phone: '555-5678'
-          },
-        ];
-        setUsers(dummyUsers);
-        setLoading(false);
-      }, 1000);
+      // Use the admin API to fetch users
+      const response = await api.admin.getUsers();
+      console.log('Users response:', response);
+      
+      // Handle different response formats
+      const usersData = Array.isArray(response.data) ? 
+        response.data : 
+        (response.data && Array.isArray(response.data.data)) ? 
+          response.data.data : 
+          (response.data && response.data.users) ? 
+            response.data.users : [];
+      
+      setUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
       setSnackbar({
@@ -86,6 +73,7 @@ const UserManagement = () => {
         message: 'Failed to fetch users. Please try again.',
         severity: 'error'
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -118,8 +106,11 @@ const UserManagement = () => {
 
   const handleSaveUser = async () => {
     try {
-      // In a real app, you would update the user via API
-      // Here we'll simulate an update
+      // Use the admin API to update the user
+      const response = await api.admin.updateUser(currentUser.id, currentUser);
+      console.log('Update user response:', response);
+      
+      // Update the user in the local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
           user.id === currentUser.id ? currentUser : user
@@ -134,10 +125,10 @@ const UserManagement = () => {
       
       handleCloseDialog();
     } catch (error) {
-      console.error('Error updating user:', error);
+      console.error('Error updating user:', error.response?.data || error);
       setSnackbar({
         open: true,
-        message: 'Failed to update user. Please try again.',
+        message: `Failed to update user: ${error.response?.data?.message || error.message || 'Unknown error'}`,
         severity: 'error'
       });
     }

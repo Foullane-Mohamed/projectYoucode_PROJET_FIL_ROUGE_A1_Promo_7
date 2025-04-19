@@ -51,8 +51,19 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/orders');
-      setOrders(response.data.data);
+      // Use the admin API to fetch orders
+      const response = await api.admin.getOrders();
+      console.log('Orders response:', response);
+      
+      // Handle different response formats
+      const ordersData = Array.isArray(response.data) ? 
+        response.data : 
+        (response.data && Array.isArray(response.data.data)) ? 
+          response.data.data : 
+          (response.data && response.data.orders) ? 
+            response.data.orders : [];
+      
+      setOrders(ordersData);
     } catch (error) {
       console.error('Error fetching orders:', error);
       setSnackbar({
@@ -76,7 +87,9 @@ const OrderManagement = () => {
 
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      await api.put(`/orders/${orderId}`, { status: newStatus });
+      // Use the admin API to update order status
+      const response = await api.admin.updateOrder(orderId, { status: newStatus });
+      console.log('Update order response:', response);
       
       // Update orders in state
       setOrders(prevOrders => 
@@ -99,10 +112,10 @@ const OrderManagement = () => {
         severity: 'success'
       });
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error('Error updating order status:', error.response?.data || error);
       setSnackbar({
         open: true,
-        message: 'Failed to update order status. Please try again.',
+        message: `Failed to update order status: ${error.response?.data?.message || error.message || 'Unknown error'}`,
         severity: 'error'
       });
     }

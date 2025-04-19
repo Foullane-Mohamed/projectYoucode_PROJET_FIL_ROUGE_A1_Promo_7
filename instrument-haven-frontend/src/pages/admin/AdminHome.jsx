@@ -9,6 +9,14 @@ import {
   Card,
   CardContent,
   CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Chip,
+  Button,
 } from '@mui/material';
 import {
   PeopleAlt as PeopleIcon,
@@ -23,34 +31,46 @@ const AdminHome = () => {
     categories: 0,
     orders: 0,
     users: 0,
+    recentOrders: [],
+    topProducts: [],
   });
   const [loading, setLoading] = useState(true);
+  
+  // Helper function to get color based on order status
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'pending':
+        return 'warning';
+      case 'processing':
+        return 'info';
+      case 'completed':
+      case 'delivered':
+        return 'success';
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
+    }
+  };
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        // Fetch product count
-        const productsResponse = await api.get('/products');
-        const products = productsResponse.data.data.length;
+        // Fetch dashboard statistics from the admin API
+        const dashboardResponse = await api.admin.getDashboard();
+        console.log('Dashboard response:', dashboardResponse);
+
+        // Extract data from the response, handling both potential formats
+        const dashboardData = dashboardResponse.data?.data || dashboardResponse.data || {};
         
-        // Fetch category count
-        const categoriesResponse = await api.get('/categories');
-        const categories = categoriesResponse.data.data.length;
-        
-        // Fetch order count (for admin)
-        const ordersResponse = await api.get('/orders');
-        const orders = ordersResponse.data.data.length;
-        
-        // Fetch user count
-        // This endpoint would need to be created in your API
-        const users = 42; // Placeholder, replace with actual API call
-        
+        // Set the statistics with proper fallbacks
         setStats({
-          products,
-          categories,
-          orders,
-          users
+          products: dashboardData.productCount || 0,
+          categories: dashboardData.categoryCount || 0,
+          orders: dashboardData.orderCount || 0,
+          users: dashboardData.userCount || 0,
+          // Add more stats as needed
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -195,8 +215,49 @@ const AdminHome = () => {
             <Typography variant="h6" gutterBottom>
               Recent Orders
             </Typography>
-            {stats.orders > 0 ? (
-              <Typography>Order data will be displayed here</Typography>
+            {stats.recentOrders && stats.recentOrders.length > 0 ? (
+              <Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Order ID</TableCell>
+                        <TableCell>Customer</TableCell>
+                        <TableCell>Date</TableCell>
+                        <TableCell>Status</TableCell>
+                        <TableCell align="right">Total</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {stats.recentOrders.map((order) => (
+                        <TableRow key={order.id}>
+                          <TableCell>#{order.id}</TableCell>
+                          <TableCell>{order.user?.name || 'Unknown'}</TableCell>
+                          <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
+                          <TableCell>
+                            <Chip 
+                              label={order.status} 
+                              size="small"
+                              color={getStatusColor(order.status)}
+                            />
+                          </TableCell>
+                          <TableCell align="right">${order.total?.toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Button 
+                    component={Link} 
+                    to="/admin/orders" 
+                    size="small"
+                    color="primary"
+                  >
+                    View All Orders
+                  </Button>
+                </Box>
+              </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
                 No recent orders to display.
@@ -210,8 +271,39 @@ const AdminHome = () => {
             <Typography variant="h6" gutterBottom>
               Top Products
             </Typography>
-            {stats.products > 0 ? (
-              <Typography>Product data will be displayed here</Typography>
+            {stats.topProducts && stats.topProducts.length > 0 ? (
+              <Box>
+                <TableContainer>
+                  <Table size="small">
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Product</TableCell>
+                        <TableCell align="right">Price</TableCell>
+                        <TableCell align="right">Sales</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {stats.topProducts.map((product) => (
+                        <TableRow key={product.id}>
+                          <TableCell>{product.name}</TableCell>
+                          <TableCell align="right">${product.price?.toFixed(2)}</TableCell>
+                          <TableCell align="right">{product.sales_count || 0}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                  <Button 
+                    component={Link} 
+                    to="/admin/products" 
+                    size="small"
+                    color="primary"
+                  >
+                    View All Products
+                  </Button>
+                </Box>
+              </Box>
             ) : (
               <Typography variant="body2" color="text.secondary">
                 No product data to display.

@@ -15,11 +15,16 @@ api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
+      // Ensure the Authorization header is properly set
       config.headers['Authorization'] = `Bearer ${token}`;
+      console.log('Added token to request:', config.url);
+    } else {
+      console.log('No token available for request:', config.url);
     }
     return config;
   },
   (error) => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   }
 );
@@ -27,33 +32,45 @@ api.interceptors.request.use(
 // Add a response interceptor to handle errors
 api.interceptors.response.use(
   (response) => {
+    // Log successful responses for debugging
+    console.log(`Response from ${response.config.url}:`, response.status);
     return response;
   },
   (error) => {
     if (error.response) {
       // The request was made and the server responded with a status code
       // that falls out of the range of 2xx
-      const { status } = error.response;
+      const { status, data, config } = error.response;
+      console.error(`Error ${status} from ${config.url}:`, data);
       
       if (status === 401) {
         // Token expired or invalid
+        console.warn('Authentication failed - clearing credentials');
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        
         // Redirect to login page if not already there
         if (window.location.pathname !== '/login') {
+          console.log('Redirecting to login page...');
           window.location.href = '/login';
         }
       }
       
       if (status === 403) {
         // Permission denied
-        console.error('Permission denied');
+        console.error('Permission denied - insufficient privileges');
       }
       
       if (status === 422) {
         // Validation errors
-        console.error('Validation errors:', error.response.data.errors);
+        console.error('Validation errors:', data.errors || data);
       }
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error('No response received:', error.request);
+    } else {
+      // Something happened in setting up the request
+      console.error('Request setup error:', error.message);
     }
     
     return Promise.reject(error);
@@ -66,7 +83,7 @@ const authAPI = {
   register: (userData) => api.post('/auth/register', userData),
   logout: () => api.post('/auth/logout'),
   getProfile: () => api.get('/auth/user'),
-  updateProfile: (userData) => api.put('/profile', userData),
+  updateProfile: (userData) => api.put('/auth/user', userData), // Corrected from '/profile' to '/auth/user'
 };
 
 // Products API calls
@@ -78,12 +95,9 @@ const productsAPI = {
   create: (formData) => api.post('/admin/products', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  update: (id, formData) => api.post(`/admin/products/${id}`, formData, {
-    headers: { 
-      'Content-Type': 'multipart/form-data',
-      'X-HTTP-Method-Override': 'PUT'
-    }
-  }),
+  update: (id, formData) => api.put(`/admin/products/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }), // Changed from POST with X-HTTP-Method-Override to PUT
   delete: (id) => api.delete(`/admin/products/${id}`),
 };
 
@@ -92,6 +106,7 @@ const categoriesAPI = {
   getAll: () => api.get('/categories'),
   getById: (id) => api.get(`/categories/${id}`),
   getParentCategories: () => api.get('/categories', { params: { parent_id: 'null' } }),
+  // Admin routes for category management
   create: (data) => api.post('/admin/categories', data),
   update: (id, data) => api.put(`/admin/categories/${id}`, data),
   delete: (id) => api.delete(`/admin/categories/${id}`),
@@ -145,6 +160,20 @@ const adminAPI = {
   createCoupon: (data) => api.post('/admin/coupons', data),
   updateCoupon: (id, data) => api.put(`/admin/coupons/${id}`, data),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
+  
+  // Admin Products - same as productsAPI but explicitly defined for clarity
+  createProduct: (formData) => api.post('/admin/products', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  updateProduct: (id, formData) => api.put(`/admin/products/${id}`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  deleteProduct: (id) => api.delete(`/admin/products/${id}`),
+  
+  // Admin Categories - same as categoriesAPI but explicitly defined for clarity
+  createCategory: (data) => api.post('/admin/categories', data),
+  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data),
+  deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
 };
 
 export default {

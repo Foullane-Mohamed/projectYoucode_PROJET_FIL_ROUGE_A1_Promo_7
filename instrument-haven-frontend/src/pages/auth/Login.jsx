@@ -35,15 +35,21 @@ const Login = () => {
     setError('');
     
     try {
+      console.log('Attempting login with:', values.email);
       const result = await login(values.email, values.password);
+      console.log('Login result:', result);
+      
       if (result.success) {
-        navigate(from, { replace: true });
+        // Show a brief pause before navigating for better UX
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 500);
       } else {
-        setError(result.message);
+        setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      console.error('Login form error:', err);
+      setError('An unexpected error occurred. Please try again.');
     } finally {
       setLoading(false);
     }

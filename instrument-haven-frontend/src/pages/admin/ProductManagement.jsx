@@ -62,16 +62,43 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/products');
-      setProducts(response.data.data);
+      // Use the products API to get all products
+      const response = await api.products.getAll();
+      console.log('Products response:', response);
+      
+      // Handle different response formats
+      const productsData = Array.isArray(response.data) ? 
+        response.data : 
+        (response.data && Array.isArray(response.data.data)) ? 
+          response.data.data : [];
+      
+      setProducts(productsData);
       
       // Fetch categories for the form
-      const categoriesResponse = await api.get('/categories');
-      setCategories(categoriesResponse.data.data);
+      const categoriesResponse = await api.categories.getAll();
+      console.log('Categories response:', categoriesResponse);
       
-      // Fetch tags for the form
-      const tagsResponse = await api.get('/tags');
-      setTags(tagsResponse.data.data);
+      // Handle different response formats
+      const categoriesData = Array.isArray(categoriesResponse.data) ? 
+        categoriesResponse.data : 
+        (categoriesResponse.data && Array.isArray(categoriesResponse.data.data)) ? 
+          categoriesResponse.data.data : [];
+      
+      setCategories(categoriesData);
+      
+      // Fetch tags if they exist in your backend
+      try {
+        const tagsResponse = await api.get('/tags');
+        const tagsData = Array.isArray(tagsResponse.data) ? 
+          tagsResponse.data : 
+          (tagsResponse.data && Array.isArray(tagsResponse.data.data)) ? 
+            tagsResponse.data.data : [];
+        
+        setTags(tagsData);
+      } catch (tagError) {
+        console.log('Tags may not be implemented in the backend:', tagError);
+        setTags([]);
+      }
     } catch (error) {
       console.error('Error fetching products:', error);
       setSnackbar({
@@ -197,8 +224,9 @@ const ProductManagement = () => {
       }
       
       let response;
+      // Use the admin API for product creation
       if (dialogMode === 'add') {
-        response = await api.products.create(formData);
+        response = await api.admin.createProduct(formData);
         setSnackbar({
           open: true,
           message: 'Product created successfully!',
@@ -211,7 +239,8 @@ const ProductManagement = () => {
           formData.append('replace_images', true);
         }
         
-        response = await api.products.update(currentProduct.id, formData);
+        // Use the admin API for product update
+        response = await api.admin.updateProduct(currentProduct.id, formData);
         setSnackbar({
           open: true,
           message: 'Product updated successfully!',
@@ -234,7 +263,8 @@ const ProductManagement = () => {
 
   const handleDeleteProduct = async () => {
     try {
-      await api.delete(`/products/${productToDelete.id}`);
+      // Use the admin API for product deletion
+      await api.admin.deleteProduct(productToDelete.id);
       
       // Filter out the deleted product from the current list
       setProducts(products.filter(product => product.id !== productToDelete.id));
@@ -250,7 +280,7 @@ const ProductManagement = () => {
       console.error('Error deleting product:', error);
       setSnackbar({
         open: true,
-        message: 'Failed to delete product. Please try again.',
+        message: `Failed to delete product: ${error.response?.data?.message || 'Unknown error'}`,
         severity: 'error'
       });
     }

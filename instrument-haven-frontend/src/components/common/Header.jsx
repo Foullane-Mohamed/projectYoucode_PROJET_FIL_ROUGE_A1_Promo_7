@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { AuthContext } from '../../context/AuthContext';
 import { CartContext } from '../../context/CartContext';
@@ -32,6 +32,11 @@ import {
 const Header = () => {
   const { user, logout, isAdmin } = useContext(AuthContext);
   const { totalItems } = useContext(CartContext);
+  
+  // Debug user state
+  useEffect(() => {
+    console.log('Header - Current user state:', user);
+  }, [user]);
   
   const [anchorElNav, setAnchorElNav] = useState(null);
   const [anchorElUser, setAnchorElUser] = useState(null);

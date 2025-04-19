@@ -53,8 +53,18 @@ const CategoryManagement = () => {
   const fetchCategories = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/categories');
-      const categoriesData = response.data.data;
+      // Use the categories API
+      const response = await api.categories.getAll();
+      console.log('Categories response:', response);
+      
+      // Handle different response formats
+      const categoriesData = Array.isArray(response.data) ? 
+        response.data : 
+        (response.data && Array.isArray(response.data.data)) ? 
+          response.data.data : 
+          (response.data && response.data.categories) ? 
+            response.data.categories : [];
+      
       setCategories(categoriesData);
       
       // Filter parent categories (those with null parent_id)
@@ -114,14 +124,20 @@ const CategoryManagement = () => {
     try {
       let response;
       if (dialogMode === 'add') {
-        response = await api.post('/categories', currentCategory);
+        // Use the admin API for creating a new category
+        response = await api.admin.createCategory(currentCategory);
+        console.log('Create category response:', response);
+        
         setSnackbar({
           open: true,
           message: 'Category created successfully!',
           severity: 'success'
         });
       } else {
-        response = await api.put(`/categories/${currentCategory.id}`, currentCategory);
+        // Use the admin API for updating a category
+        response = await api.admin.updateCategory(currentCategory.id, currentCategory);
+        console.log('Update category response:', response);
+        
         setSnackbar({
           open: true,
           message: 'Category updated successfully!',
@@ -133,10 +149,10 @@ const CategoryManagement = () => {
       fetchCategories();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving category:', error);
+      console.error('Error saving category:', error.response?.data || error);
       setSnackbar({
         open: true,
-        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} category. Please try again.`,
+        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} category: ${error.response?.data?.message || error.message || 'Unknown error'}`,
         severity: 'error'
       });
     }
@@ -144,7 +160,9 @@ const CategoryManagement = () => {
 
   const handleDeleteCategory = async () => {
     try {
-      await api.delete(`/categories/${categoryToDelete.id}`);
+      // Use the admin API for deleting a category
+      await api.admin.deleteCategory(categoryToDelete.id);
+      console.log('Category deleted, id:', categoryToDelete.id);
       
       // Filter out the deleted category from the current list
       setCategories(categories.filter(category => category.id !== categoryToDelete.id));
@@ -157,10 +175,15 @@ const CategoryManagement = () => {
       
       handleCloseDeleteDialog();
     } catch (error) {
-      console.error('Error deleting category:', error);
+      console.error('Error deleting category:', error.response?.data || error);
+      
+      // Provide a more specific error message based on the response
+      const errorMessage = error.response?.data?.message || 
+                         'Failed to delete category. It may have associated products or subcategories.';
+      
       setSnackbar({
         open: true,
-        message: 'Failed to delete category. Category might have associated products.',
+        message: errorMessage,
         severity: 'error'
       });
     }
