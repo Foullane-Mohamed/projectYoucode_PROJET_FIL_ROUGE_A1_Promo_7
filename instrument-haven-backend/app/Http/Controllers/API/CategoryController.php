@@ -154,7 +154,7 @@ class CategoryController extends Controller
         }
 
         // Update category
-        $this->categoryRepository->update($request->all(), $id);
+        $this->categoryRepository->update($id, $request->all());
         $category = $this->categoryRepository->find($id);
 
         return response()->json([

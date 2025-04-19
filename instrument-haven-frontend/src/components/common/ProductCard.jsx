@@ -20,7 +20,7 @@ import { AddShoppingCart, Favorite, FavoriteBorder } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 
 const ProductCard = ({ product }) => {
-  // Defensive programming to handle null/undefined product
+
   if (!product) {
     console.error('ProductCard received null or undefined product');
     return null;
@@ -33,6 +33,11 @@ const ProductCard = ({ product }) => {
   const handleAddToCart = (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    if (!product || !product.id || !product.name) {
+      toast.error('Cannot add product to cart: missing product information');
+      return;
+    }
     addToCart(product);
     toast.success(`${product.name} added to cart!`);
   };
@@ -40,6 +45,12 @@ const ProductCard = ({ product }) => {
   const handleWishlistToggle = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    
+
+    if (!product || !product.id || !product.name) {
+      toast.error('Cannot add product to wishlist: missing product information');
+      return;
+    }
     
     if (!user) {
       toast.error('Please login to add to wishlist');
@@ -49,20 +60,25 @@ const ProductCard = ({ product }) => {
 
     const inWishlist = isInWishlist(product.id);
     
-    if (inWishlist) {
-      const result = await removeFromWishlist(product.id);
-      if (result.success) {
-        toast.success(`${product.name} removed from wishlist!`);
+    try {
+      if (inWishlist) {
+        const result = await removeFromWishlist(product.id);
+        if (result.success) {
+          toast.success(`${product.name} removed from wishlist!`);
+        } else {
+          toast.error(result.message || 'Failed to remove from wishlist');
+        }
       } else {
-        toast.error(result.message || 'Failed to remove from wishlist');
+        const result = await addToWishlist(product.id);
+        if (result.success) {
+          toast.success(`${product.name} added to wishlist!`);
+        } else {
+          toast.error(result.message || 'Failed to add to wishlist');
+        }
       }
-    } else {
-      const result = await addToWishlist(product.id);
-      if (result.success) {
-        toast.success(`${product.name} added to wishlist!`);
-      } else {
-        toast.error(result.message || 'Failed to add to wishlist');
-      }
+    } catch (error) {
+      console.error('Wishlist operation error:', error);
+      toast.error('An error occurred while updating wishlist');
     }
   };
 
@@ -112,6 +128,9 @@ const ProductCard = ({ product }) => {
           }
           alt={product.name || 'Product'}
           sx={{ objectFit: 'contain', p: 2, bgcolor: 'background.paper' }}
+          onError={(e) => {
+            e.target.src = '/placeholder.png';
+          }}
         />
         <CardContent sx={{ flexGrow: 1, pb: 1 }}>
           <Typography gutterBottom variant="h6" component="div" noWrap>
@@ -177,7 +196,7 @@ const ProductCard = ({ product }) => {
         }}
       >
         <Typography variant="h6" color="primary">
-          ${(product.price ? parseFloat(product.price) : 0).toFixed(2)}
+        ${(product.price ? parseFloat(product.price) : 0).toFixed(2)}
         </Typography>
         <Button
           size="small"

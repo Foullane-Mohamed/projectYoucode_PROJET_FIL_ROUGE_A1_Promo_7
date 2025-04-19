@@ -216,7 +216,7 @@ class ProductController extends Controller
             }
             
             // Update product
-            $this->productRepository->update($data, $id);
+            $this->productRepository->update($id, $data);
             $product = $this->productRepository->find($id);
 
             return response()->json([

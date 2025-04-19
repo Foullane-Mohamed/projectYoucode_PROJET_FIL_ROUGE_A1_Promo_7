@@ -113,7 +113,7 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
     /**
      * @inheritDoc
      */
-    public function update(array $data, int $id)
+    public function update(int $id, array $data)
     {
         $category = $this->model->find($id);
         

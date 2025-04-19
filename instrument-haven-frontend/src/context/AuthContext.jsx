@@ -12,7 +12,7 @@ export const AuthProvider = ({ children }) => {
       const token = localStorage.getItem('token');
       const storedUser = localStorage.getItem('user');
       
-      // First try to load user from localStorage for immediate display
+
       if (storedUser) {
         try {
           const parsedUser = JSON.parse(storedUser);
@@ -23,13 +23,13 @@ export const AuthProvider = ({ children }) => {
         }
       }
       
-      // If we have a token, validate it by fetching fresh user data
+
       if (token) {
         try {
           const response = await api.auth.getProfile();
           console.log('Profile response:', response);
           
-          // Extract user data from the correct location in the response
+
           const userData = response.data?.data?.user || response.data?.user || response.data;
           
           if (userData) {
@@ -40,7 +40,7 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (error) {
           console.error('Error fetching user profile:', error);
-          // Clear storage if authentication fails
+
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           setUser(null);
@@ -58,8 +58,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.auth.login({ email, password });
       console.log('Login response:', response);
       
-      // The backend returns data in a nested structure
-      // Extract the user and token from the correct location
+
       const userData = response.data?.data?.user || response.data?.user;
       const token = response.data?.data?.token || response.data?.token;
       
@@ -71,7 +70,7 @@ export const AuthProvider = ({ children }) => {
         };
       }
       
-      // Store token and user data in localStorage
+
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));
       setUser(userData);
@@ -91,7 +90,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.auth.register(userData);
       console.log('Register response:', response);
       
-      // Extract the user and token from the correct location
+
       const user = response.data?.data?.user || response.data?.user;
       const token = response.data?.data?.token || response.data?.token;
       
@@ -135,7 +134,7 @@ export const AuthProvider = ({ children }) => {
       const response = await api.auth.updateProfile(userData);
       console.log('Update profile response:', response);
       
-      // Extract user data from the correct location in the response
+
       const updatedUser = response.data?.data?.user || response.data?.user;
       
       if (!updatedUser) {

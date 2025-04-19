@@ -285,7 +285,7 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
     /**
      * @inheritDoc
      */
-    public function update(array $data, int $id)
+    public function update(int $id, array $data)
     {
         $product = $this->model->find($id);
         

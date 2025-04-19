@@ -40,7 +40,7 @@ const Login = () => {
       console.log('Login result:', result);
       
       if (result.success) {
-        // Show a brief pause before navigating for better UX
+
         setTimeout(() => {
           navigate(from, { replace: true });
         }, 500);

@@ -18,7 +18,7 @@ export const CartProvider = ({ children }) => {
   useEffect(() => {
     localStorage.setItem('cart', JSON.stringify(cart));
     
-    // Calculate total items and price
+
     let items = 0;
     let price = 0;
     
@@ -36,7 +36,7 @@ export const CartProvider = ({ children }) => {
       const existingItemIndex = prevCart.findIndex(item => item.id === product.id);
       
       if (existingItemIndex >= 0) {
-        // Item exists, update quantity
+
         const updatedCart = [...prevCart];
         updatedCart[existingItemIndex] = {
           ...updatedCart[existingItemIndex],
@@ -44,7 +44,7 @@ export const CartProvider = ({ children }) => {
         };
         return updatedCart;
       } else {
-        // Item doesn't exist, add new item
+
         return [...prevCart, { 
           id: product.id, 
           name: product.name, 
