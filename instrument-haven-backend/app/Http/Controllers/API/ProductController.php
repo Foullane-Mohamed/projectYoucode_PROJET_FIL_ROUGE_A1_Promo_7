@@ -1,28 +1,80 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Repositories\ProductRepository;
+use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
     protected $productRepository;
 
-    public function __construct(ProductRepository $productRepository)
+    public function __construct(ProductRepositoryInterface $productRepository)
     {
         $this->productRepository = $productRepository;
     }
 
-    public function index()
+    /**
+     * Display a listing of the products.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
     {
-        $products = $this->productRepository->all();
-        return response()->json(['data' => $products->load('category', 'tags')]);
+        $perPage = $request->input('per_page', 15);
+        $products = $this->productRepository->getWithFilters($request->all(), $perPage);
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'products' => $products->items(),
+                'pagination' => [
+                    'total' => $products->total(),
+                    'per_page' => $products->perPage(),
+                    'current_page' => $products->currentPage(),
+                    'last_page' => $products->lastPage(),
+                    'from' => $products->firstItem(),
+                    'to' => $products->lastItem()
+                ]
+            ]
+        ]);
     }
 
+    /**
+     * Display the specified product.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show($id)
+    {
+        $product = $this->productRepository->getWithDetails($id);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'product' => $product
+            ]
+        ]);
+    }
+
+    /**
+     * Store a newly created product in storage.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -32,119 +84,180 @@ class ProductController extends Controller
             'stock' => 'required|integer|min:0',
             'category_id' => 'required|exists:categories,id',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tags' => 'nullable|array',
-            'tags.*' => 'exists:tags,id',
+            'specifications' => 'nullable|array',
+            'brand' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $data = $request->except(['images', 'tags']);
-        
-        if ($request->hasFile('images')) {
-            $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
+        try {
+            $data = $request->all();
+            
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                $uploadedImages = [];
+                
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('products', 'public');
+                    $uploadedImages[] = $path;
+                }
+                
+                $data['images'] = $uploadedImages;
             }
-            $data['images'] = $images;
+            
+            // Convert specifications from JSON string if necessary
+            if (isset($data['specifications']) && is_string($data['specifications'])) {
+                $data['specifications'] = json_decode($data['specifications'], true);
+            }
+            
+            // Convert attributes from JSON string if necessary
+            if (isset($data['attributes']) && is_string($data['attributes'])) {
+                $data['attributes'] = json_decode($data['attributes'], true);
+            }
+            
+            // Create product
+            $product = $this->productRepository->create($data);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product created successfully',
+                'data' => [
+                    'product' => $product
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while creating the product',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $product = $this->productRepository->create($data);
-
-        if ($request->has('tags')) {
-            $product->tags()->attach($request->tags);
-        }
-
-        return response()->json(['message' => 'Product created successfully', 'data' => $product], 201);
     }
 
-    public function show($id)
-    {
-        $product = $this->productRepository->find($id);
-        return response()->json(['data' => $product->load('category', 'tags')]);
-    }
-
+    /**
+     * Update the specified product in storage.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
+            'name' => 'sometimes|required|string|max:255',
+            'description' => 'sometimes|required|string',
+            'price' => 'sometimes|required|numeric|min:0',
+            'stock' => 'sometimes|required|integer|min:0',
+            'category_id' => 'sometimes|required|exists:categories,id',
             'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tags' => 'nullable|array',
-            'tags.*' => 'exists:tags,id',
+            'specifications' => 'nullable|array',
+            'brand' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $data = $request->except(['images', 'tags']);
+        // Check if product exists
         $product = $this->productRepository->find($id);
-        
-        if ($request->hasFile('images')) {
-            // Delete existing images
-            if (!empty($product->images)) {
-                foreach ($product->images as $image) {
-                    Storage::disk('public')->delete($image);
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found'
+            ], 404);
+        }
+
+        try {
+            $data = $request->all();
+            
+            // Handle image uploads
+            if ($request->hasFile('images')) {
+                $uploadedImages = [];
+                
+                foreach ($request->file('images') as $image) {
+                    $path = $image->store('products', 'public');
+                    $uploadedImages[] = $path;
+                }
+                
+                // Check if we should replace or append images
+                if ($request->input('replace_images', false)) {
+                    $data['images'] = $uploadedImages;
+                    $data['replace_images'] = true;
+                } else {
+                    // If product already has images, we'll append to them
+                    if (isset($product->images) && is_array($product->images)) {
+                        $data['images'] = array_merge($product->images, $uploadedImages);
+                    } else {
+                        $data['images'] = $uploadedImages;
+                    }
                 }
             }
             
-            $images = [];
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $images[] = $path;
+            // Convert specifications from JSON string if necessary
+            if (isset($data['specifications']) && is_string($data['specifications'])) {
+                $data['specifications'] = json_decode($data['specifications'], true);
             }
-            $data['images'] = $images;
+            
+            // Convert attributes from JSON string if necessary
+            if (isset($data['attributes']) && is_string($data['attributes'])) {
+                $data['attributes'] = json_decode($data['attributes'], true);
+            }
+            
+            // Update product
+            $this->productRepository->update($data, $id);
+            $product = $this->productRepository->find($id);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Product updated successfully',
+                'data' => [
+                    'product' => $product
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'An error occurred while updating the product',
+                'error' => $e->getMessage(),
+            ], 500);
         }
-
-        $product = $this->productRepository->update($data, $id);
-
-        if ($request->has('tags')) {
-            $product->tags()->sync($request->tags);
-        }
-
-        return response()->json(['message' => 'Product updated successfully', 'data' => $product]);
     }
 
+    /**
+     * Remove the specified product from storage.
+     *
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function destroy($id)
     {
+        // Check if product exists
         $product = $this->productRepository->find($id);
-        
-        // Delete product images
-        if (!empty($product->images)) {
-            foreach ($product->images as $image) {
-                Storage::disk('public')->delete($image);
-            }
+
+        if (!$product) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found'
+            ], 404);
         }
-        
+
+        // Delete product
         $this->productRepository->delete($id);
-        return response()->json(['message' => 'Product deleted successfully']);
-    }
 
-    public function getProductsByCategory($categoryId)
-    {
-        $products = $this->productRepository->getProductsByCategory($categoryId);
-        return response()->json(['data' => $products->load('category', 'tags')]);
-    }
-
-    public function getProductsByTag($tagId)
-    {
-        $products = $this->productRepository->getProductsByTag($tagId);
-        return response()->json(['data' => $products->load('category', 'tags')]);
-    }
-
-    public function searchProducts(Request $request)
-    {
-        $query = $request->input('query');
-        if (empty($query)) {
-            return response()->json(['data' => []]);
-        }
-        $products = $this->productRepository->searchProducts($query);
-        return response()->json(['data' => $products->load('category', 'tags')]);
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Product deleted successfully'
+        ]);
     }
 }

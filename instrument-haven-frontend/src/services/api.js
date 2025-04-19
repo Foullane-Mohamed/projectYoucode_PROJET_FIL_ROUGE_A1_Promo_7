@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -62,10 +62,10 @@ api.interceptors.response.use(
 
 // Auth API calls
 const authAPI = {
-  login: (credentials) => api.post('/login', credentials),
-  register: (userData) => api.post('/register', userData),
-  logout: () => api.post('/logout'),
-  getProfile: () => api.get('/profile'),
+  login: (credentials) => api.post('/auth/login', credentials),
+  register: (userData) => api.post('/auth/register', userData),
+  logout: () => api.post('/auth/logout'),
+  getProfile: () => api.get('/auth/user'),
   updateProfile: (userData) => api.put('/profile', userData),
 };
 
@@ -73,39 +73,28 @@ const authAPI = {
 const productsAPI = {
   getAll: (params) => api.get('/products', { params }),
   getById: (id) => api.get(`/products/${id}`),
-  getByCategory: (categoryId) => api.get(`/products/category/${categoryId}`),
-  getByTag: (tagId) => api.get(`/products/tag/${tagId}`),
-  search: (query) => api.get('/search', { params: { query } }),
-  create: (formData) => api.post('/products', formData, {
+  getByCategory: (categoryId) => api.get(`/categories/${categoryId}`, { params: { include: 'products' } }),
+  search: (query) => api.get('/products', { params: { search: query } }),
+  create: (formData) => api.post('/admin/products', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
-  update: (id, formData) => {
-    formData.append('_method', 'PUT');
-    return api.post(`/products/${id}`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  },
-  delete: (id) => api.delete(`/products/${id}`),
+  update: (id, formData) => api.post(`/admin/products/${id}`, formData, {
+    headers: { 
+      'Content-Type': 'multipart/form-data',
+      'X-HTTP-Method-Override': 'PUT'
+    }
+  }),
+  delete: (id) => api.delete(`/admin/products/${id}`),
 };
 
 // Categories API calls
 const categoriesAPI = {
   getAll: () => api.get('/categories'),
   getById: (id) => api.get(`/categories/${id}`),
-  getParentCategories: () => api.get('/parent-categories'),
-  getSubcategories: (id) => api.get(`/categories/${id}/subcategories`),
-  create: (data) => api.post('/categories', data),
-  update: (id, data) => api.put(`/categories/${id}`, data),
-  delete: (id) => api.delete(`/categories/${id}`),
-};
-
-// Tags API calls
-const tagsAPI = {
-  getAll: () => api.get('/tags'),
-  getById: (id) => api.get(`/tags/${id}`),
-  create: (data) => api.post('/tags', data),
-  update: (id, data) => api.put(`/tags/${id}`, data),
-  delete: (id) => api.delete(`/tags/${id}`),
+  getParentCategories: () => api.get('/categories', { params: { parent_id: 'null' } }),
+  create: (data) => api.post('/admin/categories', data),
+  update: (id, data) => api.put(`/admin/categories/${id}`, data),
+  delete: (id) => api.delete(`/admin/categories/${id}`),
 };
 
 // Wishlist API calls
@@ -117,22 +106,18 @@ const wishlistAPI = {
 
 // Orders API calls
 const ordersAPI = {
-  getAllAdmin: () => api.get('/orders'),
-  getMyOrders: () => api.get('/my-orders'),
+  getAll: () => api.get('/orders'),
   getById: (id) => api.get(`/orders/${id}`),
-  getByStatus: (status) => api.get(`/orders/status/${status}`),
   create: (orderData) => api.post('/orders', orderData),
-  updateStatus: (id, status) => api.put(`/orders/${id}`, { status }),
+  cancel: (id, reason) => api.put(`/orders/${id}/cancel`, { cancel_reason: reason }),
 };
 
-// Coupons API calls
-const couponsAPI = {
-  getAll: () => api.get('/coupons'),
-  getById: (id) => api.get(`/coupons/${id}`),
-  create: (data) => api.post('/coupons', data),
-  update: (id, data) => api.put(`/coupons/${id}`, data),
-  delete: (id) => api.delete(`/coupons/${id}`),
-  validate: (code) => api.post('/validate-coupon', { code }),
+// Reviews API calls
+const reviewsAPI = {
+  getByProduct: (productId) => api.get(`/products/${productId}/reviews`),
+  create: (productId, data) => api.post(`/products/${productId}/reviews`, data),
+  update: (productId, reviewId, data) => api.put(`/products/${productId}/reviews/${reviewId}`, data),
+  delete: (productId, reviewId) => api.delete(`/products/${productId}/reviews/${reviewId}`),
 };
 
 // Contact form
@@ -140,23 +125,35 @@ const contactAPI = {
   send: (data) => api.post('/contact', data),
 };
 
-// Users API (for admin)
-const usersAPI = {
-  getAll: () => api.get('/users'),
-  getById: (id) => api.get(`/users/${id}`),
-  create: (data) => api.post('/users', data),
-  update: (id, data) => api.put(`/users/${id}`, data),
-  delete: (id) => api.delete(`/users/${id}`),
+// Admin APIs
+const adminAPI = {
+  // Dashboard
+  getDashboard: () => api.get('/admin/dashboard'),
+  
+  // Users
+  getUsers: (params) => api.get('/admin/users', { params }),
+  getUser: (id) => api.get(`/admin/users/${id}`),
+  updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  
+  // Orders
+  getOrders: (params) => api.get('/admin/orders', { params }),
+  updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
+  getOrderStatistics: () => api.get('/admin/orders/statistics'),
+  
+  // Coupons
+  getCoupons: (params) => api.get('/admin/coupons', { params }),
+  createCoupon: (data) => api.post('/admin/coupons', data),
+  updateCoupon: (id, data) => api.put(`/admin/coupons/${id}`, data),
+  deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
 };
 
 export default {
   auth: authAPI,
   products: productsAPI,
   categories: categoriesAPI,
-  tags: tagsAPI,
   wishlist: wishlistAPI,
   orders: ordersAPI,
-  coupons: couponsAPI,
+  reviews: reviewsAPI,
   contact: contactAPI,
-  users: usersAPI,
+  admin: adminAPI
 };

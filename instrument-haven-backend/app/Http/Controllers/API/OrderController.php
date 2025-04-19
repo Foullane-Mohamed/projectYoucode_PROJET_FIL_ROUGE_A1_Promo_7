@@ -1,153 +1,201 @@
 <?php
 
-namespace App\Http\Controllers\API;
+namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Order;
-use App\Models\OrderItem;
-use App\Repositories\CouponRepository;
-use App\Repositories\OrderRepository;
-use App\Repositories\ProductRepository;
+use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class OrderController extends Controller
 {
     protected $orderRepository;
-    protected $productRepository;
-    protected $couponRepository;
 
-    public function __construct(
-        OrderRepository $orderRepository,
-        ProductRepository $productRepository,
-        CouponRepository $couponRepository
-    ) {
+    public function __construct(OrderRepositoryInterface $orderRepository)
+    {
         $this->orderRepository = $orderRepository;
-        $this->productRepository = $productRepository;
-        $this->couponRepository = $couponRepository;
     }
 
-    public function index()
+    /**
+     * Display a listing of the user's orders.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function index(Request $request)
     {
-        $orders = $this->orderRepository->all();
-        return response()->json(['data' => $orders]);
-    }
+        $perPage = $request->input('per_page', 10);
+        $filters = $request->only(['status']);
+        
+        $orders = $this->orderRepository->getForUser($request->user()->id, $filters, $perPage);
 
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'items' => 'required|array',
-            'items.*.product_id' => 'required|exists:products,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'shipping_address' => 'required|string',
-            'payment_method' => 'required|string',
-            'coupon_code' => 'nullable|string',
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'orders' => $orders->items(),
+                'pagination' => [
+                    'total' => $orders->total(),
+                    'per_page' => $orders->perPage(),
+                    'current_page' => $orders->currentPage(),
+                    'last_page' => $orders->lastPage(),
+                    'from' => $orders->firstItem(),
+                    'to' => $orders->lastItem()
+                ]
+            ]
         ]);
+    }
 
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+    /**
+     * Display the specified order.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function show(Request $request, $id)
+    {
+        $order = $this->orderRepository->getWithDetails($id);
+
+        if (!$order) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Order not found'
+            ], 404);
         }
 
-        $total = 0;
-        $items = [];
-
-        foreach ($request->items as $item) {
-            $product = $this->productRepository->find($item['product_id']);
-            
-            if ($product->stock < $item['quantity']) {
-                return response()->json([
-                    'message' => "Not enough stock for product: {$product->name}",
-                ], 400);
-            }
-
-            $price = $product->price;
-            $total += $price * $item['quantity'];
-            
-            $items[] = [
-                'product_id' => $product->id,
-                'quantity' => $item['quantity'],
-                'price' => $price,
-            ];
-            
-            // Update product stock
-            $product->stock -= $item['quantity'];
-            $product->save();
-        }
-
-        $couponId = null;
-        if ($request->has('coupon_code')) {
-            $coupon = $this->couponRepository->findByCode($request->coupon_code);
-            
-            if ($coupon && $coupon->is_active && 
-                (!$coupon->expires_at || $coupon->expires_at > now()) &&
-                (!$coupon->starts_at || $coupon->starts_at <= now())) {
-                
-                if ($coupon->type === 'percentage') {
-                    $total = $total * (1 - ($coupon->discount / 100));
-                } else {
-                    $total = max(0, $total - $coupon->discount);
-                }
-                
-                $couponId = $coupon->id;
-            }
-        }
-
-        $orderData = [
-            'user_id' => $request->user()->id,
-            'total' => $total,
-            'status' => 'pending',
-            'shipping_address' => $request->shipping_address,
-            'payment_method' => $request->payment_method,
-            'coupon_id' => $couponId,
-        ];
-
-        $order = $this->orderRepository->create($orderData);
-
-        foreach ($items as $item) {
-            OrderItem::create([
-                'order_id' => $order->id,
-                'product_id' => $item['product_id'],
-                'quantity' => $item['quantity'],
-                'price' => $item['price'],
-            ]);
+        // Only allow the owner or admin to view the order
+        if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 403);
         }
 
         return response()->json([
-            'message' => 'Order created successfully',
-            'data' => $order->load('items.product'),
-        ], 201);
+            'status' => 'success',
+            'data' => [
+                'order' => $order
+            ]
+        ]);
     }
 
-    public function show($id)
-    {
-        $order = $this->orderRepository->find($id);
-        return response()->json(['data' => $order->load('items.product', 'user')]);
-    }
-
-    public function update(Request $request, $id)
+    /**
+     * Store a newly created order.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'status' => 'required|string|in:pending,processing,completed,cancelled',
+            'shipping_address' => 'required|array',
+            'shipping_address.name' => 'required|string|max:255',
+            'shipping_address.address_line_1' => 'required|string|max:255',
+            'shipping_address.address_line_2' => 'nullable|string|max:255',
+            'shipping_address.city' => 'required|string|max:255',
+            'shipping_address.state' => 'required|string|max:255',
+            'shipping_address.postal_code' => 'required|string|max:20',
+            'shipping_address.country' => 'required|string|max:255',
+            'shipping_address.phone' => 'required|string|max:20',
+            'shipping_method' => 'required|string|in:standard,express',
+            'payment_method' => 'required|string|in:stripe,paypal',
+            'payment_intent_id' => 'nullable|string',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
         }
 
-        $order = $this->orderRepository->update($request->only('status'), $id);
-        return response()->json(['message' => 'Order updated successfully', 'data' => $order]);
+        try {
+            $order = $this->orderRepository->createFromCart(
+                $request->user()->id,
+                $request->all()
+            );
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order created successfully',
+                'data' => [
+                    'order' => $order
+                ]
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 
-    public function getOrdersByUser(Request $request)
+    /**
+     * Cancel an order.
+     *
+     * @param Request $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function cancel(Request $request, $id)
     {
-        $orders = $this->orderRepository->getOrdersByUser($request->user()->id);
-        return response()->json(['data' => $orders->load('items.product')]);
-    }
+        $validator = Validator::make($request->all(), [
+            'cancel_reason' => 'required|string|max:255',
+        ]);
 
-    public function getOrdersByStatus(Request $request)
-    {
-        $status = $request->input('status', 'pending');
-        $orders = $this->orderRepository->getOrdersByStatus($status);
-        return response()->json(['data' => $orders->load('items.product', 'user')]);
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation failed',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        // Get the order
+        $order = $this->orderRepository->find($id);
+
+        if (!$order) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Order not found'
+            ], 404);
+        }
+
+        // Only allow the owner to cancel their own order
+        if ($order->user_id !== $request->user()->id) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Unauthorized'
+            ], 403);
+        }
+
+        try {
+            $order = $this->orderRepository->cancelOrder($id, $request->cancel_reason);
+
+            if (!$order) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Order cannot be cancelled'
+                ], 400);
+            }
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order cancelled successfully',
+                'data' => [
+                    'order' => [
+                        'id' => $order->id,
+                        'status' => $order->status,
+                        'updated_at' => $order->updated_at
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => $e->getMessage()
+            ], 400);
+        }
     }
 }

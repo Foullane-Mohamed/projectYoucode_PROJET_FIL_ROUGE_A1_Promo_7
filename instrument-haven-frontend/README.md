@@ -1,12 +1,82 @@
-# React + Vite
+# Instrument Haven Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This is the frontend application for the Instrument Haven e-commerce platform, built with React and Material UI.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Node.js 18.x or higher
+- npm 9.x or higher
 
-## Expanding the ESLint configuration
+## Installation
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/instrument-haven.git
+   cd instrument-haven-frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Configure environment variables:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Update the `.env` file with your API URL:
+   ```
+   VITE_APP_NAME="Instrument Haven"
+   VITE_APP_VERSION="1.0.0"
+   VITE_API_URL="http://localhost:8000/api/v1"
+   VITE_STORAGE_URL="http://localhost:8000/storage"
+   ```
+
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+## Features
+
+- User authentication (login, register, profile management)
+- Product browsing with filtering and search
+- Product details with reviews
+- Shopping cart management
+- Wishlist functionality
+- Checkout process
+- Order history
+- Admin dashboard with product, category, order management
+
+## Folder Structure
+
+- `src/components` - Reusable React components
+- `src/pages` - Page components
+- `src/context` - React context providers
+- `src/services` - API services
+- `src/assets` - Static assets
+- `src/utils` - Utility functions
+
+## Technology Stack
+
+- React 19
+- Material UI 7
+- React Router 7
+- Axios for API requests
+- Formik and Yup for form validation
+- Tailwind CSS for utility styling
+
+## Admin Access
+
+After setting up the backend and running the seeders, you can use these admin credentials to access the admin dashboard:
+
+- Email: admin@instrumenthaven.com
+- Password: password123
+
+## Commands
+
+- `npm run dev` - Start the development server
+- `npm run build` - Build the app for production
+- `npm run preview` - Preview the production build locally
+- `npm run lint` - Lint the code

@@ -42,14 +42,12 @@ const ProductList = () => {
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState({
     category: categoryId || queryParams.get("category") || "",
-    tag: queryParams.get("tag") || "",
-    sort: queryParams.get("sort") || "newest",
     search: queryParams.get("search") || "",
+    sort: queryParams.get("sort") || "newest",
     minPrice: queryParams.get("minPrice") || "",
     maxPrice: queryParams.get("maxPrice") || "",
     page: parseInt(queryParams.get("page")) || 1,
@@ -65,38 +63,92 @@ const ProductList = () => {
       
       try {
         // Fetch categories
-        const categoriesResponse = await api.categories.getAll();
-        setCategories(categoriesResponse.data.data);
-
-        // Fetch tags
-        const tagsResponse = await api.tags.getAll();
-        setTags(tagsResponse.data.data);
+        try {
+          const categoriesResponse = await api.categories.getAll();
+          console.log('Categories response:', categoriesResponse);
+          
+          // Handle empty response
+          if (!categoriesResponse || !categoriesResponse.data) {
+            setCategories([]);
+            return;
+          }
+          
+          // Check if the response is an array directly
+          const categoriesData = Array.isArray(categoriesResponse.data) ? 
+            categoriesResponse.data : 
+            (categoriesResponse.data.data && Array.isArray(categoriesResponse.data.data)) ? 
+              categoriesResponse.data.data : 
+              [];
+              
+          setCategories(categoriesData);
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+          setCategories([]);
+        }
 
         // Fetch products based on filters
         let productsData = [];
         
         if (filters.category) {
-          const response = await api.products.getByCategory(filters.category);
-          productsData = response.data.data;
-          
-          // Get category details
-          if (categoryId) {
-            try {
-              const categoryResponse = await api.categories.getById(categoryId);
-              setCurrentCategory(categoryResponse.data.data);
-            } catch (err) {
-              console.error("Error fetching category details:", err);
+          // Get category details and its products
+          try {
+            const categoryResponse = await api.categories.getById(filters.category);
+            console.log('Category response:', categoryResponse);
+            
+            // Extract category data
+            const categoryData = categoryResponse.data && categoryResponse.data.data ? 
+              categoryResponse.data.data : 
+              (categoryResponse.data ? categoryResponse.data : null);
+            
+            setCurrentCategory(categoryData);
+            
+            // Check if products are included in the response
+            if (categoryData && categoryData.products) {
+              productsData = categoryData.products;
+            } else {
+              // Fallback to getting all products and filtering by category
+              const allProductsResponse = await api.products.getAll();
+              console.log('All products response:', allProductsResponse);
+              
+              const allProducts = Array.isArray(allProductsResponse.data) ? 
+                allProductsResponse.data : 
+                (allProductsResponse.data && allProductsResponse.data.data) ? 
+                  allProductsResponse.data.data : [];
+                  
+              productsData = allProducts.filter(
+                product => product.category_id && product.category_id.toString() === filters.category
+              );
             }
+          } catch (err) {
+            console.error("Error fetching category details:", err);
+            const allProductsResponse = await api.products.getAll();
+            console.log('All products response (fallback):', allProductsResponse);
+            
+            const allProducts = Array.isArray(allProductsResponse.data) ? 
+              allProductsResponse.data : 
+              (allProductsResponse.data && allProductsResponse.data.data) ? 
+                allProductsResponse.data.data : [];
+                
+            productsData = allProducts.filter(
+              product => product.category_id && product.category_id.toString() === filters.category
+            );
           }
-        } else if (filters.tag) {
-          const response = await api.products.getByTag(filters.tag);
-          productsData = response.data.data;
         } else if (filters.search) {
           const response = await api.products.search(filters.search);
-          productsData = response.data.data;
+          console.log('Search products response:', response);
+          
+          productsData = Array.isArray(response.data) ? 
+            response.data : 
+            (response.data && response.data.data) ? 
+              response.data.data : [];
         } else {
           const response = await api.products.getAll();
-          productsData = response.data.data;
+          console.log('All products response:', response);
+          
+          productsData = Array.isArray(response.data) ? 
+            response.data : 
+            (response.data && response.data.data) ? 
+              response.data.data : [];
         }
 
         // Apply price filters
@@ -174,7 +226,7 @@ const ProductList = () => {
         {currentCategory ? currentCategory.name : "Products"}
       </Typography>
       
-      {currentCategory && (
+      {currentCategory && currentCategory.description && (
         <Typography variant="body1" paragraph>
           {currentCategory.description}
         </Typography>
@@ -256,53 +308,41 @@ const ProductList = () => {
             </Typography>
             <List dense>
               <ListItem
-                button
+                disablePadding
                 selected={filters.category === ""}
                 onClick={() => handleFilterChange("category", "")}
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'action.hover' },
+                  pl: 2,
+                  pr: 2,
+                  py: 1,
+                  borderRadius: 1
+                }}
               >
                 <ListItemText primary="All Categories" />
               </ListItem>
               {categories.map((category) => (
                 <ListItem
-                  button
+                  disablePadding
                   key={category.id}
                   selected={filters.category === category.id.toString()}
                   onClick={() =>
                     handleFilterChange("category", category.id.toString())
                   }
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    pl: 2,
+                    pr: 2,
+                    py: 1,
+                    borderRadius: 1
+                  }}
                 >
                   <ListItemText primary={category.name} />
                 </ListItem>
               ))}
             </List>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle1" gutterBottom>
-              Tags
-            </Typography>
-            <FormGroup>
-              {tags.map((tag) => (
-                <FormControlLabel
-                  key={tag.id}
-                  control={
-                    <Checkbox
-                      checked={filters.tag === tag.id.toString()}
-                      onChange={() =>
-                        handleFilterChange(
-                          "tag",
-                          filters.tag === tag.id.toString()
-                            ? ""
-                            : tag.id.toString()
-                        )
-                      }
-                      size="small"
-                    />
-                  }
-                  label={tag.name}
-                />
-              ))}
-            </FormGroup>
 
             <Divider sx={{ my: 2 }} />
 
@@ -343,7 +383,6 @@ const ProductList = () => {
                 handleFilterChange("minPrice", "");
                 handleFilterChange("maxPrice", "");
                 handleFilterChange("category", "");
-                handleFilterChange("tag", "");
                 handleFilterChange("search", "");
               }}
             >
@@ -376,58 +415,45 @@ const ProductList = () => {
             </Typography>
             <List dense>
               <ListItem
-                button
+                disablePadding
                 selected={filters.category === ""}
                 onClick={() => {
                   handleFilterChange("category", "");
                   if (isMobile) toggleDrawer();
+                }}
+                sx={{ 
+                  cursor: 'pointer',
+                  '&:hover': { bgcolor: 'action.hover' },
+                  pl: 2,
+                  pr: 2,
+                  py: 1,
+                  borderRadius: 1
                 }}
               >
                 <ListItemText primary="All Categories" />
               </ListItem>
               {categories.map((category) => (
                 <ListItem
-                  button
+                  disablePadding
                   key={category.id}
                   selected={filters.category === category.id.toString()}
                   onClick={() => {
                     handleFilterChange("category", category.id.toString());
                     if (isMobile) toggleDrawer();
                   }}
+                  sx={{ 
+                    cursor: 'pointer',
+                    '&:hover': { bgcolor: 'action.hover' },
+                    pl: 2,
+                    pr: 2,
+                    py: 1,
+                    borderRadius: 1
+                  }}
                 >
                   <ListItemText primary={category.name} />
                 </ListItem>
               ))}
             </List>
-
-            <Divider sx={{ my: 2 }} />
-
-            <Typography variant="subtitle1" gutterBottom>
-              Tags
-            </Typography>
-            <FormGroup>
-              {tags.map((tag) => (
-                <FormControlLabel
-                  key={tag.id}
-                  control={
-                    <Checkbox
-                      checked={filters.tag === tag.id.toString()}
-                      onChange={() => {
-                        handleFilterChange(
-                          "tag",
-                          filters.tag === tag.id.toString()
-                            ? ""
-                            : tag.id.toString()
-                        );
-                        if (isMobile) toggleDrawer();
-                      }}
-                      size="small"
-                    />
-                  }
-                  label={tag.name}
-                />
-              ))}
-            </FormGroup>
 
             <Divider sx={{ my: 2 }} />
 
@@ -468,7 +494,6 @@ const ProductList = () => {
                 handleFilterChange("minPrice", "");
                 handleFilterChange("maxPrice", "");
                 handleFilterChange("category", "");
-                handleFilterChange("tag", "");
                 handleFilterChange("search", "");
                 if (isMobile) toggleDrawer();
               }}
@@ -499,7 +524,7 @@ const ProductList = () => {
             <>
               <Grid container spacing={3}>
                 {products.map((product) => (
-                  <Grid item xs={12} sm={6} md={4} key={product.id}>
+                  <Grid item xs={12} md={4} key={product.id}>
                     <ProductCard product={product} />
                   </Grid>
                 ))}
@@ -541,7 +566,6 @@ const ProductList = () => {
                   handleFilterChange("minPrice", "");
                   handleFilterChange("maxPrice", "");
                   handleFilterChange("category", "");
-                  handleFilterChange("tag", "");
                 }}
               >
                 Clear Filters

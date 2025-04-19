@@ -102,7 +102,7 @@ const ProductCard = ({ product }) => {
           height="180"
           image={
             product.images && product.images.length > 0
-              ? `http://localhost:8000/storage/${product.images[0]}`
+              ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
               : '/placeholder.png'
           }
           alt={product.name}

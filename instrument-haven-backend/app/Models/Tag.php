@@ -9,8 +9,19 @@ class Tag extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name'];
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array<int, string>
+     */
+    protected $fillable = [
+        'name',
+        'slug',
+    ];
 
+    /**
+     * Get the products that belong to the tag.
+     */
     public function products()
     {
         return $this->belongsToMany(Product::class);

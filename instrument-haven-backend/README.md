@@ -1,66 +1,179 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Instrument Haven API
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+This is the backend API for the Instrument Haven e-commerce platform, built with Laravel 12 and MySQL.
 
-## About Laravel
+## Requirements
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+- PHP 8.2 or higher
+- Composer
+- MySQL
+- Laravel 12
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Installation
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/instrument-haven.git
+   cd instrument-haven-backend
+   ```
 
-## Learning Laravel
+2. Install dependencies:
+   ```bash
+   composer install
+   ```
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
+4. Create a symbolic link to the storage directory:
+   ```bash
+   php artisan storage:link
+   ```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+5. Configure your database connection in the `.env` file:
+   ```
+   DB_CONNECTION=mysql
+   DB_HOST=127.0.0.1
+   DB_PORT=3306
+   DB_DATABASE=instrument_haven
+   DB_USERNAME=root
+   DB_PASSWORD=
+   ```
 
-## Laravel Sponsors
+5. Run migrations and seed the database:
+   ```bash
+   php artisan migrate:fresh --seed
+   ```
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+6. Start the development server:
+   ```bash
+   php artisan serve
+   ```
 
-### Premium Partners
+## API Documentation
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+The API provides endpoints for the following resources:
 
-## Contributing
+- Authentication (register, login, logout)
+- Products (list, search, filter, details)
+- Categories (hierarchical structure)
+- Cart (add, update, remove items, apply coupons)
+- Orders (create, manage, track)
+- Wishlist (add, remove products)
+- Reviews (view, add, update, delete)
+- Contact (submit contact form)
+- Admin features (dashboard statistics, user management, order management, etc.)
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+## Default Users
 
-## Code of Conduct
+After seeding the database, you can use these credentials to log in:
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+- Admin:
+  - Email: admin@instrumenthaven.com
+  - Password: password123
 
-## Security Vulnerabilities
+- Customer:
+  - Email: customer@example.com
+  - Password: password123
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+## Authentication
 
-## License
+The API uses Laravel Sanctum for authentication. Include the token in the Authorization header for protected routes:
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+```
+Authorization: Bearer {your_token}
+```
+
+## API Routes
+
+### Public Routes
+
+- `POST /api/v1/auth/register` - Register a new user
+- `POST /api/v1/auth/login` - Log in a user
+- `GET /api/v1/products` - Get list of products
+- `GET /api/v1/products/{id}` - Get product details
+- `GET /api/v1/categories` - Get list of categories
+- `GET /api/v1/categories/{id}` - Get category details
+- `GET /api/v1/products/{productId}/reviews` - Get product reviews
+- `POST /api/v1/contact` - Send a contact message
+
+### Protected Routes
+
+- `POST /api/v1/auth/logout` - Log out the authenticated user
+- `GET /api/v1/auth/user` - Get authenticated user details
+- `GET /api/v1/cart` - Get user's cart
+- `POST /api/v1/cart/items` - Add item to cart
+- `PUT /api/v1/cart/items/{id}` - Update cart item quantity
+- `DELETE /api/v1/cart/items/{id}` - Remove item from cart
+- `POST /api/v1/cart/apply-coupon` - Apply a coupon to the cart
+- `POST /api/v1/cart/remove-coupon` - Remove a coupon from the cart
+- `GET /api/v1/wishlist` - Get user's wishlist
+- `POST /api/v1/wishlist` - Add product to wishlist
+- `DELETE /api/v1/wishlist/{productId}` - Remove product from wishlist
+- `GET /api/v1/orders` - Get user's orders
+- `GET /api/v1/orders/{id}` - Get order details
+- `POST /api/v1/orders` - Create a new order
+- `PUT /api/v1/orders/{id}/cancel` - Cancel an order
+- `POST /api/v1/products/{productId}/reviews` - Add a product review
+- `PUT /api/v1/products/{productId}/reviews/{id}` - Update a review
+- `DELETE /api/v1/products/{productId}/reviews/{id}` - Delete a review
+
+### Admin Routes
+
+- `GET /api/v1/admin/dashboard` - Get dashboard statistics
+- `GET /api/v1/admin/users` - Get list of users
+- `GET /api/v1/admin/users/{id}` - Get user details
+- `PUT /api/v1/admin/users/{id}` - Update user information
+- `GET /api/v1/admin/orders` - Get list of orders
+- `PUT /api/v1/admin/orders/{id}` - Update order status
+- `GET /api/v1/admin/orders/statistics` - Get order statistics
+- `POST /api/v1/admin/products` - Create a new product
+- `PUT /api/v1/admin/products/{id}` - Update a product
+- `DELETE /api/v1/admin/products/{id}` - Delete a product
+- `POST /api/v1/admin/categories` - Create a new category
+- `PUT /api/v1/admin/categories/{id}` - Update a category
+- `DELETE /api/v1/admin/categories/{id}` - Delete a category
+- `GET /api/v1/admin/coupons` - Get list of coupons
+- `POST /api/v1/admin/coupons` - Create a new coupon
+- `PUT /api/v1/admin/coupons/{id}` - Update a coupon
+- `DELETE /api/v1/admin/coupons/{id}` - Delete a coupon
+
+## Commands for Project Setup
+
+Here's a summary of all the commands needed to set up the project:
+
+```bash
+# Clone repository
+git clone https://github.com/yourusername/instrument-haven.git
+cd instrument-haven-backend
+
+# Install dependencies
+composer install
+
+# Set up environment
+cp .env.example .env
+php artisan key:generate
+
+# Create storage symbolic link
+php artisan storage:link
+
+# Run migrations and seeders
+php artisan migrate:fresh --seed
+
+# Start the server
+php artisan serve
+```
+
+## Developer Information
+
+This project follows the repository pattern for data access. The code is organized as follows:
+
+- `app/Models` - Eloquent models
+- `app/Http/Controllers` - API controllers
+- `app/Repositories` - Repository implementations
+- `app/Repositories/Interfaces` - Repository interfaces
+- `database/migrations` - Database migrations
+- `database/seeders` - Database seeders

@@ -12,7 +12,7 @@ const Footer = () => {
     >
       <Container maxWidth="lg">
         <Grid container spacing={4}>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom>
               Instrument Haven
             </Typography>
@@ -20,7 +20,7 @@ const Footer = () => {
               Your one-stop shop for all musical instruments. Whether you're a beginner or a professional, we have instruments that will suit your needs.
             </Typography>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom>
               Quick Links
             </Typography>
@@ -37,7 +37,7 @@ const Footer = () => {
               Contact Us
             </Link>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} md={4}>
             <Typography variant="h6" gutterBottom>
               Contact Information
             </Typography>

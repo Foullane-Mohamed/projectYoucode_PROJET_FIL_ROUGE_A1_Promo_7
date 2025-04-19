@@ -168,6 +168,10 @@ const ProductManagement = () => {
       formData.append('stock', currentProduct.stock);
       formData.append('category_id', currentProduct.category_id);
       
+      if (currentProduct.brand) {
+        formData.append('brand', currentProduct.brand);
+      }
+      
       // Append tags
       if (currentProduct.tags && currentProduct.tags.length) {
         currentProduct.tags.forEach(tagId => {
@@ -175,33 +179,39 @@ const ProductManagement = () => {
         });
       }
       
+      // Append specifications if available
+      if (currentProduct.specifications) {
+        formData.append('specifications', JSON.stringify(currentProduct.specifications));
+      }
+      
+      // Append attributes if available
+      if (currentProduct.attributes) {
+        formData.append('attributes', JSON.stringify(currentProduct.attributes));
+      }
+      
       // Append images if there are any
       if (selectedFiles.length > 0) {
-        selectedFiles.forEach(file => {
-          formData.append('images[]', file);
+        selectedFiles.forEach((file, index) => {
+          formData.append(`images[${index}]`, file);
         });
       }
       
       let response;
       if (dialogMode === 'add') {
-        response = await api.post('/products', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        response = await api.products.create(formData);
         setSnackbar({
           open: true,
           message: 'Product created successfully!',
           severity: 'success'
         });
       } else {
-        // For editing, we need to use POST with _method=PUT due to file upload constraints
-        formData.append('_method', 'PUT');
-        response = await api.post(`/products/${currentProduct.id}`, formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        });
+        // For edit mode
+        if (selectedFiles.length > 0) {
+          // Option to replace all existing images
+          formData.append('replace_images', true);
+        }
+        
+        response = await api.products.update(currentProduct.id, formData);
         setSnackbar({
           open: true,
           message: 'Product updated successfully!',
@@ -213,10 +223,10 @@ const ProductManagement = () => {
       fetchProducts();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving product:', error);
+      console.error('Error saving product:', error.response?.data || error);
       setSnackbar({
         open: true,
-        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} product. Please try again.`,
+        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} product: ${error.response?.data?.message || error.message}`,
         severity: 'error'
       });
     }

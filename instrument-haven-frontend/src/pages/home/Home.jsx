@@ -31,12 +31,52 @@ const Home = () => {
       setLoading(true);
       try {
         // Fetch products
-        const productsResponse = await api.get('/products');
-        setFeaturedProducts(productsResponse.data.data.slice(0, 8));
+        try {
+          const productsResponse = await api.products.getAll();
+          console.log('Products response:', productsResponse);
+          
+          // Handle empty response
+          if (!productsResponse || !productsResponse.data) {
+            setFeaturedProducts([]);
+            return;
+          }
+          
+          // Check if the response is an array directly
+          const productsData = Array.isArray(productsResponse.data) ? 
+            productsResponse.data : 
+            (productsResponse.data.data && Array.isArray(productsResponse.data.data)) ? 
+              productsResponse.data.data : 
+              [];
+              
+          setFeaturedProducts(productsData.slice(0, 8));
+        } catch (error) {
+          console.error('Error fetching products:', error);
+          setFeaturedProducts([]);
+        }
         
         // Fetch categories
-        const categoriesResponse = await api.get('/parent-categories');
-        setCategories(categoriesResponse.data.data);
+        try {
+          const categoriesResponse = await api.categories.getParentCategories();
+          console.log('Categories response:', categoriesResponse);
+          
+          // Handle empty response
+          if (!categoriesResponse || !categoriesResponse.data) {
+            setCategories([]);
+            return;
+          }
+          
+          // Check if the response is an array directly
+          const categoriesData = Array.isArray(categoriesResponse.data) ? 
+            categoriesResponse.data : 
+            (categoriesResponse.data.data && Array.isArray(categoriesResponse.data.data)) ? 
+              categoriesResponse.data.data : 
+              [];
+              
+          setCategories(categoriesData);
+        } catch (error) {
+          console.error('Error fetching categories:', error);
+          setCategories([]);
+        }
       } catch (error) {
         console.error('Error fetching home data:', error);
       } finally {
@@ -161,7 +201,7 @@ const Home = () => {
         </Typography>
         <Grid container spacing={4} sx={{ mt: 2 }}>
           {categories.map((category) => (
-            <Grid item xs={12} sm={6} md={4} key={category.id}>
+            <Grid item xs={12} md={4} key={category.id}>
               <Card
                 component={Link}
                 to={`/categories/${category.id}`}
@@ -216,7 +256,7 @@ const Home = () => {
         </Typography>
         <Grid container spacing={3} sx={{ mt: 2 }}>
           {featuredProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={3} key={product.id}>
+            <Grid item xs={12} md={3} key={product.id}>
               <ProductCard product={product} />
             </Grid>
           ))}
