@@ -7,6 +7,7 @@ use App\Repositories\Interfaces\CategoryRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class CategoryController extends Controller
 {
@@ -74,36 +75,56 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
-            'slug' => 'nullable|string|unique:categories',
-            'meta_title' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string',
-            'position' => 'nullable|integer|min:0',
-            'is_active' => 'nullable|boolean',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|string',
+                'parent_id' => 'nullable|exists:categories,id',
+                'slug' => 'nullable|string|unique:categories',
+                'meta_title' => 'nullable|string|max:255',
+                'meta_description' => 'nullable|string',
+                'position' => 'nullable|integer|min:0',
+                'is_active' => 'nullable|boolean',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            $data = $request->all();
+            
+            // Generate slug if not provided
+            if (!isset($data['slug']) || empty($data['slug'])) {
+                $data['slug'] = Str::slug($data['name']);
+            }
+            
+            // Set defaults
+            $data['is_active'] = $data['is_active'] ?? true;
+            $data['position'] = $data['position'] ?? 0;
+            
+            // Create category
+            $category = $this->categoryRepository->create($data);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Category created successfully',
+                'data' => [
+                    'category' => $category
+                ]
+            ], 201);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'An error occurred while creating the category',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        // Create category
-        $category = $this->categoryRepository->create($request->all());
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Category created successfully',
-            'data' => [
-                'category' => $category
-            ]
-        ], 201);
     }
 
     /**
@@ -115,55 +136,71 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'parent_id' => 'nullable|exists:categories,id',
-            'slug' => 'nullable|string|unique:categories,slug,' . $id,
-            'meta_title' => 'nullable|string|max:255',
-            'meta_description' => 'nullable|string',
-            'position' => 'nullable|integer|min:0',
-            'is_active' => 'nullable|boolean',
-        ]);
+        try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'sometimes|required|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|string',
+                'parent_id' => 'nullable|exists:categories,id',
+                'slug' => 'nullable|string|unique:categories,slug,' . $id,
+                'meta_title' => 'nullable|string|max:255',
+                'meta_description' => 'nullable|string',
+                'position' => 'nullable|integer|min:0',
+                'is_active' => 'nullable|boolean',
+            ]);
 
-        if ($validator->fails()) {
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Check if category exists
+            $category = $this->categoryRepository->find($id);
+
+            if (!$category) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Category not found'
+                ], 404);
+            }
+
+            // Check that we're not setting the category as its own parent
+            if (isset($request->parent_id) && $request->parent_id == $id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'A category cannot be its own parent'
+                ], 422);
+            }
+
+            $data = $request->all();
+            
+            // Update slug if name changed and slug not provided
+            if (isset($data['name']) && $data['name'] !== $category->name && (!isset($data['slug']) || empty($data['slug']))) {
+                $data['slug'] = Str::slug($data['name']);
+            }
+            
+            // Update category
+            $this->categoryRepository->update($id, $data);
+            $category = $this->categoryRepository->find($id);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Category updated successfully',
+                'data' => [
+                    'category' => $category
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
+                'message' => 'An error occurred while updating the category',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        // Check if category exists
-        $category = $this->categoryRepository->find($id);
-
-        if (!$category) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Category not found'
-            ], 404);
-        }
-
-        // Check that we're not setting the category as its own parent
-        if (isset($request->parent_id) && $request->parent_id == $id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'A category cannot be its own parent'
-            ], 422);
-        }
-
-        // Update category
-        $this->categoryRepository->update($id, $request->all());
-        $category = $this->categoryRepository->find($id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Category updated successfully',
-            'data' => [
-                'category' => $category
-            ]
-        ]);
     }
 
     /**
@@ -174,38 +211,47 @@ class CategoryController extends Controller
      */
     public function destroy($id)
     {
-        // Check if category exists
-        $category = $this->categoryRepository->find($id);
+        try {
+            // Check if category exists
+            $category = $this->categoryRepository->find($id);
 
-        if (!$category) {
+            if (!$category) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Category not found'
+                ], 404);
+            }
+
+            // Check if category has subcategories
+            if ($category->subcategories()->count() > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Cannot delete category with subcategories'
+                ], 422);
+            }
+
+            // Check if category has products
+            if ($category->products()->count() > 0) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Cannot delete category with products'
+                ], 422);
+            }
+
+            // Delete category
+            $this->categoryRepository->delete($id);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Category deleted successfully'
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Category not found'
-            ], 404);
+                'message' => 'An error occurred while deleting the category',
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ], 500);
         }
-
-        // Check if category has subcategories
-        if ($category->subcategories()->count() > 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Cannot delete category with subcategories'
-            ], 422);
-        }
-
-        // Check if category has products
-        if ($category->products()->count() > 0) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Cannot delete category with products'
-            ], 422);
-        }
-
-        // Delete category
-        $this->categoryRepository->delete($id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Category deleted successfully'
-        ]);
     }
 }

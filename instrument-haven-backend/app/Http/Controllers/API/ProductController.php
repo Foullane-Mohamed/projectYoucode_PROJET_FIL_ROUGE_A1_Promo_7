@@ -7,6 +7,7 @@ use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
@@ -78,48 +79,49 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'specifications' => 'nullable|array',
-            'brand' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
         try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'required|string|max:255',
+                'description' => 'required|string',
+                'price' => 'required|numeric|min:0',
+                'stock' => 'required|integer|min:0',
+                'category_id' => 'required|exists:categories,id',
+                'images' => 'nullable|array',
+                'specifications' => 'nullable',
+                'attributes' => 'nullable',
+                'brand' => 'nullable|string',
+                'is_active' => 'nullable|boolean',
+                'on_sale' => 'nullable|boolean',
+                'sale_price' => 'nullable|numeric|min:0',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
             $data = $request->all();
             
-            // Handle image uploads
-            if ($request->hasFile('images')) {
-                $uploadedImages = [];
-                
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('products', 'public');
-                    $uploadedImages[] = $path;
-                }
-                
-                $data['images'] = $uploadedImages;
-            }
-            
-            // Convert specifications from JSON string if necessary
+            // Ensure specifications and attributes are properly handled
             if (isset($data['specifications']) && is_string($data['specifications'])) {
                 $data['specifications'] = json_decode($data['specifications'], true);
             }
             
-            // Convert attributes from JSON string if necessary
             if (isset($data['attributes']) && is_string($data['attributes'])) {
                 $data['attributes'] = json_decode($data['attributes'], true);
+            }
+            
+            // Set default values
+            $data['slug'] = Str::slug($data['name']);
+            $data['is_active'] = $data['is_active'] ?? true;
+            $data['on_sale'] = $data['on_sale'] ?? false;
+            
+            // Use the first image as thumbnail if available
+            if (isset($data['images']) && !empty($data['images'])) {
+                $data['thumbnail'] = $data['images'][0];
             }
             
             // Create product
@@ -137,6 +139,7 @@ class ProductController extends Controller
                 'status' => 'error',
                 'message' => 'An error occurred while creating the product',
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
@@ -150,67 +153,69 @@ class ProductController extends Controller
      */
     public function update(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'price' => 'sometimes|required|numeric|min:0',
-            'stock' => 'sometimes|required|integer|min:0',
-            'category_id' => 'sometimes|required|exists:categories,id',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'specifications' => 'nullable|array',
-            'brand' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Check if product exists
-        $product = $this->productRepository->find($id);
-
-        if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found'
-            ], 404);
-        }
-
         try {
+            $validator = Validator::make($request->all(), [
+                'name' => 'sometimes|required|string|max:255',
+                'description' => 'sometimes|required|string',
+                'price' => 'sometimes|required|numeric|min:0',
+                'stock' => 'sometimes|required|integer|min:0',
+                'category_id' => 'sometimes|required|exists:categories,id',
+                'images' => 'nullable|array',
+                'specifications' => 'nullable',
+                'attributes' => 'nullable',
+                'brand' => 'nullable|string',
+                'is_active' => 'nullable|boolean',
+                'on_sale' => 'nullable|boolean',
+                'sale_price' => 'nullable|numeric|min:0',
+                'replace_images' => 'nullable|boolean',
+            ]);
+
+            if ($validator->fails()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Validation failed',
+                    'errors' => $validator->errors()
+                ], 422);
+            }
+
+            // Check if product exists
+            $product = $this->productRepository->find($id);
+
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ], 404);
+            }
+
             $data = $request->all();
             
-            // Handle image uploads
-            if ($request->hasFile('images')) {
-                $uploadedImages = [];
-                
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('products', 'public');
-                    $uploadedImages[] = $path;
-                }
-                
+            // Update slug if name is changed
+            if (isset($data['name']) && $data['name'] !== $product->name) {
+                $data['slug'] = Str::slug($data['name']);
+            }
+            
+            // Handle images from JSON
+            if ($request->has('images')) {
                 // Check if we should replace or append images
                 if ($request->input('replace_images', false)) {
-                    $data['images'] = $uploadedImages;
-                    $data['replace_images'] = true;
+                    // Just use the provided images array
+                    if (!empty($data['images'])) {
+                        $data['thumbnail'] = $data['images'][0];
+                    }
                 } else {
                     // If product already has images, we'll append to them
                     if (isset($product->images) && is_array($product->images)) {
-                        $data['images'] = array_merge($product->images, $uploadedImages);
-                    } else {
-                        $data['images'] = $uploadedImages;
+                        $data['images'] = array_merge($product->images, $data['images']);
                     }
                 }
             }
             
-            // Convert specifications from JSON string if necessary
+            // Make sure specifications and attributes are arrays
             if (isset($data['specifications']) && is_string($data['specifications'])) {
                 $data['specifications'] = json_decode($data['specifications'], true);
             }
             
-            // Convert attributes from JSON string if necessary
             if (isset($data['attributes']) && is_string($data['attributes'])) {
                 $data['attributes'] = json_decode($data['attributes'], true);
             }
@@ -231,6 +236,7 @@ class ProductController extends Controller
                 'status' => 'error',
                 'message' => 'An error occurred while updating the product',
                 'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ], 500);
         }
     }
