@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { AuthContext } from '../../context/AuthContext';
@@ -26,6 +27,7 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const from = location.state?.from?.pathname || '/';
@@ -33,23 +35,37 @@ const Login = () => {
   const handleSubmit = async (values) => {
     setLoading(true);
     setError('');
+    setSuccess('');
     
     try {
-      console.log('Attempting login with:', values.email);
+      // Get CSRF token before login attempt
+      try {
+        await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/csrf-cookie`, {
+          withCredentials: true
+        });
+      } catch (csrfError) {
+        console.error('CSRF token request error:', csrfError);
+        // Continue anyway, as the interceptor might handle it
+      }
+      
       const result = await login(values.email, values.password);
-      console.log('Login result:', result);
       
       if (result.success) {
-
+        setSuccess(result.message || 'Login successful');
+        // Delay redirect slightly to show success message
         setTimeout(() => {
           navigate(from, { replace: true });
-        }, 500);
+        }, 800);
       } else {
         setError(result.message || 'Login failed. Please check your credentials.');
       }
     } catch (err) {
       console.error('Login form error:', err);
-      setError('An unexpected error occurred. Please try again.');
+      if (err.response?.status === 419) {
+        setError('CSRF token mismatch. Please refresh the page and try again.');
+      } else {
+        setError(err.response?.data?.message || 'An unexpected error occurred. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -66,6 +82,12 @@ const Login = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
+            </Alert>
+          )}
+          
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {success}
             </Alert>
           )}
           

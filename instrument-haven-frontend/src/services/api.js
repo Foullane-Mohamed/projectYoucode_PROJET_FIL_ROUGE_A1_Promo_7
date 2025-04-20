@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+// Use environment variable or fallback to the base URL in the API documentation
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
 const api = axios.create({
@@ -12,13 +13,47 @@ const api = axios.create({
   withCredentials: true
 });
 
+// Log API URL during initialization to verify correct URL
+console.log('API URL:', API_URL);
+
+
+// Function to get CSRF token
+async function getCsrfToken() {
+  try {
+    await axios.get(`${API_URL}/csrf-cookie`, {
+      withCredentials: true
+    });
+    console.log('CSRF cookie requested');
+  } catch (error) {
+    console.error('Error getting CSRF token:', error);
+    toast.error('Failed to set up secure session. Please refresh the page.');
+  }
+}
+
+// Call getCsrfToken on initial load
+getCsrfToken();
+
 
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    // For login/register requests, get a fresh CSRF token first
+    if (
+      (config.url === '/auth/login' || config.url === '/auth/register') &&
+      (config.method === 'post' || config.method === 'POST')
+    ) {
+      await getCsrfToken();
+    }
+    
     const token = localStorage.getItem('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
+    
+    // Log request details when in development
+    if (import.meta.env.DEV) {
+      console.log(`Request: ${config.method.toUpperCase()} ${config.url}`, config);
+    }
+    
     return config;
   },
   (error) => {
@@ -29,17 +64,28 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    // Ensure we have a properly formatted response according to API documentation
     if (response.data === null || response.data === undefined) {
       return {
         ...response,
-        data: { status: 'success', data: [] }
+        data: { status: 'success', data: {} }
       };
     }
     return response;
   },
   (error) => {
+    // Handle network errors (CORS issues often appear as network errors)
+    if (!error.response) {
+      console.error('Network Error:', error.message);
+      toast.error('Network error. This could be due to CORS issues or server unavailability. Please check your connection and try again.');
+      return Promise.reject(error);
+    }
+
     if (error.response) {
       const { status, data } = error.response;
+      
+      // Log the error details for debugging
+      console.error(`API Error (${status}):`, data);
       
       if (status === 401) {
         localStorage.removeItem('token');
@@ -48,9 +94,11 @@ api.interceptors.response.use(
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
+      } else if (status === 403) {
+        toast.error('Access forbidden. You may not have permission to perform this action.');
+      } else if (status === 429) {
+        toast.error('Too many requests. Please try again later.');
       }
-    } else if (error.request) {
-      toast.error('Network error. Please check your connection and try again.');
     }
     return Promise.reject(error);
   }
@@ -78,14 +126,15 @@ const productsAPI = {
   },
   getByCategory: (categoryId) => {
     console.log('Getting products by category:', categoryId);
-    return api.get(`/categories/${categoryId}`, { params: { include: 'products' } });
+    return api.get(`/categories/${categoryId}`);
   },
   search: (query) => {
-
+    // Properly format search params according to API documentation
     const params = typeof query === 'string' ? { search: query } : query;
     console.log('Searching products with params:', params);
     return api.get('/products', { params });
   },
+  // Admin operations
   create: (formData) => api.post('/admin/products', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),

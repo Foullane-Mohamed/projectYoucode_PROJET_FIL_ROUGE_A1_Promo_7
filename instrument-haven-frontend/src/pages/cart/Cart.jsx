@@ -1,7 +1,8 @@
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
+import { toast } from 'react-toastify';
 import {
   Container,
   Typography,
@@ -34,23 +35,40 @@ import {
 } from '@mui/icons-material';
 
 const Cart = () => {
-  const { cart, totalItems, totalPrice, updateQuantity, removeFromCart, clearCart } = useContext(CartContext);
+  const { cart, totalItems, loading, error, updateQuantity, removeFromCart, clearCart, applyCoupon, removeCoupon } = useContext(CartContext);
   const { user } = useContext(AuthContext);
   const navigate = useNavigate();
   
   const [couponCode, setCouponCode] = useState('');
-  const [couponApplied, setCouponApplied] = useState(false);
-  const [discount, setDiscount] = useState(0);
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
   const [clearCartDialogOpen, setClearCartDialogOpen] = useState(false);
+  const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
 
-  const handleApplyCoupon = () => {
-    // This would normally be implemented with an API call
-    if (couponCode.toLowerCase() === 'welcome10') {
-      setCouponApplied(true);
-      setDiscount(totalPrice * 0.1);
-    } else {
-      setCouponApplied(false);
-      setDiscount(0);
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Please enter a coupon code');
+      return;
+    }
+    
+    setApplyingCoupon(true);
+    try {
+      const result = await applyCoupon(couponCode);
+      if (!result) {
+        // The error is already handled in the context with toast
+      }
+      setCouponCode('');
+    } catch (err) {
+      toast.error('Failed to apply coupon');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+  
+  const handleRemoveCoupon = async () => {
+    try {
+      await removeCoupon();
+    } catch (err) {
+      toast.error('Failed to remove coupon');
     }
   };
 
@@ -75,7 +93,7 @@ const Cart = () => {
     setClearCartDialogOpen(false);
   };
 
-  if (cart.length === 0) {
+  if (!cart.items || cart.items.length === 0) {
     return (
       <Container maxWidth="md" sx={{ py: 8 }}>
         <Box
@@ -128,7 +146,7 @@ const Cart = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {cart.map((item) => (
+                {cart.items && cart.items.map((item) => (
                   <TableRow key={item.id}>
                     <TableCell>
                       <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -144,11 +162,11 @@ const Cart = () => {
                         >
                           <img
                             src={
-                              item.image
-                                ? `${process.env.REACT_APP_API_URL}/storage/${item.image}`
+                              item.product?.thumbnail
+                                ? `${storageUrl}/${item.product.thumbnail}`
                                 : '/placeholder.png'
                             }
-                            alt={item.name}
+                            alt={item.product?.name || 'Product'}
                             style={{
                               width: '100%',
                               height: '100%',
@@ -157,19 +175,34 @@ const Cart = () => {
                           />
                         </Box>
                         <Box>
-                          <Typography variant="subtitle1" component={Link} to={`/products/${item.id}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
-                            {item.name}
+                          <Typography variant="subtitle1" component={Link} to={`/products/${item.product_id}`} sx={{ textDecoration: 'none', color: 'inherit' }}>
+                            {item.product?.name || 'Product'}
                           </Typography>
                         </Box>
                       </Box>
                     </TableCell>
-                    <TableCell align="right">${item.price.toFixed(2)}</TableCell>
+                    <TableCell align="right">
+                      {item.product?.on_sale && item.product?.sale_price ? (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" sx={{ textDecoration: 'line-through' }}>
+                            ${Number(item.product.price).toFixed(2)}
+                          </Typography>
+                          <Typography variant="body1" color="error">
+                            ${Number(item.product.sale_price).toFixed(2)}
+                          </Typography>
+                        </Box>
+                      ) : (
+                        <Typography variant="body1">
+                          ${Number(item.price).toFixed(2)}
+                        </Typography>
+                      )}
+                    </TableCell>
                     <TableCell align="center">
                       <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <IconButton
                           size="small"
                           onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          disabled={item.quantity <= 1}
+                          disabled={item.quantity <= 1 || loading}
                         >
                           <Remove fontSize="small" />
                         </IconButton>
@@ -182,20 +215,23 @@ const Cart = () => {
                           }}
                           onChange={(e) => updateQuantity(item.id, parseInt(e.target.value) || 1)}
                           sx={{ width: 60, mx: 1 }}
+                          disabled={loading}
                         />
                         <IconButton
                           size="small"
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                          disabled={loading}
                         >
                           <Add fontSize="small" />
                         </IconButton>
                       </Box>
                     </TableCell>
-                    <TableCell align="right">${(item.price * item.quantity).toFixed(2)}</TableCell>
+                    <TableCell align="right">${Number(item.total).toFixed(2)}</TableCell>
                     <TableCell align="center">
                       <IconButton
                         color="error"
                         onClick={() => removeFromCart(item.id)}
+                        disabled={loading}
                       >
                         <Delete />
                       </IconButton>
@@ -232,13 +268,26 @@ const Cart = () => {
             <Box sx={{ my: 2 }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                 <Typography variant="body1">Subtotal ({totalItems} items):</Typography>
-                <Typography variant="body1">${totalPrice.toFixed(2)}</Typography>
+                <Typography variant="body1">${Number(cart.subtotal || 0).toFixed(2)}</Typography>
               </Box>
-              {couponApplied && (
+              {cart.discount > 0 && cart.coupon && (
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body1">Discount:</Typography>
+                  <Typography variant="body1" sx={{ display: 'flex', alignItems: 'center' }}>
+                    Discount ({cart.coupon.code})
+                    {user && (
+                      <Button 
+                        size="small" 
+                        color="error" 
+                        onClick={handleRemoveCoupon}
+                        disabled={loading}
+                        sx={{ ml: 1, minWidth: 'auto', p: 0 }}
+                      >
+                        Remove
+                      </Button>
+                    )}
+                  </Typography>
                   <Typography variant="body1" color="error">
-                    -${discount.toFixed(2)}
+                    -${Number(cart.discount).toFixed(2)}
                   </Typography>
                 </Box>
               )}
@@ -253,7 +302,7 @@ const Cart = () => {
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
               <Typography variant="h6">Total:</Typography>
               <Typography variant="h6" color="primary">
-                ${(totalPrice - discount).toFixed(2)}
+                ${Number(cart.total || 0).toFixed(2)}
               </Typography>
             </Box>
             
@@ -268,14 +317,24 @@ const Cart = () => {
                   value={couponCode}
                   onChange={(e) => setCouponCode(e.target.value)}
                   placeholder="Enter coupon code"
+                  disabled={loading || applyingCoupon || !user}
                 />
-                <Button variant="outlined" onClick={handleApplyCoupon}>
-                  Apply
+                <Button 
+                  variant="outlined" 
+                  onClick={handleApplyCoupon}
+                  disabled={loading || applyingCoupon || !user || !couponCode}
+                >
+                  {applyingCoupon ? 'Applying...' : 'Apply'}
                 </Button>
               </Box>
-              {couponApplied && (
+              {cart.coupon && (
                 <Alert severity="success" sx={{ mt: 1 }}>
-                  Coupon applied successfully!
+                  Coupon "{cart.coupon.code}" applied successfully!
+                </Alert>
+              )}
+              {!user && (
+                <Alert severity="info" sx={{ mt: 1 }}>
+                  Please log in to apply coupon codes.
                 </Alert>
               )}
             </Box>

@@ -1,5 +1,6 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { AuthContext } from '../../context/AuthContext';
@@ -31,22 +32,45 @@ const Register = () => {
   const { register } = useContext(AuthContext);
   const navigate = useNavigate();
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (values) => {
     setLoading(true);
     setError('');
+    setSuccess('');
     
     try {
+      // Request CSRF token before registration
+      try {
+        await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/csrf-cookie`, {
+          withCredentials: true
+        });
+      } catch (csrfError) {
+        console.error('CSRF token request error:', csrfError);
+        // Continue anyway, as the interceptor might handle it
+      }
+      
       const result = await register(values);
       if (result.success) {
-        navigate('/', { replace: true });
+        setSuccess('Registration successful! Redirecting to home page...');
+        setTimeout(() => {
+          navigate('/', { replace: true });
+        }, 1500);
       } else {
         setError(result.message);
       }
     } catch (err) {
-      setError('An unexpected error occurred');
-      console.error(err);
+      console.error('Registration error:', err);
+      if (err.response?.status === 419) {
+        setError('CSRF token mismatch. Please refresh the page and try again.');
+      } else if (err.response?.data?.errors) {
+        // Format validation errors
+        const validationErrors = Object.values(err.response.data.errors).flat().join(', ');
+        setError(`Validation error: ${validationErrors}`);
+      } else {
+        setError(err.response?.data?.message || 'An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
@@ -63,6 +87,12 @@ const Register = () => {
           {error && (
             <Alert severity="error" sx={{ mb: 3 }}>
               {error}
+            </Alert>
+          )}
+          
+          {success && (
+            <Alert severity="success" sx={{ mb: 3 }}>
+              {success}
             </Alert>
           )}
           

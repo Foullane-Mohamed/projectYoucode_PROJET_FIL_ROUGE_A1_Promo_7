@@ -23,7 +23,9 @@ export const WishlistProvider = ({ children }) => {
     setLoading(true);
     try {
       const response = await api.wishlist.getAll();
-      setWishlist(response.data.data);
+      // Per API documentation, the wishlist is in response.data.data.wishlist
+      const wishlistData = response.data?.data?.wishlist || [];
+      setWishlist(wishlistData);
     } catch (error) {
       console.error('Error fetching wishlist:', error);
     } finally {
@@ -35,9 +37,17 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return { success: false, message: 'Please log in to add to wishlist' };
     
     try {
-      await api.wishlist.add(productId);
+      const response = await api.wishlist.add(productId);
+      // Handle the case where product is already in wishlist (returns 200 with info status)
+      if (response.data?.status === 'info' && response.data?.message === 'Product is already in wishlist') {
+        return { success: true, message: 'Product is already in wishlist' };
+      }
+      
       await fetchWishlist();
-      return { success: true, message: 'Product added to wishlist' };
+      return { 
+        success: true, 
+        message: response.data?.message || 'Product added to wishlist' 
+      };
     } catch (error) {
       return { 
         success: false, 
@@ -47,13 +57,24 @@ export const WishlistProvider = ({ children }) => {
   };
 
   const removeFromWishlist = async (productId) => {
-    if (!user) return { success: false };
+    if (!user) return { success: false, message: 'Please log in to manage wishlist' };
     
     try {
-      await api.wishlist.remove(productId);
+      const response = await api.wishlist.remove(productId);
       await fetchWishlist();
-      return { success: true, message: 'Product removed from wishlist' };
+      return { 
+        success: true, 
+        message: response.data?.message || 'Product removed from wishlist' 
+      };
     } catch (error) {
+      // Handle 404 case specifically per API documentation
+      if (error.response?.status === 404) {
+        return { 
+          success: false, 
+          message: 'Product not found in wishlist' 
+        };
+      }
+      
       return { 
         success: false, 
         message: error.response?.data?.message || 'Error removing from wishlist' 
@@ -62,7 +83,10 @@ export const WishlistProvider = ({ children }) => {
   };
 
   const isInWishlist = (productId) => {
-    return wishlist.some(item => item.product_id === productId);
+    return wishlist.some(item => {
+      // Handle both direct product_id and nested product.id structures
+      return item.product_id === productId || (item.product && item.product.id === productId);
+    });
   };
 
   return (

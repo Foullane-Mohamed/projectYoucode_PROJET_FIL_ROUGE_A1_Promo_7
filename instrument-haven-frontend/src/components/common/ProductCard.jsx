@@ -122,9 +122,11 @@ const ProductCard = ({ product }) => {
           component="img"
           height="180"
           image={
-            product.images && Array.isArray(product.images) && product.images.length > 0
-              ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
-              : '/placeholder.png'
+            product.thumbnail
+              ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
+              : (product.images && Array.isArray(product.images) && product.images.length > 0
+                ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
+                : '/placeholder.png')
           }
           alt={product.name || 'Product'}
           sx={{ objectFit: 'contain', p: 2, bgcolor: 'background.paper' }}
@@ -138,9 +140,9 @@ const ProductCard = ({ product }) => {
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Rating value={4} readOnly size="small" />
+            <Rating value={product.average_rating || 0} readOnly size="small" />
             <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
-              (24)
+              ({product.reviews ? product.reviews.length : 0})
             </Typography>
           </Box>
           
@@ -195,9 +197,24 @@ const ProductCard = ({ product }) => {
           mt: 'auto',
         }}
       >
-        <Typography variant="h6" color="primary">
-        ${(product.price ? parseFloat(product.price) : 0).toFixed(2)}
-        </Typography>
+        {product.on_sale && product.sale_price ? (
+          <Box>
+            <Typography 
+              variant="body2" 
+              color="text.secondary" 
+              sx={{ textDecoration: 'line-through' }}
+            >
+              ${(parseFloat(product.price) || 0).toFixed(2)}
+            </Typography>
+            <Typography variant="h6" color="error">
+              ${(parseFloat(product.sale_price) || 0).toFixed(2)}
+            </Typography>
+          </Box>
+        ) : (
+          <Typography variant="h6" color="primary">
+            ${(parseFloat(product.price) || 0).toFixed(2)}
+          </Typography>
+        )}
         <Button
           size="small"
           variant="contained"

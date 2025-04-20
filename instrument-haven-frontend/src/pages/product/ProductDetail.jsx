@@ -47,6 +47,7 @@ const ProductDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [currentImage, setCurrentImage] = useState(0);
+  const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -55,15 +56,25 @@ const ProductDetail = () => {
       
       try {
         const response = await api.products.getById(id);
-        const productData = response.data.data;
+        // Ensure we use the correct data structure according to API documentation
+        const productData = response.data?.data?.product || response.data?.product;
+        
+        if (!productData) {
+          setError('Product not found.');
+          return;
+        }
+        
         setProduct(productData);
         
         // Fetch related products from the same category
         if (productData.category_id) {
           try {
             const relatedResponse = await api.products.getByCategory(productData.category_id);
+            // Extract products from the category response according to API documentation
+            const categoryProducts = relatedResponse.data?.data?.category?.products || [];
+            
             setRelatedProducts(
-              relatedResponse.data.data
+              categoryProducts
                 .filter((item) => item.id !== parseInt(id))
                 .slice(0, 4)
             );
@@ -206,7 +217,7 @@ const ProductDetail = () => {
             >
               {product.images && product.images.length > 0 ? (
                 <img
-                  src={`http://localhost:8000/storage/${product.images[currentImage]}`}
+                  src={`${storageUrl}/${product.images[currentImage]}`}
                   alt={product.name}
                   style={{
                     maxWidth: '100%',
@@ -252,7 +263,7 @@ const ProductDetail = () => {
                     }}
                   >
                     <img
-                      src={`http://localhost:8000/storage/${image}`}
+                      src={`${storageUrl}/${image}`}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       style={{
                         width: '100%',
@@ -282,14 +293,34 @@ const ProductDetail = () => {
               mb: 2,
             }}
           >
-            <Rating value={4.5} precision={0.5} readOnly />
+            <Rating 
+              value={product.average_rating || 0} 
+              precision={0.5} 
+              readOnly 
+            />
             <Typography variant="body2" color="text.secondary">
-              (25 reviews)
+              ({product.reviews ? product.reviews.length : 0} reviews)
             </Typography>
           </Box>
           
-          <Typography variant="h5" color="primary" gutterBottom>
-            ${parseFloat(product.price).toFixed(2)}
+          <Typography variant="h5" gutterBottom>
+            {product.on_sale && product.sale_price ? (
+              <>
+                <Typography 
+                  component="span" 
+                  variant="h5" 
+                  color="text.secondary" 
+                  sx={{ textDecoration: 'line-through', mr: 1 }}
+                >
+                  ${parseFloat(product.price).toFixed(2)}
+                </Typography>
+                <Typography component="span" variant="h5" color="error">
+                  ${parseFloat(product.sale_price).toFixed(2)}
+                </Typography>
+              </>
+            ) : (
+              <>${parseFloat(product.price).toFixed(2)}</>
+            )}
           </Typography>
           
           <Box sx={{ my: 3 }}>
@@ -464,11 +495,40 @@ const ProductDetail = () => {
               <Typography variant="body1" gutterBottom>
                 Customer reviews for {product.name}:
               </Typography>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="body2" color="text.secondary">
-                  No reviews yet. Be the first to review this product!
-                </Typography>
-              </Box>
+              
+              {product.reviews && product.reviews.length > 0 ? (
+                <Box sx={{ mt: 2 }}>
+                  {product.reviews.map((review) => (
+                    <Paper key={review.id} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                        <Rating value={review.rating} readOnly size="small" />
+                        <Typography variant="body2" sx={{ ml: 1 }}>
+                          by {review.user_name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
+                          {new Date(review.created_at).toLocaleDateString()}
+                        </Typography>
+                      </Box>
+                      <Typography variant="body2">{review.comment}</Typography>
+                    </Paper>
+                  ))}
+                </Box>
+              ) : (
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    No reviews yet. Be the first to review this product!
+                  </Typography>
+                </Box>
+              )}
+              
+              {user && (
+                <Box sx={{ mt: 3 }}>
+                  <Typography variant="subtitle1" gutterBottom>Write a Review</Typography>
+                  <Button variant="outlined" size="small">
+                    Add Your Review
+                  </Button>
+                </Box>
+              )}
             </Box>
           )}
         </Box>
@@ -510,25 +570,43 @@ const ProductDetail = () => {
                     }}
                   >
                     <img
-                      src={
-                        relatedProduct.images && relatedProduct.images.length > 0
-                          ? `http://localhost:8000/storage/${relatedProduct.images[0]}`
-                          : '/placeholder.png'
-                      }
-                      alt={relatedProduct.name}
-                      style={{
-                        maxWidth: '100%',
-                        maxHeight: '100%',
-                        objectFit: 'contain',
-                      }}
+                    src={
+                    relatedProduct.thumbnail
+                    ? `${storageUrl}/${relatedProduct.thumbnail}`
+                    : '/placeholder.png'
+                    }
+                    alt={relatedProduct.name}
+                    style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                    }}
                     />
                   </Box>
                   <Box sx={{ p: 2 }}>
                     <Typography variant="subtitle1" noWrap>
                       {relatedProduct.name}
                     </Typography>
-                    <Typography variant="body2" color="primary" fontWeight="bold">
-                      ${parseFloat(relatedProduct.price).toFixed(2)}
+                    <Typography variant="body2" fontWeight="bold">
+                      {relatedProduct.on_sale && relatedProduct.sale_price ? (
+                        <>
+                          <Typography 
+                            component="span" 
+                            variant="body2" 
+                            color="text.secondary" 
+                            sx={{ textDecoration: 'line-through', mr: 1 }}
+                          >
+                            ${parseFloat(relatedProduct.price).toFixed(2)}
+                          </Typography>
+                          <Typography component="span" variant="body2" color="error">
+                            ${parseFloat(relatedProduct.sale_price).toFixed(2)}
+                          </Typography>
+                        </>
+                      ) : (
+                        <Typography component="span" color="primary">
+                          ${parseFloat(relatedProduct.price).toFixed(2)}
+                        </Typography>
+                      )}
                     </Typography>
                   </Box>
                 </Paper>
