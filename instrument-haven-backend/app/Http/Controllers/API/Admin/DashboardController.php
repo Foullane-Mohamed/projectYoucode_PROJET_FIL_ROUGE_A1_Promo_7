@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
+use App\Models\Category;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -34,6 +35,9 @@ class DashboardController extends Controller
         
         // Get total products
         $totalProducts = Product::count();
+        
+        // Get total categories
+        $totalCategories = Category::count();
         
         // Get total users
         $totalUsers = User::count();
@@ -86,6 +90,7 @@ class DashboardController extends Controller
                     'total_sales' => $totalSales,
                     'total_orders' => $totalOrders,
                     'total_products' => $totalProducts,
+                    'total_categories' => $totalCategories,
                     'total_users' => $totalUsers,
                     'recent_orders' => $recentOrders,
                     'sales_by_date' => [

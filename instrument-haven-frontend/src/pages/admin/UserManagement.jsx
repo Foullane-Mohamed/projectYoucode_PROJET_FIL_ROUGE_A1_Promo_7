@@ -28,19 +28,24 @@ import {
   Snackbar,
   Alert,
   Grid,
+  Avatar
 } from '@mui/material';
 import { 
   Edit as EditIcon,
-  Person as PersonIcon
+  Person as PersonIcon,
+  SupervisorAccount as AdminIcon,
+  Search as SearchIcon
 } from '@mui/icons-material';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [filteredUsers, setFilteredUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -50,6 +55,19 @@ const UserManagement = () => {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (searchTerm) {
+      const filtered = users.filter(user => 
+        user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers(users);
+    }
+    setPage(0); // Reset to first page when filtering
+  }, [searchTerm, users]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -64,7 +82,7 @@ const UserManagement = () => {
                      (Array.isArray(response.data) ? response.data : []);
       
       setUsers(usersData);
-      toast.success('Users loaded successfully');
+      setFilteredUsers(usersData);
     } catch (error) {
       console.error('Error fetching users:', error);
       toast.error('Failed to fetch users: ' + (error.response?.data?.message || 'Unknown error'));
@@ -102,6 +120,10 @@ const UserManagement = () => {
       ...currentUser,
       [name]: value
     });
+  };
+
+  const handleSearch = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   const handleSaveUser = async () => {
@@ -167,6 +189,16 @@ const UserManagement = () => {
     });
   };
 
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name
+      .split(' ')
+      .slice(0, 2)
+      .map(part => part[0])
+      .join('')
+      .toUpperCase();
+  };
+
   if (loading) {
     return (
       <Box
@@ -188,6 +220,20 @@ const UserManagement = () => {
         User Management
       </Typography>
 
+      <Box sx={{ mb: 3, display: 'flex', justifyContent: 'flex-end' }}>
+        <TextField
+          placeholder="Search users..."
+          variant="outlined"
+          size="small"
+          value={searchTerm}
+          onChange={handleSearch}
+          sx={{ width: { xs: '100%', sm: '300px' } }}
+          InputProps={{
+            startAdornment: <SearchIcon sx={{ color: 'text.secondary', mr: 1 }} />
+          }}
+        />
+      </Box>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -201,38 +247,61 @@ const UserManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {users
-              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-              .map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>{user.id}</TableCell>
-                  <TableCell>{user.name}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <Chip
-                      label={user.role}
-                      color={user.role === 'admin' ? 'primary' : 'default'}
-                      size="small"
-                      icon={<PersonIcon />}
-                    />
-                  </TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <IconButton 
-                      color="primary"
-                      onClick={() => handleOpenEditDialog(user)}
-                    >
-                      <EditIcon />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+            {filteredUsers.length > 0 ? (
+              filteredUsers
+                .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+                .map((user) => (
+                  <TableRow key={user.id}>
+                    <TableCell>{user.id}</TableCell>
+                    <TableCell>
+                      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                        <Avatar 
+                          sx={{ 
+                            mr: 1, 
+                            bgcolor: user.role === 'admin' ? 'primary.main' : 'secondary.main',
+                            width: 32,
+                            height: 32,
+                            fontSize: '0.875rem'
+                          }}
+                        >
+                          {getInitials(user.name)}
+                        </Avatar>
+                        {user.name}
+                      </Box>
+                    </TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <Chip
+                        label={user.role === 'admin' ? 'Admin' : 'Customer'}
+                        color={user.role === 'admin' ? 'primary' : 'default'}
+                        size="small"
+                        icon={user.role === 'admin' ? <AdminIcon /> : <PersonIcon />}
+                      />
+                    </TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <IconButton 
+                        color="primary"
+                        onClick={() => handleOpenEditDialog(user)}
+                      >
+                        <EditIcon />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={6} align="center">
+                  No users found
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={users.length}
+          count={filteredUsers.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
@@ -243,7 +312,17 @@ const UserManagement = () => {
       {/* User Edit Dialog */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
         <DialogTitle>
-          Edit User
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Avatar 
+              sx={{ 
+                mr: 2, 
+                bgcolor: currentUser?.role === 'admin' ? 'primary.main' : 'secondary.main'
+              }}
+            >
+              {currentUser ? getInitials(currentUser.name) : ''}
+            </Avatar>
+            Edit User
+          </Box>
         </DialogTitle>
         <DialogContent>
           {currentUser && (
@@ -283,6 +362,23 @@ const UserManagement = () => {
                     </Select>
                   </FormControl>
                 </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Phone"
+                    name="phone"
+                    value={currentUser.phone || ''}
+                    onChange={handleInputChange}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={6}>
+                  <TextField
+                    fullWidth
+                    label="Joined Date"
+                    value={new Date(currentUser.created_at).toLocaleDateString()}
+                    disabled
+                  />
+                </Grid>
                 <Grid item xs={12}>
                   <TextField
                     fullWidth
@@ -294,19 +390,12 @@ const UserManagement = () => {
                     rows={2}
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <TextField
-                    fullWidth
-                    label="Phone"
-                    name="phone"
-                    value={currentUser.phone || ''}
-                    onChange={handleInputChange}
-                  />
-                </Grid>
               </Grid>
-              <Typography variant="caption" color="info.main" sx={{ mt: 2, display: 'block' }}>
-                Note: Change user roles with caution. Admin users have full access to the system.
-              </Typography>
+              <Box sx={{ mt: 2, p: 2, bgcolor: 'info.light', borderRadius: 1 }}>
+                <Typography variant="body2" color="info.dark">
+                  Note: Change user roles with caution. Admin users have full access to the system.
+                </Typography>
+              </Box>
             </Box>
           )}
         </DialogContent>

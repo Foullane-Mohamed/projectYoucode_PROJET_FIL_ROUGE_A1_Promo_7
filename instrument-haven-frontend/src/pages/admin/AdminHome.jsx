@@ -23,6 +23,7 @@ import {
   ShoppingCart as CartIcon,
   Inventory as InventoryIcon,
   Category as CategoryIcon,
+  AttachMoney as MoneyIcon,
 } from '@mui/icons-material';
 
 const AdminHome = () => {
@@ -31,6 +32,7 @@ const AdminHome = () => {
     categories: 0,
     orders: 0,
     users: 0,
+    totalSales: 0,
     recentOrders: [],
     topProducts: [],
   });
@@ -63,31 +65,32 @@ const AdminHome = () => {
         console.log('Dashboard response:', dashboardResponse);
 
         // Extract data from the response, handling both potential formats
-        const dashboardData = dashboardResponse.data?.data || dashboardResponse.data || {};
+        const dashboardData = dashboardResponse.data?.data?.statistics || dashboardResponse.data?.statistics || {};
+        console.log('Dashboard data:', dashboardData);
         
-        // Try to fetch recent orders if not included in dashboard data
-        let recentOrders = dashboardData.recentOrders || [];
-        if (!recentOrders.length) {
+        // Try to fetch recent orders
+        let recentOrders = dashboardData.recent_orders || [];
+        if (!recentOrders.length && !dashboardData.recent_orders) {
           try {
             const ordersResponse = await api.admin.getOrders({ limit: 5 });
             console.log('Recent orders response:', ordersResponse);
             recentOrders = ordersResponse.data?.data?.orders || 
                           ordersResponse.data?.orders || 
-                          (Array.isArray(ordersResponse.data) ? ordersResponse.data : []);
+                          [];
           } catch (orderError) {
             console.warn('Could not fetch recent orders:', orderError);
           }
         }
         
-        // Try to fetch top products if not included in dashboard data
-        let topProducts = dashboardData.topProducts || [];
-        if (!topProducts.length) {
+        // Try to fetch top products
+        let topProducts = dashboardData.top_selling_products || [];
+        if (!topProducts.length && !dashboardData.top_selling_products) {
           try {
             const productsResponse = await api.products.getAll({ limit: 5, sort: 'popular' });
             console.log('Top products response:', productsResponse);
             topProducts = productsResponse.data?.data?.products || 
                          productsResponse.data?.products || 
-                         (Array.isArray(productsResponse.data) ? productsResponse.data : []);
+                         [];
           } catch (productError) {
             console.warn('Could not fetch top products:', productError);
           }
@@ -95,10 +98,11 @@ const AdminHome = () => {
         
         // Set the statistics with proper fallbacks
         setStats({
-          products: dashboardData.productCount || 0,
-          categories: dashboardData.categoryCount || 0,
-          orders: dashboardData.orderCount || 0,
-          users: dashboardData.userCount || 0,
+          products: dashboardData.total_products || 0,
+          categories: dashboardData.total_categories || 0,
+          orders: dashboardData.total_orders || 0,
+          users: dashboardData.total_users || 0,
+          totalSales: dashboardData.total_sales || 0,
           recentOrders: recentOrders,
           topProducts: topProducts
         });
@@ -148,8 +152,9 @@ const AdminHome = () => {
         Dashboard
       </Typography>
       
+      {/* Statistic Cards */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <Card 
             component={Link} 
             to="/admin/products"
@@ -175,7 +180,7 @@ const AdminHome = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <Card 
             component={Link} 
             to="/admin/categories"
@@ -201,7 +206,7 @@ const AdminHome = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <Card 
             component={Link} 
             to="/admin/orders"
@@ -227,7 +232,7 @@ const AdminHome = () => {
           </Card>
         </Grid>
         
-        <Grid item xs={12} sm={6} md={3}>
+        <Grid item xs={12} sm={6} md={3} lg={2}>
           <Card 
             component={Link} 
             to="/admin/users"
@@ -252,8 +257,33 @@ const AdminHome = () => {
             </CardContent>
           </Card>
         </Grid>
+
+        <Grid item xs={12} sm={6} md={3} lg={2}>
+          <Card 
+            sx={{ 
+              textDecoration: 'none',
+              transition: 'transform 0.2s',
+              '&:hover': { transform: 'translateY(-5px)' }
+            }}
+          >
+            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
+              <Box sx={{ mr: 2, bgcolor: 'error.light', p: 1, borderRadius: 1 }}>
+                <MoneyIcon fontSize="large" />
+              </Box>
+              <Box>
+                <Typography variant="h5" component="div">
+                  ${parseFloat(stats.totalSales || 0).toFixed(2)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Total Sales
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
       </Grid>
       
+      {/* Orders and Products Tables */}
       <Grid container spacing={3} sx={{ mt: 3 }}>
         <Grid item xs={12} md={6}>
           <Paper sx={{ p: 3 }}>
@@ -267,7 +297,6 @@ const AdminHome = () => {
                     <TableHead>
                       <TableRow>
                         <TableCell>Order ID</TableCell>
-                        <TableCell>Customer</TableCell>
                         <TableCell>Date</TableCell>
                         <TableCell>Status</TableCell>
                         <TableCell align="right">Total</TableCell>
@@ -277,7 +306,6 @@ const AdminHome = () => {
                       {stats.recentOrders.map((order) => (
                         <TableRow key={order.id}>
                           <TableCell>#{order.id}</TableCell>
-                          <TableCell>{order.user?.name || 'Unknown'}</TableCell>
                           <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
                             <Chip 
@@ -286,7 +314,7 @@ const AdminHome = () => {
                               color={getStatusColor(order.status)}
                             />
                           </TableCell>
-                          <TableCell align="right">${order.total?.toFixed(2)}</TableCell>
+                          <TableCell align="right">${parseFloat(order.total || 0).toFixed(2)}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -329,10 +357,13 @@ const AdminHome = () => {
                     </TableHead>
                     <TableBody>
                       {stats.topProducts.map((product) => (
-                        <TableRow key={product.id}>
-                          <TableCell>{product.name}</TableCell>
-                          <TableCell align="right">${product.price?.toFixed(2)}</TableCell>
-                          <TableCell align="right">{product.sales_count || 0}</TableCell>
+                        <TableRow key={product.id || product.product_id}>
+                          <TableCell>{product.name || product.product_name}</TableCell>
+                          <TableCell align="right">
+                            ${typeof product.price === 'number' ? product.price.toFixed(2) : 
+                               (typeof product.revenue === 'number' ? (product.revenue / (product.total_sold || 1)).toFixed(2) : '0.00')}
+                          </TableCell>
+                          <TableCell align="right">{product.sales_count || product.total_sold || 0}</TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

@@ -46,7 +46,6 @@ const ProductManagement = () => {
   const [dialogMode, setDialogMode] = useState('add'); // 'add' or 'edit'
   const [currentProduct, setCurrentProduct] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -85,19 +84,7 @@ const ProductManagement = () => {
                           (Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
       
       setCategories(categoriesData);
-      
-      // Fetch tags if they exist in your backend
-      try {
-        const tagsResponse = await api.admin.getTags();
-        const tagsData = tagsResponse.data?.data?.tags || 
-                      tagsResponse.data?.tags || 
-                      (Array.isArray(tagsResponse.data) ? tagsResponse.data : []);
-        
-        setTags(tagsData);
-      } catch (tagError) {
-        console.log('Tags may not be implemented in the backend:', tagError);
-        setTags([]);
-      }
+
     } catch (error) {
       console.error('Error fetching products:', error);
       toast.error('Failed to fetch products: ' + (error.response?.data?.message || 'Unknown error'));
@@ -127,8 +114,7 @@ const ProductManagement = () => {
       description: '',
       price: '',
       stock: '',
-      category_id: '',
-      tags: []
+      category_id: ''
     });
     setSelectedFiles([]);
     setFilePreview([]);
@@ -138,8 +124,7 @@ const ProductManagement = () => {
   const handleOpenEditDialog = (product) => {
     setDialogMode('edit');
     setCurrentProduct({ 
-      ...product,
-      tags: product.tags ? product.tags.map(tag => tag.id) : []
+      ...product
     });
     setSelectedFiles([]);
     setFilePreview([]);
@@ -177,12 +162,7 @@ const ProductManagement = () => {
     });
   };
 
-  const handleTagChange = (e) => {
-    setCurrentProduct({
-      ...currentProduct,
-      tags: e.target.value
-    });
-  };
+
 
   const handleSaveProduct = async () => {
     try {
@@ -206,13 +186,7 @@ const ProductManagement = () => {
         formData.append('on_sale', currentProduct.on_sale ? '1' : '0');
       }
       
-      // Append tags
-      if (currentProduct.tags && Array.isArray(currentProduct.tags) && currentProduct.tags.length) {
-        // Use tag_ids[] notation as per API documentation
-        currentProduct.tags.forEach(tagId => {
-          formData.append('tag_ids[]', tagId);
-        });
-      }
+
       
       // Append specifications if available
       if (currentProduct.specifications) {
@@ -355,7 +329,7 @@ const ProductManagement = () => {
               <TableCell>Category</TableCell>
               <TableCell>Price</TableCell>
               <TableCell>Stock</TableCell>
-              <TableCell>Tags</TableCell>
+
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -400,16 +374,7 @@ const ProductManagement = () => {
                       size="small"
                     />
                   </TableCell>
-                  <TableCell>
-                    {product.tags && product.tags.map(tag => (
-                      <Chip 
-                        key={tag.id} 
-                        label={tag.name} 
-                        size="small" 
-                        sx={{ m: 0.5 }} 
-                      />
-                    ))}
-                  </TableCell>
+
                   <TableCell>
                     <IconButton
                       color="primary"
@@ -509,23 +474,7 @@ const ProductManagement = () => {
                   </Select>
                 </FormControl>
               </Grid>
-              <Grid item xs={12}>
-                <FormControl fullWidth>
-                  <InputLabel>Tags</InputLabel>
-                  <Select
-                    multiple
-                    value={currentProduct?.tags || []}
-                    onChange={handleTagChange}
-                    label="Tags"
-                  >
-                    {tags.map((tag) => (
-                      <MenuItem key={tag.id} value={tag.id}>
-                        {tag.name}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
+
               <Grid item xs={12}>
                 <Typography variant="subtitle1" gutterBottom>
                   Product Images

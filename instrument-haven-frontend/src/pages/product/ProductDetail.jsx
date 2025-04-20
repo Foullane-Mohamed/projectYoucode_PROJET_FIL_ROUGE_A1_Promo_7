@@ -17,7 +17,6 @@ import {
   Divider,
   TextField,
   Chip,
-  Stack,
   Rating,
   IconButton,
   Alert,
@@ -350,18 +349,7 @@ const ProductDetail = () => {
               </Typography>
             )}
             
-            {product.tags && product.tags.length > 0 && (
-              <Box sx={{ mt: 1 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Tags:
-                </Typography>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                  {product.tags.map((tag) => (
-                    <Chip key={tag.id} label={tag.name} size="small" />
-                  ))}
-                </Stack>
-              </Box>
-            )}
+
           </Box>
           
           <Divider sx={{ my: 3 }} />

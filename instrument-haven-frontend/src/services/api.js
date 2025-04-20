@@ -261,19 +261,7 @@ const adminAPI = {
   },
   deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
   
-  // Tags management
-  getTags: () => {
-    try {
-      return api.get('/admin/tags');
-    } catch (error) {
-      // Attempt to use a public endpoint if admin endpoint fails
-      console.warn('Admin tags endpoint failed, falling back to public endpoint if available');
-      return api.get('/tags');
-    }
-  },
-  createTag: (data) => api.post('/admin/tags', data),
-  updateTag: (id, data) => api.put(`/admin/tags/${id}`, data),
-  deleteTag: (id) => api.delete(`/admin/tags/${id}`),
+  // Tags are not supported in the backend
 };
 
 export default {

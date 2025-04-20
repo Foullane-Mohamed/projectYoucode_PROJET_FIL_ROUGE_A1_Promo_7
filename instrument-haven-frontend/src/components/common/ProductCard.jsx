@@ -11,8 +11,6 @@ import {
   Button,
   Box,
   IconButton,
-  Chip,
-  Stack,
   CardActionArea,
   Rating,
 } from '@mui/material';
@@ -162,28 +160,7 @@ const ProductCard = ({ product }) => {
             {product.description || 'No description available'}
           </Typography>
           
-          {product.tags && product.tags.length > 0 && (
-            <Stack 
-              direction="row" 
-              spacing={0.5} 
-              sx={{ 
-                flexWrap: 'wrap', 
-                gap: 0.5, 
-                mb: 1.5,
-                height: '24px',
-                overflow: 'hidden'
-              }}
-            >
-              {product.tags.slice(0, 2).map((tag) => (
-                <Chip key={tag.id} label={tag.name} size="small" />
-              ))}
-              {product.tags.length > 2 && (
-                <Typography variant="caption" color="text.secondary">
-                  +{product.tags.length - 2} more
-                </Typography>
-              )}
-            </Stack>
-          )}
+
         </CardContent>
       </CardActionArea>
       
