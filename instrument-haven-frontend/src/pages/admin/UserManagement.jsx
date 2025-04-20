@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { toast } from 'react-toastify';
 import {
   Typography,
   Box,
@@ -57,17 +58,16 @@ const UserManagement = () => {
       const response = await api.admin.getUsers();
       console.log('Users response:', response);
       
-      // Handle different response formats
-      const usersData = Array.isArray(response.data) ? 
-        response.data : 
-        (response.data && Array.isArray(response.data.data)) ? 
-          response.data.data : 
-          (response.data && response.data.users) ? 
-            response.data.users : [];
+      // Handle different response formats according to API documentation
+      const usersData = response.data?.data?.users || 
+                     response.data?.users || 
+                     (Array.isArray(response.data) ? response.data : []);
       
       setUsers(usersData);
+      toast.success('Users loaded successfully');
     } catch (error) {
       console.error('Error fetching users:', error);
+      toast.error('Failed to fetch users: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch users. Please try again.',
@@ -106,17 +106,34 @@ const UserManagement = () => {
 
   const handleSaveUser = async () => {
     try {
+      // Validate form
+      if (!currentUser.name) {
+        toast.error('Name is required');
+        return;
+      }
+      
+      // Prepare user data - convert empty strings to null
+      const userData = {
+        ...currentUser,
+        phone: currentUser.phone || null,
+        address: currentUser.address || null
+      };
+      
       // Use the admin API to update the user
-      const response = await api.admin.updateUser(currentUser.id, currentUser);
+      const response = await api.admin.updateUser(currentUser.id, userData);
       console.log('Update user response:', response);
+      
+      // Extract user data from response according to API documentation
+      const updatedUser = response.data?.data?.user || response.data?.user || userData;
       
       // Update the user in the local state
       setUsers(prevUsers => 
         prevUsers.map(user => 
-          user.id === currentUser.id ? currentUser : user
+          user.id === updatedUser.id ? updatedUser : user
         )
       );
       
+      toast.success('User updated successfully!');
       setSnackbar({
         open: true,
         message: 'User updated successfully!',
@@ -126,6 +143,15 @@ const UserManagement = () => {
       handleCloseDialog();
     } catch (error) {
       console.error('Error updating user:', error.response?.data || error);
+      
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        toast.error(`Validation error: ${errorMessages}`);
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to update user');
+      }
+      
       setSnackbar({
         open: true,
         message: `Failed to update user: ${error.response?.data?.message || error.message || 'Unknown error'}`,
@@ -278,8 +304,8 @@ const UserManagement = () => {
                   />
                 </Grid>
               </Grid>
-              <Typography variant="caption" color="error" sx={{ mt: 2, display: 'block' }}>
-                Note: In a real application, this would update the user in the database.
+              <Typography variant="caption" color="info.main" sx={{ mt: 2, display: 'block' }}>
+                Note: Change user roles with caution. Admin users have full access to the system.
               </Typography>
             </Box>
           )}

@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react';
+import api from '../../services/api';
+import { toast } from 'react-toastify';
+import CouponForm from './components/CouponForm';
 import {
   Typography,
   Box,
@@ -31,8 +34,6 @@ import {
   Search as SearchIcon,
   FilterList as FilterIcon
 } from '@mui/icons-material';
-import CouponForm from './components/CouponForm';
-import api from '../../services/api';
 
 const CouponManagement = () => {
   const [coupons, setCoupons] = useState([]);
@@ -67,10 +68,25 @@ const CouponManagement = () => {
       };
       
       const response = await api.admin.getCoupons(params);
-      setCoupons(response.data.data);
-      setTotalCoupons(response.data.meta.total);
+      console.log('Coupons response:', response);
+      
+      // Handle different response formats according to API documentation
+      const couponsData = response.data?.data?.coupons || 
+                       response.data?.coupons || 
+                       response.data?.data || 
+                       [];
+      
+      // Get total count for pagination
+      const totalCount = response.data?.meta?.total ||
+                      response.data?.pagination?.total ||
+                      couponsData.length;
+      
+      setCoupons(couponsData);
+      setTotalCoupons(totalCount);
+      toast.success('Coupons loaded successfully');
     } catch (error) {
       console.error('Error fetching coupons:', error);
+      toast.error('Failed to fetch coupons: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch coupons. Please try again.',
@@ -124,8 +140,10 @@ const CouponManagement = () => {
 
   const handleDeleteCoupon = async () => {
     try {
-      await api.admin.deleteCoupon(couponToDelete.id);
+      const response = await api.admin.deleteCoupon(couponToDelete.id);
+      console.log('Delete coupon response:', response);
       
+      toast.success('Coupon deleted successfully!');
       setSnackbar({
         open: true,
         message: 'Coupon deleted successfully!',
@@ -136,6 +154,7 @@ const CouponManagement = () => {
       handleCloseDeleteDialog();
     } catch (error) {
       console.error('Error deleting coupon:', error);
+      toast.error('Failed to delete coupon: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to delete coupon. Please try again.',
@@ -149,13 +168,17 @@ const CouponManagement = () => {
       // Format dates for API
       const formattedCoupon = {
         ...values,
-        starts_at: values.starts_at ? values.starts_at.toISOString() : null,
-        expires_at: values.expires_at ? values.expires_at.toISOString() : null,
+        // Format dates as YYYY-MM-DD for backend compatibility
+        starts_at: values.starts_at ? values.starts_at.toISOString().split('T')[0] : null,
+        expires_at: values.expires_at ? values.expires_at.toISOString().split('T')[0] : null,
       };
 
+      let response;
       if (currentCoupon) {
         // Update existing coupon
-        await api.admin.updateCoupon(currentCoupon.id, formattedCoupon);
+        response = await api.admin.updateCoupon(currentCoupon.id, formattedCoupon);
+        console.log('Update coupon response:', response);
+        toast.success('Coupon updated successfully!');
         setSnackbar({
           open: true,
           message: 'Coupon updated successfully!',
@@ -163,7 +186,9 @@ const CouponManagement = () => {
         });
       } else {
         // Create new coupon
-        await api.admin.createCoupon(formattedCoupon);
+        response = await api.admin.createCoupon(formattedCoupon);
+        console.log('Create coupon response:', response);
+        toast.success('Coupon created successfully!');
         setSnackbar({
           open: true,
           message: 'Coupon created successfully!',
@@ -176,6 +201,15 @@ const CouponManagement = () => {
       return true; // Return success
     } catch (error) {
       console.error('Error saving coupon:', error);
+      
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        toast.error(`Validation error: ${errorMessages}`);
+      } else {
+        toast.error(error.response?.data?.message || `Failed to ${currentCoupon ? 'update' : 'create'} coupon`);
+      }
+      
       setSnackbar({
         open: true,
         message: `Failed to ${currentCoupon ? 'update' : 'create'} coupon. Please try again.`,

@@ -200,26 +200,27 @@ const cartAPI = {
 
 
 const adminAPI = {
-
+  // Dashboard statistics
   getDashboard: () => api.get('/admin/dashboard'),
   
-
+  // Users management
   getUsers: (params) => api.get('/admin/users', { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   
-
+  // Orders management
   getOrders: (params) => api.get('/admin/orders', { params }),
   updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
   getOrderStatistics: () => api.get('/admin/orders/statistics'),
   
-
+  // Coupons management
   getCoupons: (params) => api.get('/admin/coupons', { params }),
   createCoupon: (data) => api.post('/admin/coupons', data),
   updateCoupon: (id, data) => api.put(`/admin/coupons/${id}`, data),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
   
-
+  // Products management
+  getProducts: (params) => api.get('/products', { params }), // Fallback to public endpoint
   createProduct: (formData) => api.post('/admin/products', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }),
@@ -228,14 +229,51 @@ const adminAPI = {
   }),
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   
-
-  createCategory: (data) => api.post('/admin/categories', data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  updateCategory: (id, data) => api.put(`/admin/categories/${id}`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  // Categories management
+  getCategories: (params) => {
+    try {
+      return api.get('/admin/categories', { params });
+    } catch (error) {
+      // Fallback to public categories endpoint if admin endpoint fails
+      console.warn('Admin categories endpoint failed, falling back to public endpoint');
+      return api.get('/categories', { params });
+    }
+  },
+  createCategory: (data) => {
+    // If the data has files, use FormData
+    if (data instanceof FormData) {
+      return api.post('/admin/categories', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    // Otherwise, send as JSON
+    return api.post('/admin/categories', data);
+  },
+  updateCategory: (id, data) => {
+    // If the data has files, use FormData
+    if (data instanceof FormData) {
+      return api.put(`/admin/categories/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+    }
+    // Otherwise, send as JSON
+    return api.put(`/admin/categories/${id}`, data);
+  },
   deleteCategory: (id) => api.delete(`/admin/categories/${id}`),
+  
+  // Tags management
+  getTags: () => {
+    try {
+      return api.get('/admin/tags');
+    } catch (error) {
+      // Attempt to use a public endpoint if admin endpoint fails
+      console.warn('Admin tags endpoint failed, falling back to public endpoint if available');
+      return api.get('/tags');
+    }
+  },
+  createTag: (data) => api.post('/admin/tags', data),
+  updateTag: (id, data) => api.put(`/admin/tags/${id}`, data),
+  deleteTag: (id) => api.delete(`/admin/tags/${id}`),
 };
 
 export default {

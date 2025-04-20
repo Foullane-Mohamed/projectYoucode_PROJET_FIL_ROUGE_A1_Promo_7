@@ -1,6 +1,7 @@
 // src/pages/admin/TagManagement.jsx
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { toast } from 'react-toastify';
 import {
   Typography,
   Box,
@@ -50,10 +51,20 @@ const TagManagement = () => {
   const fetchTags = async () => {
     setLoading(true);
     try {
-      const response = await api.get('/tags');
-      setTags(response.data.data);
+      // Use the admin API to get tags
+      const response = await api.admin.getTags();
+      console.log('Tags response:', response);
+      
+      // Handle different response formats according to API documentation
+      const tagsData = response.data?.data?.tags || 
+                    response.data?.tags || 
+                    (Array.isArray(response.data) ? response.data : []);
+      
+      setTags(tagsData);
+      toast.success('Tags loaded successfully');
     } catch (error) {
       console.error('Error fetching tags:', error);
+      toast.error('Failed to fetch tags: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch tags. Please try again.',
@@ -100,16 +111,30 @@ const TagManagement = () => {
 
   const handleSaveTag = async () => {
     try {
+      // Validate form data
+      if (!currentTag?.name) {
+        toast.error('Tag name is required');
+        return;
+      }
+      
       let response;
       if (dialogMode === 'add') {
-        response = await api.post('/tags', currentTag);
+        // Use the admin API for creating a new tag
+        response = await api.admin.createTag(currentTag);
+        console.log('Create tag response:', response);
+        
+        toast.success('Tag created successfully!');
         setSnackbar({
           open: true,
           message: 'Tag created successfully!',
           severity: 'success'
         });
       } else {
-        response = await api.put(`/tags/${currentTag.id}`, currentTag);
+        // Use the admin API for updating a tag
+        response = await api.admin.updateTag(currentTag.id, currentTag);
+        console.log('Update tag response:', response);
+        
+        toast.success('Tag updated successfully!');
         setSnackbar({
           open: true,
           message: 'Tag updated successfully!',
@@ -121,10 +146,19 @@ const TagManagement = () => {
       fetchTags();
       handleCloseDialog();
     } catch (error) {
-      console.error('Error saving tag:', error);
+      console.error('Error saving tag:', error.response?.data || error);
+      
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        toast.error(`Validation error: ${errorMessages}`);
+      } else {
+        toast.error(error.response?.data?.message || `Failed to ${dialogMode === 'add' ? 'create' : 'update'} tag`);
+      }
+      
       setSnackbar({
         open: true,
-        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} tag. Please try again.`,
+        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} tag: ${error.response?.data?.message || error.message || 'Unknown error'}`,
         severity: 'error'
       });
     }
@@ -132,11 +166,14 @@ const TagManagement = () => {
 
   const handleDeleteTag = async () => {
     try {
-      await api.delete(`/tags/${tagToDelete.id}`);
+      // Use the admin API for deleting a tag
+      const response = await api.admin.deleteTag(tagToDelete.id);
+      console.log('Delete tag response:', response);
       
       // Filter out the deleted tag from the current list
       setTags(tags.filter(tag => tag.id !== tagToDelete.id));
       
+      toast.success('Tag deleted successfully!');
       setSnackbar({
         open: true,
         message: 'Tag deleted successfully!',
@@ -145,10 +182,16 @@ const TagManagement = () => {
       
       handleCloseDeleteDialog();
     } catch (error) {
-      console.error('Error deleting tag:', error);
+      console.error('Error deleting tag:', error.response?.data || error);
+      
+      // Provide a more specific error message based on the response
+      const errorMessage = error.response?.data?.message || 
+                         'Failed to delete tag. The tag might be in use by products.';
+      
+      toast.error(errorMessage);
       setSnackbar({
         open: true,
-        message: 'Failed to delete tag. The tag might be in use by products.',
+        message: errorMessage,
         severity: 'error'
       });
     }

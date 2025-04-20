@@ -38,7 +38,7 @@ const AdminHome = () => {
   
   // Helper function to get color based on order status
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'pending':
         return 'warning';
       case 'processing':
@@ -47,6 +47,7 @@ const AdminHome = () => {
       case 'delivered':
         return 'success';
       case 'cancelled':
+      case 'canceled':
         return 'error';
       default:
         return 'default';
@@ -64,16 +65,60 @@ const AdminHome = () => {
         // Extract data from the response, handling both potential formats
         const dashboardData = dashboardResponse.data?.data || dashboardResponse.data || {};
         
+        // Try to fetch recent orders if not included in dashboard data
+        let recentOrders = dashboardData.recentOrders || [];
+        if (!recentOrders.length) {
+          try {
+            const ordersResponse = await api.admin.getOrders({ limit: 5 });
+            console.log('Recent orders response:', ordersResponse);
+            recentOrders = ordersResponse.data?.data?.orders || 
+                          ordersResponse.data?.orders || 
+                          (Array.isArray(ordersResponse.data) ? ordersResponse.data : []);
+          } catch (orderError) {
+            console.warn('Could not fetch recent orders:', orderError);
+          }
+        }
+        
+        // Try to fetch top products if not included in dashboard data
+        let topProducts = dashboardData.topProducts || [];
+        if (!topProducts.length) {
+          try {
+            const productsResponse = await api.products.getAll({ limit: 5, sort: 'popular' });
+            console.log('Top products response:', productsResponse);
+            topProducts = productsResponse.data?.data?.products || 
+                         productsResponse.data?.products || 
+                         (Array.isArray(productsResponse.data) ? productsResponse.data : []);
+          } catch (productError) {
+            console.warn('Could not fetch top products:', productError);
+          }
+        }
+        
         // Set the statistics with proper fallbacks
         setStats({
           products: dashboardData.productCount || 0,
           categories: dashboardData.categoryCount || 0,
           orders: dashboardData.orderCount || 0,
           users: dashboardData.userCount || 0,
-          // Add more stats as needed
+          recentOrders: recentOrders,
+          topProducts: topProducts
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
+        // Try to fetch individual stats if dashboard endpoint fails
+        try {
+          const products = await api.products.getAll();
+          const categories = await api.categories.getAll();
+          const productCount = products.data?.data?.total || products.data?.meta?.total || 0;
+          const categoryCount = categories.data?.data?.categories?.length || categories.data?.categories?.length || 0;
+          
+          setStats(prev => ({
+            ...prev,
+            products: productCount,
+            categories: categoryCount
+          }));
+        } catch (fallbackError) {
+          console.error('Fallback stats fetching failed:', fallbackError);
+        }
       } finally {
         setLoading(false);
       }

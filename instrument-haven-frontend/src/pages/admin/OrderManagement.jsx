@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { toast } from 'react-toastify';
 import {
   Typography,
   Box,
@@ -44,6 +45,8 @@ const OrderManagement = () => {
     severity: 'success'
   });
 
+  const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
+  
   useEffect(() => {
     fetchOrders();
   }, []);
@@ -55,17 +58,16 @@ const OrderManagement = () => {
       const response = await api.admin.getOrders();
       console.log('Orders response:', response);
       
-      // Handle different response formats
-      const ordersData = Array.isArray(response.data) ? 
-        response.data : 
-        (response.data && Array.isArray(response.data.data)) ? 
-          response.data.data : 
-          (response.data && response.data.orders) ? 
-            response.data.orders : [];
+      // Handle different response formats according to API documentation
+      const ordersData = response.data?.data?.orders || 
+                      response.data?.orders || 
+                      (Array.isArray(response.data) ? response.data : []);
       
       setOrders(ordersData);
+      toast.success('Orders loaded successfully');
     } catch (error) {
       console.error('Error fetching orders:', error);
+      toast.error('Failed to fetch orders: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch orders. Please try again.',
@@ -91,6 +93,9 @@ const OrderManagement = () => {
       const response = await api.admin.updateOrder(orderId, { status: newStatus });
       console.log('Update order response:', response);
       
+      // Extract updated order from response according to API documentation
+      const updatedOrder = response.data?.data?.order || response.data?.order || { id: orderId, status: newStatus };
+      
       // Update orders in state
       setOrders(prevOrders => 
         prevOrders.map(order => 
@@ -106,6 +111,7 @@ const OrderManagement = () => {
         });
       }
       
+      toast.success('Order status updated successfully!');
       setSnackbar({
         open: true,
         message: 'Order status updated successfully!',
@@ -113,6 +119,7 @@ const OrderManagement = () => {
       });
     } catch (error) {
       console.error('Error updating order status:', error.response?.data || error);
+      toast.error('Failed to update order status: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: `Failed to update order status: ${error.response?.data?.message || error.message || 'Unknown error'}`,
@@ -138,7 +145,7 @@ const OrderManagement = () => {
   };
 
   const getStatusColor = (status) => {
-    switch (status) {
+    switch (status?.toLowerCase()) {
       case 'pending':
         return 'warning';
       case 'processing':
@@ -146,6 +153,7 @@ const OrderManagement = () => {
       case 'completed':
         return 'success';
       case 'cancelled':
+      case 'canceled': // Handle both spellings
         return 'error';
       default:
         return 'default';
@@ -328,9 +336,12 @@ const OrderManagement = () => {
                                     }}
                                   >
                                     <img
-                                      src={`${process.env.REACT_APP_API_URL}/storage/${item.product.images[0]}`}
+                                      src={`${storageUrl}/${item.product.thumbnail || (item.product.images && item.product.images.length > 0 ? item.product.images[0] : '')}`}
                                       alt={item.product.name}
                                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                      onError={(e) => {
+                                        e.target.src = '/placeholder.png';
+                                      }}
                                     />
                                   </Box>
                                 )}
@@ -339,9 +350,9 @@ const OrderManagement = () => {
                             )}
                           </Box>
                         </TableCell>
-                        <TableCell align="right">${item.price.toFixed(2)}</TableCell>
+                        <TableCell align="right">${parseFloat(item.price).toFixed(2)}</TableCell>
                         <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${(item.price * item.quantity).toFixed(2)}</TableCell>
+                        <TableCell align="right">${(parseFloat(item.price) * item.quantity).toFixed(2)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -351,7 +362,7 @@ const OrderManagement = () => {
                         <Typography variant="subtitle2">Total:</Typography>
                       </TableCell>
                       <TableCell align="right">
-                        <Typography variant="subtitle2">${currentOrder.total.toFixed(2)}</Typography>
+                        <Typography variant="subtitle2">${parseFloat(currentOrder.total).toFixed(2)}</Typography>
                       </TableCell>
                     </TableRow>
                   </TableBody>

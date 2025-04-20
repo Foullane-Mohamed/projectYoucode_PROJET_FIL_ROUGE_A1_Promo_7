@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
+import { toast } from 'react-toastify';
 import {
   Typography,
   Box,
@@ -54,6 +55,7 @@ const ProductManagement = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [filePreview, setFilePreview] = useState([]);
+  const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
 
   useEffect(() => {
     fetchProducts();
@@ -62,15 +64,14 @@ const ProductManagement = () => {
   const fetchProducts = async () => {
     setLoading(true);
     try {
-      // Use the products API to get all products
-      const response = await api.products.getAll();
+      // Use the admin API to get all products
+      const response = await api.admin.getProducts();
       console.log('Products response:', response);
       
-      // Handle different response formats
-      const productsData = Array.isArray(response.data) ? 
-        response.data : 
-        (response.data && Array.isArray(response.data.data)) ? 
-          response.data.data : [];
+      // Handle different response formats based on API documentation
+      const productsData = response.data?.data?.products || 
+                        response.data?.products || 
+                        (Array.isArray(response.data) ? response.data : []);
       
       setProducts(productsData);
       
@@ -78,21 +79,19 @@ const ProductManagement = () => {
       const categoriesResponse = await api.categories.getAll();
       console.log('Categories response:', categoriesResponse);
       
-      // Handle different response formats
-      const categoriesData = Array.isArray(categoriesResponse.data) ? 
-        categoriesResponse.data : 
-        (categoriesResponse.data && Array.isArray(categoriesResponse.data.data)) ? 
-          categoriesResponse.data.data : [];
+      // Handle different response formats based on API documentation
+      const categoriesData = categoriesResponse.data?.data?.categories || 
+                          categoriesResponse.data?.categories || 
+                          (Array.isArray(categoriesResponse.data) ? categoriesResponse.data : []);
       
       setCategories(categoriesData);
       
       // Fetch tags if they exist in your backend
       try {
-        const tagsResponse = await api.get('/tags');
-        const tagsData = Array.isArray(tagsResponse.data) ? 
-          tagsResponse.data : 
-          (tagsResponse.data && Array.isArray(tagsResponse.data.data)) ? 
-            tagsResponse.data.data : [];
+        const tagsResponse = await api.admin.getTags();
+        const tagsData = tagsResponse.data?.data?.tags || 
+                      tagsResponse.data?.tags || 
+                      (Array.isArray(tagsResponse.data) ? tagsResponse.data : []);
         
         setTags(tagsData);
       } catch (tagError) {
@@ -101,6 +100,7 @@ const ProductManagement = () => {
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+      toast.error('Failed to fetch products: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch products. Please try again.',
@@ -186,6 +186,7 @@ const ProductManagement = () => {
 
   const handleSaveProduct = async () => {
     try {
+      // Create a FormData object to handle file uploads
       const formData = new FormData();
       
       // Append text fields
@@ -199,10 +200,17 @@ const ProductManagement = () => {
         formData.append('brand', currentProduct.brand);
       }
       
+      // Handle sale price and on_sale status
+      if (currentProduct.sale_price) {
+        formData.append('sale_price', currentProduct.sale_price);
+        formData.append('on_sale', currentProduct.on_sale ? '1' : '0');
+      }
+      
       // Append tags
-      if (currentProduct.tags && currentProduct.tags.length) {
+      if (currentProduct.tags && Array.isArray(currentProduct.tags) && currentProduct.tags.length) {
+        // Use tag_ids[] notation as per API documentation
         currentProduct.tags.forEach(tagId => {
-          formData.append('tags[]', tagId);
+          formData.append('tag_ids[]', tagId);
         });
       }
       
@@ -224,9 +232,10 @@ const ProductManagement = () => {
       }
       
       let response;
-      // Use the admin API for product creation
+      // Use the admin API for product operations
       if (dialogMode === 'add') {
         response = await api.admin.createProduct(formData);
+        toast.success('Product created successfully!');
         setSnackbar({
           open: true,
           message: 'Product created successfully!',
@@ -236,11 +245,12 @@ const ProductManagement = () => {
         // For edit mode
         if (selectedFiles.length > 0) {
           // Option to replace all existing images
-          formData.append('replace_images', true);
+          formData.append('replace_images', 'true');
         }
         
         // Use the admin API for product update
         response = await api.admin.updateProduct(currentProduct.id, formData);
+        toast.success('Product updated successfully!');
         setSnackbar({
           open: true,
           message: 'Product updated successfully!',
@@ -248,14 +258,23 @@ const ProductManagement = () => {
         });
       }
       
+      console.log('Product saved response:', response);
       // Refresh the product list
       fetchProducts();
       handleCloseDialog();
     } catch (error) {
       console.error('Error saving product:', error.response?.data || error);
+      // Handle validation errors
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        toast.error(`Validation error: ${errorMessages}`);
+      } else {
+        toast.error(error.response?.data?.message || 'Failed to save product');
+      }
+      
       setSnackbar({
         open: true,
-        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} product: ${error.response?.data?.message || error.message}`,
+        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} product: ${error.response?.data?.message || error.message || 'Unknown error'}`,
         severity: 'error'
       });
     }
@@ -264,11 +283,13 @@ const ProductManagement = () => {
   const handleDeleteProduct = async () => {
     try {
       // Use the admin API for product deletion
-      await api.admin.deleteProduct(productToDelete.id);
+      const response = await api.admin.deleteProduct(productToDelete.id);
+      console.log('Delete product response:', response);
       
       // Filter out the deleted product from the current list
       setProducts(products.filter(product => product.id !== productToDelete.id));
       
+      toast.success('Product deleted successfully!');
       setSnackbar({
         open: true,
         message: 'Product deleted successfully!',
@@ -278,6 +299,7 @@ const ProductManagement = () => {
       handleCloseDeleteDialog();
     } catch (error) {
       console.error('Error deleting product:', error);
+      toast.error(error.response?.data?.message || 'Failed to delete product');
       setSnackbar({
         open: true,
         message: `Failed to delete product: ${error.response?.data?.message || 'Unknown error'}`,
@@ -354,18 +376,23 @@ const ProductManagement = () => {
                     >
                       <img
                         src={
-                          product.images && product.images.length > 0
-                            ? `${process.env.REACT_APP_API_URL}/storage/${product.images[0]}`
-                            : '/placeholder.png'
+                          product.thumbnail
+                            ? `${storageUrl}/${product.thumbnail}`
+                            : (product.images && product.images.length > 0
+                              ? `${storageUrl}/${product.images[0]}`
+                              : '/placeholder.png')
                         }
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.src = '/placeholder.png';
+                        }}
                       />
                     </Box>
                   </TableCell>
                   <TableCell>{product.name}</TableCell>
                   <TableCell>{product.category?.name || 'N/A'}</TableCell>
-                  <TableCell>${product.price.toFixed(2)}</TableCell>
+                  <TableCell>${parseFloat(product.price).toFixed(2)}</TableCell>
                   <TableCell>
                     <Chip
                       label={product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
@@ -547,10 +574,13 @@ const ProductManagement = () => {
                             overflow: 'hidden',
                           }}
                         >
-                          <img
-                            src={`${process.env.REACT_APP_API_URL}/storage/${image}`}
+                        <img
+                            src={`${storageUrl}/${image}`}
                             alt={`Current ${index + 1}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              e.target.src = '/placeholder.png';
+                            }}
                           />
                         </Box>
                       ))}
