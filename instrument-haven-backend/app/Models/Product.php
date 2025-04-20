@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Product extends Model
 {
@@ -19,16 +20,13 @@ class Product extends Model
         'slug',
         'description',
         'price',
+        'sale_price',
         'stock',
-        'category_id',
-        'images',
         'thumbnail',
-        'specifications',
-        'attributes',
+        'category_id',
+        'brand',
         'is_active',
         'on_sale',
-        'sale_price',
-        'brand',
     ];
 
     /**
@@ -37,8 +35,8 @@ class Product extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'price' => 'decimal:2',
-        'sale_price' => 'decimal:2',
+        'price' => 'float',
+        'sale_price' => 'float',
         'stock' => 'integer',
         'is_active' => 'boolean',
         'on_sale' => 'boolean',
@@ -48,7 +46,23 @@ class Product extends Model
     ];
 
     /**
-     * Get the category that owns the product.
+     * Boot function to set the slug
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($product) {
+            $product->slug = $product->slug ?? Str::slug($product->name);
+        });
+
+        static::updating(function ($product) {
+            $product->slug = $product->slug ?? Str::slug($product->name);
+        });
+    }
+
+    /**
+     * Get the category that owns the product
      */
     public function category()
     {
@@ -56,7 +70,7 @@ class Product extends Model
     }
 
     /**
-     * Get the product's reviews.
+     * Get the reviews for the product
      */
     public function reviews()
     {
@@ -64,58 +78,42 @@ class Product extends Model
     }
 
     /**
-     * Get the product's tags.
+     * Get the average rating for the product
      */
-    public function tags()
+    public function getAverageRatingAttribute()
     {
-        return $this->belongsToMany(Tag::class);
+        return $this->reviews()->avg('rating') ?? 0;
     }
 
     /**
-     * Get the product's wishlists.
+     * Get the wishlist entries for the product
      */
-    public function wishlists()
+    public function wishlistItems()
     {
         return $this->hasMany(Wishlist::class);
     }
 
     /**
-     * Check if the product is in stock.
+     * Get the cart items for the product
      */
-    public function inStock()
+    public function cartItems()
     {
-        return $this->stock > 0;
+        return $this->hasMany(CartItem::class);
     }
 
     /**
-     * Get the average rating for the product.
+     * Get the order items for the product
      */
-    public function getAverageRatingAttribute()
+    public function orderItems()
     {
-        return $this->reviews()->avg('rating') ?: 0;
+        return $this->hasMany(OrderItem::class);
     }
-
+    
     /**
-     * Scope a query to only include active products.
+     * Get the tags for the product
      */
-    public function scopeActive($query)
+    public function tags()
     {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Scope a query to only include products on sale.
-     */
-    public function scopeOnSale($query)
-    {
-        return $query->where('on_sale', true);
-    }
-
-    /**
-     * Scope a query to only include products in stock.
-     */
-    public function scopeInStock($query)
-    {
-        return $query->where('stock', '>', 0);
+        return $this->belongsToMany(Tag::class);
     }
 }

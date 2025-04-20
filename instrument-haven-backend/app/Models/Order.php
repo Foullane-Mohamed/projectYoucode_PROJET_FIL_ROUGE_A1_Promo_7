@@ -15,24 +15,21 @@ class Order extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'order_number',
         'user_id',
+        'order_number',
+        'status',
+        'payment_method',
+        'payment_status',
+        'payment_id',
         'subtotal',
         'discount',
-        'discount_code',
-        'shipping_fee',
+        'coupon_code',
+        'tax',
+        'shipping_cost',
         'total',
-        'status',
-        'tracking_number',
-        'carrier',
         'shipping_address',
-        'shipping_address_json',
-        'payment_method',
-        'payment_id',
-        'payment_status',
-        'shipping_method',
-        'cancel_reason',
-        'coupon_id',
+        'billing_address',
+        'tracking_number',
     ];
 
     /**
@@ -41,15 +38,17 @@ class Order extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'subtotal' => 'decimal:2',
-        'discount' => 'decimal:2',
-        'shipping_fee' => 'decimal:2',
-        'total' => 'decimal:2',
-        'shipping_address_json' => 'array',
+        'subtotal' => 'float',
+        'discount' => 'float',
+        'tax' => 'float',
+        'shipping_cost' => 'float',
+        'total' => 'float',
+        'shipping_address' => 'array',
+        'billing_address' => 'array',
     ];
 
     /**
-     * Get the user that owns the order.
+     * Get the user that owns the order
      */
     public function user()
     {
@@ -57,7 +56,7 @@ class Order extends Model
     }
 
     /**
-     * Get the items for the order.
+     * Get the items for the order
      */
     public function items()
     {
@@ -65,48 +64,90 @@ class Order extends Model
     }
 
     /**
-     * Get the coupon for the order.
-     */
-    public function coupon()
-    {
-        return $this->belongsTo(Coupon::class);
-    }
-
-    /**
-     * Get the user's name for the order.
-     */
-    public function getUserNameAttribute()
-    {
-        return $this->user->name;
-    }
-
-    /**
-     * Get the items count for the order.
+     * Get the items count for the order
      */
     public function getItemsCountAttribute()
     {
-        return $this->items->count();
+        return $this->items->sum('quantity');
     }
 
     /**
-     * Check if the order is cancellable.
-     */
-    public function isCancellable()
-    {
-        return in_array($this->status, ['pending', 'processing']);
-    }
-
-    /**
-     * Generate a unique order number.
+     * Generate order number
      */
     public static function generateOrderNumber()
     {
-        $date = now()->format('Ymd');
-        $lastOrder = self::whereDate('created_at', today())
-            ->orderBy('id', 'desc')
-            ->first();
+        $prefix = 'ORD-';
+        $number = mt_rand(100000, 999999);
+        
+        while (self::where('order_number', $prefix . $number)->exists()) {
+            $number = mt_rand(100000, 999999);
+        }
+        
+        return $prefix . $number;
+    }
 
-        $number = $lastOrder ? intval(substr($lastOrder->order_number, -3)) + 1 : 1;
-        return 'ORD-' . $date . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
+    /**
+     * Create order from cart
+     */
+    public static function createFromCart($userId, $paymentMethod, $paymentId, $shippingAddress, $billingAddress)
+    {
+        $user = User::findOrFail($userId);
+        $cart = $user->cart;
+        
+        if (!$cart || $cart->items->isEmpty()) {
+            throw new \Exception('Cart is empty.');
+        }
+        
+        $order = new self([
+            'user_id' => $userId,
+            'order_number' => self::generateOrderNumber(),
+            'status' => 'processing',
+            'payment_method' => $paymentMethod,
+            'payment_status' => 'paid',
+            'payment_id' => $paymentId,
+            'subtotal' => $cart->subtotal,
+            'discount' => $cart->discount,
+            'coupon_code' => $cart->coupon ? $cart->coupon->code : null,
+            'tax' => $cart->subtotal * 0.06, // 6% tax
+            'shipping_cost' => 10.00, // Fixed shipping cost
+            'total' => $cart->total + ($cart->subtotal * 0.06) + 10.00,
+            'shipping_address' => $shippingAddress,
+            'billing_address' => $billingAddress,
+        ]);
+        
+        $order->save();
+        
+        // Create order items
+        foreach ($cart->items as $cartItem) {
+            $orderItem = new OrderItem([
+                'order_id' => $order->id,
+                'product_id' => $cartItem->product_id,
+                'product_name' => $cartItem->product->name,
+                'product_slug' => $cartItem->product->slug,
+                'quantity' => $cartItem->quantity,
+                'price' => $cartItem->price,
+                'total' => $cartItem->total,
+            ]);
+            
+            $order->items()->save($orderItem);
+            
+            // Update product stock
+            $product = $cartItem->product;
+            $product->stock -= $cartItem->quantity;
+            $product->save();
+        }
+        
+        // Update coupon usage count if used
+        if ($cart->coupon) {
+            $cart->coupon->usage_count += 1;
+            $cart->coupon->save();
+        }
+        
+        // Clear cart
+        $cart->items()->delete();
+        $cart->coupon_id = null;
+        $cart->save();
+        
+        return $order;
     }
 }

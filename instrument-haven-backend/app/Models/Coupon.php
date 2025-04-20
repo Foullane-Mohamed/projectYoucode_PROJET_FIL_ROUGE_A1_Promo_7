@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Carbon\Carbon;
 
 class Coupon extends Model
 {
@@ -17,15 +16,15 @@ class Coupon extends Model
      */
     protected $fillable = [
         'code',
-        'discount',
-        'type',
-        'min_purchase',
-        'start_date',
-        'end_date',
+        'discount_type',
+        'discount_value',
+        'min_order_amount',
+        'max_discount_amount',
+        'starts_at',
+        'expires_at',
+        'is_active',
         'usage_limit',
         'usage_count',
-        'description',
-        'is_active',
     ];
 
     /**
@@ -34,97 +33,49 @@ class Coupon extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'discount' => 'decimal:2',
-        'min_purchase' => 'decimal:2',
-        'start_date' => 'datetime',
-        'end_date' => 'datetime',
+        'discount_value' => 'float',
+        'min_order_amount' => 'float',
+        'max_discount_amount' => 'float',
+        'is_active' => 'boolean',
         'usage_limit' => 'integer',
         'usage_count' => 'integer',
-        'is_active' => 'boolean',
+        'starts_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     /**
-     * Get the orders that used this coupon.
+     * Get the carts that belong to the coupon
      */
-    public function orders()
+    public function carts()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Cart::class);
     }
 
     /**
-     * Check if the coupon is valid for the cart.
-     *
-     * @param Cart $cart
-     * @return bool
+     * Check if coupon is valid
      */
-    public function isValidForCart(Cart $cart)
+    public function isValid($subtotal = null)
     {
         // Check if coupon is active
         if (!$this->is_active) {
             return false;
         }
-
-        // Check if coupon has started
-        if ($this->start_date && $this->start_date->isFuture()) {
-            return false;
-        }
-
+        
         // Check if coupon has expired
-        if ($this->end_date && $this->end_date->isPast()) {
+        if ($this->starts_at > now() || $this->expires_at < now()) {
             return false;
         }
-
-        // Check if coupon has reached usage limit
-        if ($this->usage_limit > 0 && $this->usage_count >= $this->usage_limit) {
+        
+        // Check if usage limit has been reached
+        if ($this->usage_limit && $this->usage_count >= $this->usage_limit) {
             return false;
         }
-
-        // Check if cart meets minimum purchase requirement
-        if ($this->min_purchase > 0 && $cart->subtotal < $this->min_purchase) {
+        
+        // Check if minimum order amount is reached
+        if ($subtotal !== null && $this->min_order_amount && $subtotal < $this->min_order_amount) {
             return false;
         }
-
+        
         return true;
-    }
-
-    /**
-     * Calculate the discount amount for a cart.
-     *
-     * @param Cart $cart
-     * @return float
-     */
-    public function calculateDiscountForCart(Cart $cart)
-    {
-        if ($this->type === 'percentage') {
-            return round(($cart->subtotal * $this->discount) / 100, 2);
-        }
-
-        return min($this->discount, $cart->subtotal);
-    }
-
-    /**
-     * Get the coupon status (active, expired, upcoming).
-     */
-    public function getStatusAttribute()
-    {
-        if (!$this->is_active) {
-            return 'inactive';
-        }
-
-        $now = Carbon::now();
-        
-        if ($this->start_date && $this->start_date->isFuture()) {
-            return 'upcoming';
-        }
-        
-        if ($this->end_date && $this->end_date->isPast()) {
-            return 'expired';
-        }
-        
-        if ($this->usage_limit > 0 && $this->usage_count >= $this->usage_limit) {
-            return 'depleted';
-        }
-        
-        return 'active';
     }
 }

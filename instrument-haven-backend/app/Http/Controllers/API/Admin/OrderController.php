@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Order;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -17,30 +18,55 @@ class OrderController extends Controller
     }
 
     /**
-     * Display a listing of orders.
+     * Display a listing of the orders.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $perPage = $request->input('per_page', 15);
-        $filters = $request->only(['search', 'status', 'from_date', 'to_date']);
+        $page = $request->input('page', 1);
+        $status = $request->input('status');
+        $search = $request->input('search');
         
-        $orders = $this->orderRepository->getWithFilters($filters, $perPage);
-
+        $query = Order::with('user:id,name');
+        
+        // Apply status filter if provided
+        if ($status) {
+            $query->where('status', $status);
+        }
+        
+        // Apply search if provided
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('order_number', 'like', "%{$search}%")
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%");
+                  });
+            });
+        }
+        
+        $orders = $query->paginate($perPage);
+        
+        // Format the response
+        $formattedOrders = $orders->map(function ($order) {
+            return [
+                'id' => $order->id,
+                'order_number' => $order->order_number,
+                'user_id' => $order->user_id,
+                'user_name' => $order->user->name,
+                'status' => $order->status,
+                'payment_status' => $order->payment_status,
+                'total' => $order->total,
+                'created_at' => $order->created_at
+            ];
+        });
+        
         return response()->json([
             'status' => 'success',
             'data' => [
-                'orders' => $orders->items(),
+                'orders' => $formattedOrders,
                 'pagination' => [
                     'total' => $orders->total(),
                     'per_page' => $orders->perPage(),
@@ -54,102 +80,74 @@ class OrderController extends Controller
     }
 
     /**
-     * Update the specified order's status.
+     * Update the specified order.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $validator = Validator::make($request->all(), [
             'status' => 'required|string|in:pending,processing,shipped,delivered,cancelled',
-            'tracking_number' => 'nullable|string|max:255',
-            'carrier' => 'nullable|string|max:255',
+            'payment_status' => 'nullable|string|in:pending,paid,failed,refunded',
+            'tracking_number' => 'nullable|string'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        // Check if order exists
-        $order = $this->orderRepository->find($id);
-
-        if (!$order) {
+        try {
+            $this->orderRepository->updateStatus(
+                $id,
+                $request->status,
+                $request->payment_status,
+                $request->tracking_number
+            );
+            
+            $order = $this->orderRepository->find($id);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Order updated successfully',
+                'data' => [
+                    'order' => [
+                        'id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'payment_status' => $order->payment_status,
+                        'tracking_number' => $order->tracking_number,
+                        'updated_at' => $order->updated_at
+                    ]
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Order not found'
             ], 404);
         }
-
-        // Update order status
-        $result = $this->orderRepository->updateStatus($id, $request->all());
-
-        if (!$result) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Failed to update order status'
-            ], 400);
-        }
-
-        // Get updated order
-        $order = $this->orderRepository->find($id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Order updated successfully',
-            'data' => [
-                'order' => [
-                    'id' => $order->id,
-                    'status' => $order->status,
-                    'tracking_number' => $order->tracking_number,
-                    'carrier' => $order->carrier,
-                    'updated_at' => $order->updated_at
-                ]
-            ]
-        ]);
     }
 
     /**
-     * Get order statistics for dashboard.
+     * Get order statistics.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\Response
      */
-    public function statistics(Request $request)
+    public function statistics()
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        $timeframe = $request->input('timeframe', 'month');
-        $allowedTimeframes = ['today', 'week', 'month', 'year', 'all'];
+        $statistics = $this->orderRepository->getStatistics();
         
-        if (!in_array($timeframe, $allowedTimeframes)) {
-            $timeframe = 'month';
-        }
-        
-        $statistics = $this->orderRepository->getStatistics($timeframe);
-
         return response()->json([
             'status' => 'success',
-            'data' => $statistics
+            'data' => [
+                'statistics' => $statistics
+            ]
         ]);
     }
 }

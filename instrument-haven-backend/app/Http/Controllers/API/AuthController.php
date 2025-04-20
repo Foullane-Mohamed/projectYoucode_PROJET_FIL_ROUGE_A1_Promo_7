@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
@@ -22,26 +22,33 @@ class AuthController extends Controller
     /**
      * Register a new user
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers()
+                    ->symbols()
+            ],
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        $user = $this->userRepository->create([
+        $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
@@ -63,8 +70,8 @@ class AuthController extends Controller
     /**
      * Login user
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function login(Request $request)
     {
@@ -76,24 +83,25 @@ class AuthController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        if (!Auth::attempt($request->only('email', 'password'))) {
+        $user = $this->userRepository->findByEmail($request->email);
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Invalid credentials'
             ], 401);
         }
 
-        $user = $this->userRepository->findByEmail($request->email);
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'message' => 'Logged in successfully',
+            'message' => 'Login successful',
             'data' => [
                 'user' => $user,
                 'token' => $token
@@ -102,26 +110,10 @@ class AuthController extends Controller
     }
 
     /**
-     * Logout user
+     * Get authenticated user
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()->delete();
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Successfully logged out'
-        ]);
-    }
-
-    /**
-     * Get authenticated user details
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function user(Request $request)
     {
@@ -136,42 +128,54 @@ class AuthController extends Controller
     /**
      * Update user profile
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function updateProfile(Request $request)
     {
-        $user = $request->user();
-        
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
-            'password' => 'sometimes|string|min:8|confirmed',
+            'name' => 'string|max:255',
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'city' => 'nullable|string|max:100',
+            'state' => 'nullable|string|max:100',
+            'zip_code' => 'nullable|string|max:20',
+            'country' => 'nullable|string|max:100',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        $userData = $request->only(['name', 'email']);
-        
-        if ($request->has('password')) {
-            $userData['password'] = Hash::make($request->password);
-        }
-        
-        $this->userRepository->update($user->id, $userData);
-        $updatedUser = $this->userRepository->find($user->id);
-        
+        $user = $request->user();
+        $this->userRepository->update($request->all(), $user->id);
+
         return response()->json([
             'status' => 'success',
             'message' => 'Profile updated successfully',
             'data' => [
-                'user' => $updatedUser
+                'user' => $this->userRepository->find($user->id)
             ]
+        ]);
+    }
+
+    /**
+     * Logout user
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function logout(Request $request)
+    {
+        $request->user()->tokens()->delete();
+
+        return response()->json([
+            'status' => 'success',
+            'message' => 'Logged out successfully'
         ]);
     }
 }

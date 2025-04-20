@@ -2,67 +2,59 @@
 
 namespace App\Repositories\Interfaces;
 
-interface OrderRepositoryInterface extends BaseRepositoryInterface
+interface OrderRepositoryInterface extends RepositoryInterface
 {
     /**
-     * Get orders with filters
-     *
-     * @param array $filters
-     * @param int $perPage
+     * Get orders by user id
+     * 
+     * @param int $userId
      * @return mixed
      */
-    public function getWithFilters(array $filters, int $perPage = 15);
-
+    public function getByUserId($userId);
+    
     /**
-     * Get order with details
-     *
+     * Get order with items
+     * 
      * @param int $id
      * @return mixed
      */
-    public function getWithDetails(int $id);
-
-    /**
-     * Get orders for user
-     *
-     * @param int $userId
-     * @param array $filters
-     * @param int $perPage
-     * @return mixed
-     */
-    public function getForUser(int $userId, array $filters = [], int $perPage = 10);
-
+    public function getWithItems($id);
+    
     /**
      * Create order from cart
-     *
+     * 
      * @param int $userId
-     * @param array $orderData
+     * @param string $paymentMethod
+     * @param string $paymentId
+     * @param array $shippingAddress
+     * @param array $billingAddress
      * @return mixed
      */
-    public function createFromCart(int $userId, array $orderData);
-
-    /**
-     * Cancel order
-     *
-     * @param int $orderId
-     * @param string $reason
-     * @return mixed
-     */
-    public function cancelOrder(int $orderId, string $reason);
-
+    public function createFromCart($userId, $paymentMethod, $paymentId, $shippingAddress, $billingAddress);
+    
     /**
      * Update order status
-     *
-     * @param int $orderId
-     * @param array $data
+     * 
+     * @param int $id
+     * @param string $status
+     * @param string $paymentStatus
+     * @param string $trackingNumber
      * @return mixed
      */
-    public function updateStatus(int $orderId, array $data);
-
+    public function updateStatus($id, $status, $paymentStatus = null, $trackingNumber = null);
+    
+    /**
+     * Cancel order
+     * 
+     * @param int $id
+     * @return mixed
+     */
+    public function cancelOrder($id);
+    
     /**
      * Get order statistics
-     *
-     * @param string $timeframe
+     * 
      * @return mixed
      */
-    public function getStatistics(string $timeframe = 'month');
+    public function getStatistics();
 }

@@ -4,32 +4,37 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Repositories\Interfaces\ReviewRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
     protected $productRepository;
+    protected $reviewRepository;
 
-    public function __construct(ProductRepositoryInterface $productRepository)
-    {
+    public function __construct(
+        ProductRepositoryInterface $productRepository,
+        ReviewRepositoryInterface $reviewRepository
+    ) {
         $this->productRepository = $productRepository;
+        $this->reviewRepository = $reviewRepository;
     }
 
     /**
      * Display a listing of the products.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 15);
-        $products = $this->productRepository->getWithFilters($request->all(), $perPage);
+        $filters = $request->only([
+            'per_page', 'page', 'category_id', 'search', 'price_min', 'price_max', 'sort_by', 'sort_direction'
+        ]);
 
-        // Consistent response format matching frontend expectations
+        $products = $this->productRepository->filter($filters);
+
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -49,184 +54,22 @@ class ProductController extends Controller
     /**
      * Display the specified product.
      *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function show($id)
     {
-        $product = $this->productRepository->getWithDetails($id);
-
-        if (!$product) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Product not found'
-            ], 404);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'product' => $product
-            ]
-        ]);
-    }
-
-    /**
-     * Store a newly created product in storage.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function store(Request $request)
-    {
         try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'required|string|max:255',
-                'description' => 'required|string',
-                'price' => 'required|numeric|min:0',
-                'stock' => 'required|integer|min:0',
-                'category_id' => 'required|exists:categories,id',
-                'images' => 'nullable|array',
-                'specifications' => 'nullable',
-                'attributes' => 'nullable',
-                'brand' => 'nullable|string',
-                'is_active' => 'nullable|boolean',
-                'on_sale' => 'nullable|boolean',
-                'sale_price' => 'nullable|numeric|min:0',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            $data = $request->all();
+            $product = $this->productRepository->find($id);
             
-            // Ensure specifications and attributes are properly handled
-            if (isset($data['specifications']) && is_string($data['specifications'])) {
-                $data['specifications'] = json_decode($data['specifications'], true);
-            }
+            // Load relationships
+            $product->load(['category', 'reviews.user', 'tags']);
             
-            if (isset($data['attributes']) && is_string($data['attributes'])) {
-                $data['attributes'] = json_decode($data['attributes'], true);
-            }
+            // Add average rating
+            $product->average_rating = $product->getAverageRatingAttribute();
             
-            // Set default values
-            $data['slug'] = Str::slug($data['name']);
-            $data['is_active'] = $data['is_active'] ?? true;
-            $data['on_sale'] = $data['on_sale'] ?? false;
-            
-            // Use the first image as thumbnail if available
-            if (isset($data['images']) && !empty($data['images'])) {
-                $data['thumbnail'] = $data['images'][0];
-            }
-            
-            // Create product
-            $product = $this->productRepository->create($data);
-
             return response()->json([
                 'status' => 'success',
-                'message' => 'Product created successfully',
-                'data' => [
-                    'product' => $product
-                ]
-            ], 201);
-        } catch (\Exception $e) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'An error occurred while creating the product',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
-        }
-    }
-
-    /**
-     * Update the specified product in storage.
-     *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function update(Request $request, $id)
-    {
-        try {
-            $validator = Validator::make($request->all(), [
-                'name' => 'sometimes|required|string|max:255',
-                'description' => 'sometimes|required|string',
-                'price' => 'sometimes|required|numeric|min:0',
-                'stock' => 'sometimes|required|integer|min:0',
-                'category_id' => 'sometimes|required|exists:categories,id',
-                'images' => 'nullable|array',
-                'specifications' => 'nullable',
-                'attributes' => 'nullable',
-                'brand' => 'nullable|string',
-                'is_active' => 'nullable|boolean',
-                'on_sale' => 'nullable|boolean',
-                'sale_price' => 'nullable|numeric|min:0',
-                'replace_images' => 'nullable|boolean',
-            ]);
-
-            if ($validator->fails()) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Validation failed',
-                    'errors' => $validator->errors()
-                ], 422);
-            }
-
-            // Check if product exists
-            $product = $this->productRepository->find($id);
-
-            if (!$product) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Product not found'
-                ], 404);
-            }
-
-            $data = $request->all();
-            
-            // Update slug if name is changed
-            if (isset($data['name']) && $data['name'] !== $product->name) {
-                $data['slug'] = Str::slug($data['name']);
-            }
-            
-            // Handle images from JSON
-            if ($request->has('images')) {
-                // Check if we should replace or append images
-                if ($request->input('replace_images', false)) {
-                    // Just use the provided images array
-                    if (!empty($data['images'])) {
-                        $data['thumbnail'] = $data['images'][0];
-                    }
-                } else {
-                    // If product already has images, we'll append to them
-                    if (isset($product->images) && is_array($product->images)) {
-                        $data['images'] = array_merge($product->images, $data['images']);
-                    }
-                }
-            }
-            
-            // Make sure specifications and attributes are arrays
-            if (isset($data['specifications']) && is_string($data['specifications'])) {
-                $data['specifications'] = json_decode($data['specifications'], true);
-            }
-            
-            if (isset($data['attributes']) && is_string($data['attributes'])) {
-                $data['attributes'] = json_decode($data['attributes'], true);
-            }
-            
-            // Update product
-            $this->productRepository->update($id, $data);
-            $product = $this->productRepository->find($id);
-
-            return response()->json([
-                'status' => 'success',
-                'message' => 'Product updated successfully',
                 'data' => [
                     'product' => $product
                 ]
@@ -234,37 +77,183 @@ class ProductController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'An error occurred while updating the product',
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ], 500);
+                'message' => 'Product not found'
+            ], 404);
         }
     }
 
     /**
-     * Remove the specified product from storage.
+     * Get reviews for a product
      *
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $productId
+     * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function getReviews($productId)
     {
-        // Check if product exists
-        $product = $this->productRepository->find($id);
-
-        if (!$product) {
+        try {
+            $reviews = $this->reviewRepository->getByProductId($productId);
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'reviews' => $reviews
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Product not found'
             ], 404);
         }
+    }
 
-        // Delete product
-        $this->productRepository->delete($id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Product deleted successfully'
+    /**
+     * Create a review for a product
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $productId
+     * @return \Illuminate\Http\Response
+     */
+    public function createReview(Request $request, $productId)
+    {
+        $validator = Validator::make($request->all(), [
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
         ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $this->productRepository->find($productId);
+            
+            $review = $this->reviewRepository->createOrUpdate(
+                $request->user()->id,
+                $productId,
+                $request->rating,
+                $request->comment
+            );
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Review added successfully',
+                'data' => [
+                    'review' => $review
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Product not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Update a review for a product
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $productId
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function updateReview(Request $request, $productId, $id)
+    {
+        $validator = Validator::make($request->all(), [
+            'rating' => 'required|integer|min:1|max:5',
+            'comment' => 'nullable|string|max:1000',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        try {
+            $review = $this->reviewRepository->find($id);
+            
+            if ($review->user_id !== $request->user()->id) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+            
+            if ($review->product_id != $productId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Review does not belong to this product'
+                ], 400);
+            }
+            
+            $review = $this->reviewRepository->createOrUpdate(
+                $request->user()->id,
+                $productId,
+                $request->rating,
+                $request->comment
+            );
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Review updated successfully',
+                'data' => [
+                    'review' => $review
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Review not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Delete a review for a product
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $productId
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function deleteReview(Request $request, $productId, $id)
+    {
+        try {
+            $review = $this->reviewRepository->find($id);
+            
+            if ($review->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+            
+            if ($review->product_id != $productId) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Review does not belong to this product'
+                ], 400);
+            }
+            
+            $this->reviewRepository->delete($id);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Review deleted successfully'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Review not found'
+            ], 404);
+        }
     }
 }

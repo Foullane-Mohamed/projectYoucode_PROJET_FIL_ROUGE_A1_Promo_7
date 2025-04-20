@@ -17,19 +17,25 @@ class CartController extends Controller
     }
 
     /**
-     * Display the cart for the authenticated user.
+     * Get the user's cart.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function getCart(Request $request)
     {
-        $cart = $this->cartRepository->getForUser($request->user()->id);
-
+        $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+        
         return response()->json([
             'status' => 'success',
             'data' => [
-                'cart' => $cart
+                'cart' => [
+                    'items' => $cart->items,
+                    'subtotal' => $cart->subtotal,
+                    'discount' => $cart->discount,
+                    'coupon' => $cart->coupon,
+                    'total' => $cart->total
+                ]
             ]
         ]);
     }
@@ -37,36 +43,46 @@ class CartController extends Controller
     /**
      * Add an item to the cart.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function addItem(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required|integer|exists:products,id',
             'quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $result = $this->cartRepository->addItem(
+            $this->cartRepository->addItem(
                 $request->user()->id,
                 $request->product_id,
                 $request->quantity
             );
-
+            
+            $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+            
             return response()->json([
                 'status' => 'success',
-                'message' => 'Item added to cart successfully',
-                'data' => $result
-            ], 201);
+                'message' => 'Product added to cart',
+                'data' => [
+                    'cart' => [
+                        'items' => $cart->items,
+                        'subtotal' => $cart->subtotal,
+                        'discount' => $cart->discount,
+                        'coupon' => $cart->coupon,
+                        'total' => $cart->total
+                    ]
+                ]
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -76,79 +92,96 @@ class CartController extends Controller
     }
 
     /**
-     * Update cart item quantity.
+     * Update an item quantity.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function updateItem(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'quantity' => 'required|integer|min:0',
+            'quantity' => 'required|integer|min:1',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $result = $this->cartRepository->updateItemQuantity(
+            $this->cartRepository->updateItemQuantity(
                 $request->user()->id,
                 $id,
                 $request->quantity
             );
-
+            
+            $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+            
             return response()->json([
                 'status' => 'success',
-                'message' => 'Cart item updated successfully',
-                'data' => $result
+                'message' => 'Cart item updated',
+                'data' => [
+                    'cart' => [
+                        'items' => $cart->items,
+                        'subtotal' => $cart->subtotal,
+                        'discount' => $cart->discount,
+                        'coupon' => $cart->coupon,
+                        'total' => $cart->total
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+                'message' => 'Cart item not found'
+            ], 404);
         }
     }
 
     /**
      * Remove an item from the cart.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function removeItem(Request $request, $id)
     {
         try {
-            $result = $this->cartRepository->removeItem(
-                $request->user()->id,
-                $id
-            );
-
+            $this->cartRepository->removeItem($request->user()->id, $id);
+            
+            $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+            
             return response()->json([
                 'status' => 'success',
-                'message' => 'Item removed from cart successfully',
-                'data' => $result
+                'message' => 'Item removed from cart',
+                'data' => [
+                    'cart' => [
+                        'items' => $cart->items,
+                        'subtotal' => $cart->subtotal,
+                        'discount' => $cart->discount,
+                        'coupon' => $cart->coupon,
+                        'total' => $cart->total
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+                'message' => 'Cart item not found'
+            ], 404);
         }
     }
 
     /**
      * Apply a coupon to the cart.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function applyCoupon(Request $request)
     {
@@ -159,21 +192,28 @@ class CartController extends Controller
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
         try {
-            $result = $this->cartRepository->applyCoupon(
-                $request->user()->id,
-                $request->code
-            );
-
+            $this->cartRepository->applyCoupon($request->user()->id, $request->code);
+            
+            $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Coupon applied successfully',
-                'data' => $result
+                'data' => [
+                    'cart' => [
+                        'items' => $cart->items,
+                        'subtotal' => $cart->subtotal,
+                        'discount' => $cart->discount,
+                        'coupon' => $cart->coupon,
+                        'total' => $cart->total
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
@@ -186,20 +226,28 @@ class CartController extends Controller
     /**
      * Remove the coupon from the cart.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function removeCoupon(Request $request)
     {
         try {
-            $result = $this->cartRepository->removeCoupon(
-                $request->user()->id
-            );
-
+            $this->cartRepository->removeCoupon($request->user()->id);
+            
+            $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
+            
             return response()->json([
                 'status' => 'success',
-                'message' => 'Coupon removed successfully',
-                'data' => $result
+                'message' => 'Coupon removed',
+                'data' => [
+                    'cart' => [
+                        'items' => $cart->items,
+                        'subtotal' => $cart->subtotal,
+                        'discount' => $cart->discount,
+                        'coupon' => $cart->coupon,
+                        'total' => $cart->total
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -18,8 +18,7 @@ class CartItem extends Model
         'cart_id',
         'product_id',
         'quantity',
-        'unit_price',
-        'subtotal',
+        'price',
     ];
 
     /**
@@ -28,13 +27,12 @@ class CartItem extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'unit_price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
         'quantity' => 'integer',
+        'price' => 'float',
     ];
 
     /**
-     * Get the cart that owns the item.
+     * Get the cart that owns the cart item
      */
     public function cart()
     {
@@ -42,7 +40,7 @@ class CartItem extends Model
     }
 
     /**
-     * Get the product associated with the cart item.
+     * Get the product that owns the cart item
      */
     public function product()
     {
@@ -50,40 +48,10 @@ class CartItem extends Model
     }
 
     /**
-     * Get the product name.
+     * Get the total for the cart item
      */
-    public function getProductNameAttribute()
+    public function getTotalAttribute()
     {
-        return $this->product->name;
-    }
-
-    /**
-     * Get the product thumbnail.
-     */
-    public function getThumbnailAttribute()
-    {
-        return $this->product->thumbnail;
-    }
-
-    /**
-     * Calculate the subtotal.
-     */
-    protected static function booted()
-    {
-        static::creating(function ($cartItem) {
-            $cartItem->subtotal = $cartItem->unit_price * $cartItem->quantity;
-        });
-
-        static::updating(function ($cartItem) {
-            $cartItem->subtotal = $cartItem->unit_price * $cartItem->quantity;
-        });
-
-        static::saved(function ($cartItem) {
-            $cartItem->cart->recalculate();
-        });
-
-        static::deleted(function ($cartItem) {
-            $cartItem->cart->recalculate();
-        });
+        return $this->quantity * $this->price;
     }
 }

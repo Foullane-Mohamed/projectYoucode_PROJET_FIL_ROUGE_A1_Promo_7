@@ -18,10 +18,10 @@ class OrderItem extends Model
         'order_id',
         'product_id',
         'product_name',
+        'product_slug',
         'quantity',
-        'unit_price',
-        'subtotal',
-        'thumbnail',
+        'price',
+        'total',
     ];
 
     /**
@@ -30,13 +30,13 @@ class OrderItem extends Model
      * @var array<string, string>
      */
     protected $casts = [
-        'unit_price' => 'decimal:2',
-        'subtotal' => 'decimal:2',
         'quantity' => 'integer',
+        'price' => 'float',
+        'total' => 'float',
     ];
 
     /**
-     * Get the order that owns the item.
+     * Get the order that owns the order item
      */
     public function order()
     {
@@ -44,7 +44,7 @@ class OrderItem extends Model
     }
 
     /**
-     * Get the product associated with the order item.
+     * Get the product that owns the order item
      */
     public function product()
     {

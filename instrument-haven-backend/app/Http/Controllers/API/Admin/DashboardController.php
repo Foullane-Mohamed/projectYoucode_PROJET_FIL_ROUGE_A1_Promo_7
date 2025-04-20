@@ -7,63 +7,93 @@ use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
-use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
     protected $orderRepository;
-    protected $productRepository;
 
-    public function __construct(
-        OrderRepositoryInterface $orderRepository,
-        ProductRepositoryInterface $productRepository
-    ) {
+    public function __construct(OrderRepositoryInterface $orderRepository)
+    {
         $this->orderRepository = $orderRepository;
-        $this->productRepository = $productRepository;
     }
 
     /**
-     * Get dashboard statistics.
+     * Get dashboard statistics
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @return \Illuminate\Http\Response
      */
-    public function index(Request $request)
+    public function statistics()
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
+        // Get total sales
+        $totalSales = Order::sum('total');
+        
+        // Get total orders
+        $totalOrders = Order::count();
+        
+        // Get total products
+        $totalProducts = Product::count();
+        
+        // Get total users
+        $totalUsers = User::count();
+        
+        // Get recent orders
+        $recentOrders = Order::orderBy('created_at', 'desc')
+            ->take(5)
+            ->get(['id', 'order_number', 'total', 'status', 'created_at']);
+        
+        // Get sales by date for the last 7 days
+        $salesByDate = Order::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(total) as total')
+            )
+            ->whereDate('created_at', '>=', now()->subDays(7))
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get()
+            ->mapWithKeys(function ($item) {
+                return [$item->date => $item->total];
+            });
+        
+        // Fill in missing dates
+        $labels = [];
+        $data = [];
+        
+        for ($i = 6; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $labels[] = $date;
+            $data[] = $salesByDate[$date] ?? 0;
         }
-
-        // Get counts for dashboard
-        $productCount = Product::count();
-        $userCount = User::count();
-        $orderCount = Order::count();
-        $categoryCount = DB::table('categories')->count();
-
-        // Get recent orders for display
-        $recentOrders = Order::with('user')
-            ->orderBy('created_at', 'desc')
+        
+        // Get top selling products
+        $topSellingProducts = DB::table('order_items')
+            ->select(
+                'product_id',
+                'product_name',
+                DB::raw('SUM(quantity) as total_sold'),
+                DB::raw('SUM(total) as revenue')
+            )
+            ->groupBy('product_id', 'product_name')
+            ->orderBy('total_sold', 'desc')
             ->take(5)
             ->get();
-
-        // Get top selling products
-        $topProducts = $this->productRepository->getTopSelling(5);
-
+        
         return response()->json([
             'status' => 'success',
             'data' => [
-                'productCount' => $productCount,
-                'userCount' => $userCount,
-                'orderCount' => $orderCount,
-                'categoryCount' => $categoryCount,
-                'recentOrders' => $recentOrders,
-                'topProducts' => $topProducts
+                'statistics' => [
+                    'total_sales' => $totalSales,
+                    'total_orders' => $totalOrders,
+                    'total_products' => $totalProducts,
+                    'total_users' => $totalUsers,
+                    'recent_orders' => $recentOrders,
+                    'sales_by_date' => [
+                        'labels' => $labels,
+                        'data' => $data
+                    ],
+                    'top_selling_products' => $topSellingProducts
+                ]
             ]
         ]);
     }

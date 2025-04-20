@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Category extends Model
 {
@@ -16,28 +17,38 @@ class Category extends Model
      */
     protected $fillable = [
         'name',
+        'slug',
         'description',
         'image',
         'parent_id',
-        'slug',
-        'meta_title',
-        'meta_description',
-        'position',
-        'is_active',
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
+     * Boot function to set the slug
      */
-    protected $casts = [
-        'is_active' => 'boolean',
-        'position' => 'integer',
-    ];
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($category) {
+            $category->slug = $category->slug ?? Str::slug($category->name);
+        });
+
+        static::updating(function ($category) {
+            $category->slug = $category->slug ?? Str::slug($category->name);
+        });
+    }
 
     /**
-     * Get the parent category.
+     * Get the products for the category
+     */
+    public function products()
+    {
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Get the parent category
      */
     public function parent()
     {
@@ -45,7 +56,7 @@ class Category extends Model
     }
 
     /**
-     * Get the subcategories.
+     * Get the subcategories
      */
     public function subcategories()
     {
@@ -53,18 +64,10 @@ class Category extends Model
     }
 
     /**
-     * Get all nested subcategories.
+     * Get the product count for the category
      */
-    public function allSubcategories()
+    public function getProductCountAttribute()
     {
-        return $this->subcategories()->with('allSubcategories');
-    }
-
-    /**
-     * Get all products within this category.
-     */
-    public function products()
-    {
-        return $this->hasMany(Product::class);
+        return $this->products()->count();
     }
 }

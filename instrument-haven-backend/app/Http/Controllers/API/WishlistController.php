@@ -3,35 +3,29 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Models\Wishlist;
+use App\Repositories\Interfaces\WishlistRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
 class WishlistController extends Controller
 {
+    protected $wishlistRepository;
+
+    public function __construct(WishlistRepositoryInterface $wishlistRepository)
+    {
+        $this->wishlistRepository = $wishlistRepository;
+    }
+
     /**
-     * Display the wishlist for the authenticated user.
+     * Get the user's wishlist.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        $wishlist = Wishlist::with('product')
-            ->where('user_id', $request->user()->id)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'product_name' => $item->product_name,
-                    'price' => $item->price,
-                    'thumbnail' => $item->thumbnail,
-                    'in_stock' => $item->in_stock,
-                    'added_at' => $item->added_at
-                ];
-            });
-
+        $wishlist = $this->wishlistRepository->getByUserId($request->user()->id);
+        
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -43,98 +37,68 @@ class WishlistController extends Controller
     /**
      * Add a product to the wishlist.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required|integer|exists:products,id',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        // Check if product is already in wishlist
-        $existingItem = Wishlist::where('user_id', $request->user()->id)
-            ->where('product_id', $request->product_id)
-            ->first();
+        $wishlistItem = $this->wishlistRepository->addProduct(
+            $request->user()->id,
+            $request->product_id
+        );
 
-        if ($existingItem) {
+        if (!$wishlistItem) {
             return response()->json([
-                'status' => 'success',
-                'message' => 'Product already in wishlist',
-                'data' => [
-                    'wishlist_item' => [
-                        'id' => $existingItem->id,
-                        'product_id' => $existingItem->product_id,
-                        'product_name' => $existingItem->product_name,
-                        'price' => $existingItem->price,
-                        'thumbnail' => $existingItem->thumbnail,
-                        'in_stock' => $existingItem->in_stock,
-                        'added_at' => $existingItem->added_at
-                    ]
-                ]
+                'status' => 'info',
+                'message' => 'Product is already in wishlist'
             ]);
         }
-
-        // Add product to wishlist
-        $wishlistItem = Wishlist::create([
-            'user_id' => $request->user()->id,
-            'product_id' => $request->product_id,
-        ]);
-
-        $wishlistItem->load('product');
-
+        
         return response()->json([
             'status' => 'success',
-            'message' => 'Product added to wishlist successfully',
+            'message' => 'Product added to wishlist',
             'data' => [
-                'wishlist_item' => [
-                    'id' => $wishlistItem->id,
-                    'product_id' => $wishlistItem->product_id,
-                    'product_name' => $wishlistItem->product_name,
-                    'price' => $wishlistItem->price,
-                    'thumbnail' => $wishlistItem->thumbnail,
-                    'in_stock' => $wishlistItem->in_stock,
-                    'added_at' => $wishlistItem->added_at
-                ]
+                'wishlist_item' => $wishlistItem
             ]
-        ], 201);
+        ]);
     }
 
     /**
      * Remove a product from the wishlist.
      *
-     * @param Request $request
-     * @param int $productId
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $productId
+     * @return \Illuminate\Http\Response
      */
     public function destroy(Request $request, $productId)
     {
-        // Check if product is in wishlist
-        $wishlistItem = Wishlist::where('user_id', $request->user()->id)
-            ->where('product_id', $productId)
-            ->first();
+        $removed = $this->wishlistRepository->removeProduct(
+            $request->user()->id,
+            $productId
+        );
 
-        if (!$wishlistItem) {
+        if (!$removed) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Product not found in wishlist'
             ], 404);
         }
-
-        // Remove product from wishlist
-        $wishlistItem->delete();
-
+        
         return response()->json([
             'status' => 'success',
-            'message' => 'Product removed from wishlist successfully'
+            'message' => 'Product removed from wishlist'
         ]);
     }
 }

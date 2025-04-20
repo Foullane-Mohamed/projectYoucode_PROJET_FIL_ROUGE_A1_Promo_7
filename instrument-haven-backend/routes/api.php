@@ -1,52 +1,67 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\Api\CartController;
-use App\Http\Controllers\Api\CategoryController;
-use App\Http\Controllers\Api\ContactController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\ReviewController;
-use App\Http\Controllers\Api\WishlistController;
-use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
-use App\Http\Controllers\Api\Admin\DashboardController;
-use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
-use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\CategoryController;
+use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\WishlistController;
+use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\Api\ContactController;
+use App\Http\Controllers\Api\Admin\DashboardController;
+use App\Http\Controllers\Api\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Api\Admin\OrderController as AdminOrderController;
+use App\Http\Controllers\Api\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Api\Admin\CategoryController as AdminCategoryController;
+use App\Http\Controllers\Api\Admin\CouponController as AdminCouponController;
 
-/**
- * Public routes
- */
-Route::prefix('v1')->group(function () {
-    // Auth
-    Route::post('/auth/register', [AuthController::class, 'register']);
-    Route::post('/auth/login', [AuthController::class, 'login']);
+/*
+|--------------------------------------------------------------------------
+| API Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register API routes for your application. These
+| routes are loaded by the RouteServiceProvider and all of them will
+| be assigned to the "api" middleware group. Make something great!
+|
+*/
+
+// API prefix is automatically applied as '/api/v1'
+// Add CSRF cookie route for SPA authentication
+Route::get('/v1/csrf-cookie', function() {
+    return response()->json(['status' => 'success', 'message' => 'CSRF cookie set']);
+});
+
+Route::prefix('v1')->middleware(['cors'])->group(function () {
+    // Public routes
+    Route::prefix('auth')->group(function () {
+        Route::post('/register', [AuthController::class, 'register']);
+        Route::post('/login', [AuthController::class, 'login']);
+    });
 
     // Products
     Route::get('/products', [ProductController::class, 'index']);
     Route::get('/products/{id}', [ProductController::class, 'show']);
+    Route::get('/products/{productId}/reviews', [ProductController::class, 'getReviews']);
 
     // Categories
     Route::get('/categories', [CategoryController::class, 'index']);
     Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-    // Reviews
-    Route::get('/products/{productId}/reviews', [ReviewController::class, 'index']);
-
     // Contact
-    Route::post('/contact', [ContactController::class, 'store']);
+    Route::post('/contact', [ContactController::class, 'submit']);
 
-    /**
-     * Protected routes
-     */
+    // Protected routes (require authentication)
     Route::middleware('auth:sanctum')->group(function () {
-        // Auth
-        Route::post('/auth/logout', [AuthController::class, 'logout']);
-        Route::get('/auth/user', [AuthController::class, 'user']);
-        Route::put('/auth/user/update', [AuthController::class, 'updateProfile']);
+        // User profile
+        Route::prefix('auth')->group(function () {
+            Route::get('/user', [AuthController::class, 'user']);
+            Route::put('/user/update', [AuthController::class, 'updateProfile']);
+            Route::post('/logout', [AuthController::class, 'logout']);
+        });
 
         // Cart
-        Route::get('/cart', [CartController::class, 'index']);
+        Route::get('/cart', [CartController::class, 'getCart']);
         Route::post('/cart/items', [CartController::class, 'addItem']);
         Route::put('/cart/items/{id}', [CartController::class, 'updateItem']);
         Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
@@ -65,45 +80,40 @@ Route::prefix('v1')->group(function () {
         Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);
 
         // Reviews
-        Route::post('/products/{productId}/reviews', [ReviewController::class, 'store']);
-        Route::put('/products/{productId}/reviews/{id}', [ReviewController::class, 'update']);
-        Route::delete('/products/{productId}/reviews/{id}', [ReviewController::class, 'destroy']);
+        Route::post('/products/{productId}/reviews', [ProductController::class, 'createReview']);
+        Route::put('/products/{productId}/reviews/{id}', [ProductController::class, 'updateReview']);
+        Route::delete('/products/{productId}/reviews/{id}', [ProductController::class, 'deleteReview']);
 
-        /**
-         * Admin routes
-         */
-        Route::prefix('admin')->group(function () {
-            // Middleware to check if user is admin
-            Route::middleware('admin')->group(function () {
-                // Dashboard statistics
-                Route::get('/dashboard', [DashboardController::class, 'index']);
+        // Admin routes
+        Route::middleware('admin')->prefix('admin')->group(function () {
+            // Dashboard
+            Route::get('/dashboard', [DashboardController::class, 'statistics']);
 
-                // Users management
-                Route::get('/users', [AdminUserController::class, 'index']);
-                Route::get('/users/{id}', [AdminUserController::class, 'show']);
-                Route::put('/users/{id}', [AdminUserController::class, 'update']);
+            // Users management
+            Route::get('/users', [AdminUserController::class, 'index']);
+            Route::get('/users/{id}', [AdminUserController::class, 'show']);
+            Route::put('/users/{id}', [AdminUserController::class, 'update']);
 
-                // Orders management
-                Route::get('/orders', [AdminOrderController::class, 'index']);
-                Route::put('/orders/{id}', [AdminOrderController::class, 'update']);
-                Route::get('/orders/statistics', [AdminOrderController::class, 'statistics']);
+            // Orders management
+            Route::get('/orders', [AdminOrderController::class, 'index']);
+            Route::put('/orders/{id}', [AdminOrderController::class, 'update']);
+            Route::get('/orders/statistics', [AdminOrderController::class, 'statistics']);
 
-                // Products management
-                Route::post('/products', [ProductController::class, 'store']);
-                Route::put('/products/{id}', [ProductController::class, 'update']);
-                Route::delete('/products/{id}', [ProductController::class, 'destroy']);
+            // Products management
+            Route::post('/products', [AdminProductController::class, 'store']);
+            Route::put('/products/{id}', [AdminProductController::class, 'update']);
+            Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
 
-                // Categories management
-                Route::post('/categories', [CategoryController::class, 'store']);
-                Route::put('/categories/{id}', [CategoryController::class, 'update']);
-                Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+            // Categories management
+            Route::post('/categories', [AdminCategoryController::class, 'store']);
+            Route::put('/categories/{id}', [AdminCategoryController::class, 'update']);
+            Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy']);
 
-                // Coupons management
-                Route::get('/coupons', [AdminCouponController::class, 'index']);
-                Route::post('/coupons', [AdminCouponController::class, 'store']);
-                Route::put('/coupons/{id}', [AdminCouponController::class, 'update']);
-                Route::delete('/coupons/{id}', [AdminCouponController::class, 'destroy']);
-            });
+            // Coupons management
+            Route::get('/coupons', [AdminCouponController::class, 'index']);
+            Route::post('/coupons', [AdminCouponController::class, 'store']);
+            Route::put('/coupons/{id}', [AdminCouponController::class, 'update']);
+            Route::delete('/coupons/{id}', [AdminCouponController::class, 'destroy']);
         });
     });
 });

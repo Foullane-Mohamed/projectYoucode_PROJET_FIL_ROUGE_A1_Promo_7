@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 
 class Tag extends Model
 {
@@ -20,7 +21,23 @@ class Tag extends Model
     ];
 
     /**
-     * Get the products that belong to the tag.
+     * Boot function to set the slug
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($tag) {
+            $tag->slug = $tag->slug ?? Str::slug($tag->name);
+        });
+
+        static::updating(function ($tag) {
+            $tag->slug = $tag->slug ?? Str::slug($tag->name);
+        });
+    }
+
+    /**
+     * Get the products for the tag
      */
     public function products()
     {

@@ -17,37 +17,29 @@ class UserController extends Controller
     }
 
     /**
-     * Display a listing of users.
+     * Display a listing of the users.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $perPage = $request->input('per_page', 15);
+        $page = $request->input('page', 1);
+        $search = $request->input('search');
         
-        // Get filters
-        $filters = [];
+        $query = $this->userRepository->model->query();
         
-        if ($request->has('search')) {
-            $filters['search'] = $request->search;
+        // Apply search if provided
+        if ($search) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
         }
         
-        if ($request->has('role')) {
-            $filters['role'] = $request->role;
-        }
+        $users = $query->paginate($perPage, ['id', 'name', 'email', 'role', 'created_at']);
         
-        // Get paginated users
-        $users = $this->userRepository->getWithFilters($filters, $perPage);
-
         return response()->json([
             'status' => 'success',
             'data' => [
@@ -65,91 +57,71 @@ class UserController extends Controller
     }
 
     /**
-     * Display the specified user with details.
+     * Display the specified user.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
-    public function show(Request $request, $id)
+    public function show($id)
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
+        try {
+            $user = $this->userRepository->find($id);
+            $user->load('orders');
+            
             return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        // Get user with order summary
-        $user = $this->userRepository->getUserWithOrdersSummary($id);
-
-        if (!$user) {
+                'status' => 'success',
+                'data' => [
+                    'user' => $user
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User not found'
             ], 404);
         }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'user' => $user
-            ]
-        ]);
     }
 
     /**
      * Update the specified user.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function update(Request $request, $id)
     {
-        // Verify admin permission
-        if (!$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $id,
-            'role' => 'sometimes|required|string|in:customer,admin',
+            'name' => 'string|max:255',
+            'role' => 'string|in:customer,admin',
+            'is_active' => 'boolean'
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
 
-        // Check if user exists
-        $user = $this->userRepository->find($id);
-
-        if (!$user) {
+        try {
+            $this->userRepository->update($request->all(), $id);
+            
+            $user = $this->userRepository->find($id);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User updated successfully',
+                'data' => [
+                    'user' => $user
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'User not found'
             ], 404);
         }
-
-        // Update user
-        $this->userRepository->update($request->all(), $id);
-        $user = $this->userRepository->find($id);
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'User updated successfully',
-            'data' => [
-                'user' => $user
-            ]
-        ]);
     }
 }

@@ -16,25 +16,11 @@ class Cart extends Model
      */
     protected $fillable = [
         'user_id',
-        'subtotal',
-        'discount',
-        'discount_code',
-        'total',
+        'coupon_id',
     ];
 
     /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'subtotal' => 'decimal:2',
-        'discount' => 'decimal:2',
-        'total' => 'decimal:2',
-    ];
-
-    /**
-     * Get the user that owns the cart.
+     * Get the user that owns the cart
      */
     public function user()
     {
@@ -42,7 +28,15 @@ class Cart extends Model
     }
 
     /**
-     * Get the items in the cart.
+     * Get the coupon for the cart
+     */
+    public function coupon()
+    {
+        return $this->belongsTo(Coupon::class);
+    }
+
+    /**
+     * Get the items for the cart
      */
     public function items()
     {
@@ -50,15 +44,125 @@ class Cart extends Model
     }
 
     /**
-     * Recalculate the cart totals.
+     * Get the subtotal for the cart
      */
-    public function recalculate()
+    public function getSubtotalAttribute()
     {
-        $subtotal = $this->items->sum('subtotal');
-        $this->subtotal = $subtotal;
-        $this->total = $subtotal - $this->discount;
+        return $this->items->sum('total');
+    }
+
+    /**
+     * Get the discount for the cart
+     */
+    public function getDiscountAttribute()
+    {
+        if (!$this->coupon) {
+            return 0;
+        }
+
+        if ($this->coupon->discount_type === 'percentage') {
+            $discount = $this->subtotal * ($this->coupon->discount_value / 100);
+            return $this->coupon->max_discount_amount && $discount > $this->coupon->max_discount_amount
+                ? $this->coupon->max_discount_amount
+                : $discount;
+        }
+
+        return $this->coupon->discount_value;
+    }
+
+    /**
+     * Get the total for the cart
+     */
+    public function getTotalAttribute()
+    {
+        return max(0, $this->subtotal - $this->discount);
+    }
+
+    /**
+     * Add product to cart
+     */
+    public function addProduct($productId, $quantity = 1)
+    {
+        $product = Product::findOrFail($productId);
+        
+        // Check if product is already in cart
+        $cartItem = $this->items()->where('product_id', $productId)->first();
+        
+        if ($cartItem) {
+            // Update quantity
+            $cartItem->quantity += $quantity;
+            $cartItem->save();
+        } else {
+            // Create new cart item
+            $cartItem = new CartItem([
+                'product_id' => $productId,
+                'quantity' => $quantity,
+                'price' => $product->on_sale && $product->sale_price ? $product->sale_price : $product->price,
+            ]);
+            
+            $this->items()->save($cartItem);
+        }
+        
+        return $cartItem;
+    }
+
+    /**
+     * Update product quantity
+     */
+    public function updateProductQuantity($cartItemId, $quantity)
+    {
+        $cartItem = $this->items()->findOrFail($cartItemId);
+        $cartItem->quantity = $quantity;
+        $cartItem->save();
+        
+        return $cartItem;
+    }
+
+    /**
+     * Remove product from cart
+     */
+    public function removeProduct($cartItemId)
+    {
+        return $this->items()->findOrFail($cartItemId)->delete();
+    }
+
+    /**
+     * Apply coupon to cart
+     */
+    public function applyCoupon($couponCode)
+    {
+        $coupon = Coupon::where('code', $couponCode)
+            ->where('is_active', true)
+            ->whereDate('starts_at', '<=', now())
+            ->whereDate('expires_at', '>=', now())
+            ->first();
+        
+        if (!$coupon) {
+            throw new \Exception('Invalid coupon code or expired coupon.');
+        }
+        
+        if ($coupon->min_order_amount && $this->subtotal < $coupon->min_order_amount) {
+            throw new \Exception('Minimum order amount not reached for this coupon.');
+        }
+        
+        if ($coupon->usage_limit && $coupon->usage_count >= $coupon->usage_limit) {
+            throw new \Exception('Coupon usage limit reached.');
+        }
+        
+        $this->coupon_id = $coupon->id;
         $this->save();
         
-        return $this;
+        return $coupon;
+    }
+
+    /**
+     * Remove coupon from cart
+     */
+    public function removeCoupon()
+    {
+        $this->coupon_id = null;
+        $this->save();
+        
+        return true;
     }
 }

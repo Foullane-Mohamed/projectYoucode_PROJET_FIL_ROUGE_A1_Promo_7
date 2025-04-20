@@ -17,95 +17,90 @@ class OrderController extends Controller
     }
 
     /**
-     * Display a listing of the user's orders.
+     * Get all orders for the authenticated user.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 10);
-        $filters = $request->only(['status']);
+        $orders = $this->orderRepository->getByUserId($request->user()->id);
         
-        $orders = $this->orderRepository->getForUser($request->user()->id, $filters, $perPage);
-
         return response()->json([
             'status' => 'success',
             'data' => [
-                'orders' => $orders->items(),
-                'pagination' => [
-                    'total' => $orders->total(),
-                    'per_page' => $orders->perPage(),
-                    'current_page' => $orders->currentPage(),
-                    'last_page' => $orders->lastPage(),
-                    'from' => $orders->firstItem(),
-                    'to' => $orders->lastItem()
-                ]
+                'orders' => $orders
             ]
         ]);
     }
 
     /**
-     * Display the specified order.
+     * Get a specific order with items.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function show(Request $request, $id)
     {
-        $order = $this->orderRepository->getWithDetails($id);
-
-        if (!$order) {
+        try {
+            $order = $this->orderRepository->getWithItems($id);
+            
+            // Check if the order belongs to the authenticated user
+            if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+            
+            return response()->json([
+                'status' => 'success',
+                'data' => [
+                    'order' => $order
+                ]
+            ]);
+        } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Order not found'
             ], 404);
         }
-
-        // Only allow the owner or admin to view the order
-        if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'order' => $order
-            ]
-        ]);
     }
 
     /**
-     * Store a newly created order.
+     * Create a new order from the cart.
      *
-     * @param Request $request
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
+            'payment_method' => 'required|string',
+            'payment_id' => 'required|string',
             'shipping_address' => 'required|array',
-            'shipping_address.name' => 'required|string|max:255',
-            'shipping_address.address_line_1' => 'required|string|max:255',
-            'shipping_address.address_line_2' => 'nullable|string|max:255',
-            'shipping_address.city' => 'required|string|max:255',
-            'shipping_address.state' => 'required|string|max:255',
-            'shipping_address.postal_code' => 'required|string|max:20',
-            'shipping_address.country' => 'required|string|max:255',
-            'shipping_address.phone' => 'required|string|max:20',
-            'shipping_method' => 'required|string|in:standard,express',
-            'payment_method' => 'required|string|in:stripe,paypal',
-            'payment_intent_id' => 'nullable|string',
+            'shipping_address.name' => 'required|string',
+            'shipping_address.address' => 'required|string',
+            'shipping_address.city' => 'required|string',
+            'shipping_address.state' => 'required|string',
+            'shipping_address.zip_code' => 'required|string',
+            'shipping_address.country' => 'required|string',
+            'shipping_address.phone' => 'required|string',
+            'billing_address' => 'required|array',
+            'billing_address.name' => 'required|string',
+            'billing_address.address' => 'required|string',
+            'billing_address.city' => 'required|string',
+            'billing_address.state' => 'required|string',
+            'billing_address.zip_code' => 'required|string',
+            'billing_address.country' => 'required|string',
+            'billing_address.phone' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Validation failed',
+                'message' => 'Validation error',
                 'errors' => $validator->errors()
             ], 422);
         }
@@ -113,16 +108,19 @@ class OrderController extends Controller
         try {
             $order = $this->orderRepository->createFromCart(
                 $request->user()->id,
-                $request->all()
+                $request->payment_method,
+                $request->payment_id,
+                $request->shipping_address,
+                $request->billing_address
             );
-
+            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order created successfully',
                 'data' => [
                     'order' => $order
                 ]
-            ], 201);
+            ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
@@ -134,68 +132,50 @@ class OrderController extends Controller
     /**
      * Cancel an order.
      *
-     * @param Request $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
+     * @param  \Illuminate\Http\Request  $request
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
      */
     public function cancel(Request $request, $id)
     {
-        $validator = Validator::make($request->all(), [
-            'cancel_reason' => 'required|string|max:255',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Validation failed',
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        // Get the order
-        $order = $this->orderRepository->find($id);
-
-        if (!$order) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Order not found'
-            ], 404);
-        }
-
-        // Only allow the owner to cancel their own order
-        if ($order->user_id !== $request->user()->id) {
-            return response()->json([
-                'status' => 'error',
-                'message' => 'Unauthorized'
-            ], 403);
-        }
-
         try {
-            $order = $this->orderRepository->cancelOrder($id, $request->cancel_reason);
-
-            if (!$order) {
+            $order = $this->orderRepository->find($id);
+            
+            // Check if the order belongs to the authenticated user
+            if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Unauthorized'
+                ], 403);
+            }
+            
+            // Check if the order can be cancelled
+            if (!in_array($order->status, ['pending', 'processing'])) {
                 return response()->json([
                     'status' => 'error',
                     'message' => 'Order cannot be cancelled'
                 ], 400);
             }
-
+            
+            $this->orderRepository->cancelOrder($id);
+            
             return response()->json([
                 'status' => 'success',
                 'message' => 'Order cancelled successfully',
                 'data' => [
                     'order' => [
                         'id' => $order->id,
-                        'status' => $order->status,
-                        'updated_at' => $order->updated_at
+                        'order_number' => $order->order_number,
+                        'status' => 'cancelled',
+                        'updated_at' => now()
                     ]
                 ]
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'status' => 'error',
-                'message' => $e->getMessage()
-            ], 400);
+                'message' => 'Order not found'
+            ], 404);
         }
     }
 }

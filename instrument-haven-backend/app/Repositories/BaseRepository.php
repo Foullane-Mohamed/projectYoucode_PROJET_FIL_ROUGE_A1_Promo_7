@@ -2,10 +2,11 @@
 
 namespace App\Repositories;
 
-use App\Repositories\Interfaces\BaseRepositoryInterface;
+use App\Repositories\Interfaces\RepositoryInterface;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Collection;
 
-class BaseRepository implements BaseRepositoryInterface
+abstract class BaseRepository implements RepositoryInterface
 {
     /**
      * @var Model
@@ -14,87 +15,97 @@ class BaseRepository implements BaseRepositoryInterface
 
     /**
      * BaseRepository constructor.
-     *
-     * @param Model $model
      */
-    public function __construct(Model $model)
+    public function __construct()
     {
-        $this->model = $model;
+        $this->setModel();
     }
 
     /**
-     * @inheritDoc
+     * Set model
      */
-    public function all(array $columns = ['*'])
+    abstract public function setModel();
+
+    /**
+     * Get all records
+     * 
+     * @param array $columns
+     * @return Collection
+     */
+    public function all($columns = ['*'])
     {
         return $this->model->all($columns);
     }
-
+    
     /**
-     * @inheritDoc
+     * Get paginated records
+     * 
+     * @param int $perPage
+     * @param array $columns
+     * @return mixed
      */
-    public function paginate(int $perPage = 15, array $columns = ['*'])
+    public function paginate($perPage = 15, $columns = ['*'])
     {
         return $this->model->paginate($perPage, $columns);
     }
-
+    
     /**
-     * @inheritDoc
+     * Create new record
+     * 
+     * @param array $data
+     * @return Model
      */
     public function create(array $data)
     {
         return $this->model->create($data);
     }
-
+    
     /**
-     * @inheritDoc
+     * Update record
+     * 
+     * @param array $data
+     * @param int $id
+     * @return bool
      */
-    public function update(int $id, array $data)
+    public function update(array $data, $id)
     {
-        $record = $this->model->find($id);
-        return $record ? $record->update($data) : false;
+        $record = $this->find($id);
+        return $record->update($data);
     }
-
+    
     /**
-     * @inheritDoc
+     * Delete record
+     * 
+     * @param int $id
+     * @return bool
      */
-    public function delete(int $id)
+    public function delete($id)
     {
         return $this->model->destroy($id);
     }
-
+    
     /**
-     * @inheritDoc
+     * Find record by id
+     * 
+     * @param int $id
+     * @param array $columns
+     * @return Model
      */
-    public function find(int $id, array $columns = ['*'])
+    public function find($id, $columns = ['*'])
     {
-        return $this->model->find($id, $columns);
+        return $this->model->findOrFail($id, $columns);
     }
-
+    
     /**
-     * @inheritDoc
+     * Find record by field
+     * 
+     * @param string $field
+     * @param mixed $value
+     * @param array $columns
+     * @return Collection
      */
-    public function findByField(string $field, $value, array $columns = ['*'])
+    public function findByField($field, $value, $columns = ['*'])
     {
         return $this->model->where($field, $value)->get($columns);
-    }
-
-    /**
-     * @inheritDoc
-     */
-    public function findWhere(array $where, array $columns = ['*'])
-    {
-        $query = $this->model->newQuery();
-        
-        foreach ($where as $field => $value) {
-            if (is_array($value)) {
-                list($field, $condition, $val) = $value;
-                $query->where($field, $condition, $val);
-            } else {
-                $query->where($field, '=', $value);
-            }
-        }
-        
-        return $query->get($columns);
     }
 }

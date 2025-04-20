@@ -31,7 +31,7 @@ class Review extends Model
     ];
 
     /**
-     * Get the user that owns the review.
+     * Get the user that owns the review
      */
     public function user()
     {
@@ -39,7 +39,7 @@ class Review extends Model
     }
 
     /**
-     * Get the product that the review belongs to.
+     * Get the product that owns the review
      */
     public function product()
     {
@@ -47,7 +47,7 @@ class Review extends Model
     }
 
     /**
-     * Get the user's name.
+     * Get the user name
      */
     public function getUserNameAttribute()
     {

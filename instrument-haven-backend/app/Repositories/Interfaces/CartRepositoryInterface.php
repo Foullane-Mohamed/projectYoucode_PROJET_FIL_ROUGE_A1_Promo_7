@@ -2,67 +2,67 @@
 
 namespace App\Repositories\Interfaces;
 
-interface CartRepositoryInterface extends BaseRepositoryInterface
+interface CartRepositoryInterface extends RepositoryInterface
 {
     /**
-     * Get cart for user
-     *
+     * Get cart by user id
+     * 
      * @param int $userId
      * @return mixed
      */
-    public function getForUser(int $userId);
-
+    public function getByUserId($userId);
+    
+    /**
+     * Get cart with items by user id
+     * 
+     * @param int $userId
+     * @return mixed
+     */
+    public function getWithItemsByUserId($userId);
+    
     /**
      * Add item to cart
-     *
+     * 
      * @param int $userId
      * @param int $productId
      * @param int $quantity
      * @return mixed
      */
-    public function addItem(int $userId, int $productId, int $quantity);
-
+    public function addItem($userId, $productId, $quantity);
+    
     /**
-     * Update cart item quantity
-     *
+     * Update item quantity
+     * 
      * @param int $userId
      * @param int $itemId
      * @param int $quantity
      * @return mixed
      */
-    public function updateItemQuantity(int $userId, int $itemId, int $quantity);
-
+    public function updateItemQuantity($userId, $itemId, $quantity);
+    
     /**
      * Remove item from cart
-     *
+     * 
      * @param int $userId
      * @param int $itemId
      * @return mixed
      */
-    public function removeItem(int $userId, int $itemId);
-
+    public function removeItem($userId, $itemId);
+    
     /**
      * Apply coupon to cart
-     *
+     * 
      * @param int $userId
-     * @param string $code
+     * @param string $couponCode
      * @return mixed
      */
-    public function applyCoupon(int $userId, string $code);
-
+    public function applyCoupon($userId, $couponCode);
+    
     /**
      * Remove coupon from cart
-     *
+     * 
      * @param int $userId
      * @return mixed
      */
-    public function removeCoupon(int $userId);
-
-    /**
-     * Clear cart
-     *
-     * @param int $userId
-     * @return mixed
-     */
-    public function clearCart(int $userId);
+    public function removeCoupon($userId);
 }
