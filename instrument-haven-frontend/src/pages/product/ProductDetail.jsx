@@ -1,9 +1,10 @@
 import { useState, useEffect, useContext } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import api from '../../services/api';
+import apiService, { api } from '../../services/api';
 import { CartContext } from '../../context/CartContext';
 import { WishlistContext } from '../../context/WishlistContext';
 import { AuthContext } from '../../context/AuthContext';
+import EnhancedProductCard from '../../components/common/EnhancedProductCard';
 import {
   Container,
   Grid,
@@ -47,6 +48,10 @@ const ProductDetail = () => {
   const [relatedProducts, setRelatedProducts] = useState([]);
   const [currentImage, setCurrentImage] = useState(0);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
+  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewComment, setReviewComment] = useState('');
+  const [reviewSubmitting, setReviewSubmitting] = useState(false);
 
   useEffect(() => {
     const fetchProductDetails = async () => {
@@ -54,7 +59,7 @@ const ProductDetail = () => {
       setError(null);
       
       try {
-        const response = await api.products.getById(id);
+        const response = await apiService.products.getById(id);
         // Ensure we use the correct data structure according to API documentation
         const productData = response.data?.data?.product || response.data?.product;
         
@@ -68,7 +73,7 @@ const ProductDetail = () => {
         // Fetch related products from the same category
         if (productData.category_id) {
           try {
-            const relatedResponse = await api.products.getByCategory(productData.category_id);
+            const relatedResponse = await apiService.products.getByCategory(productData.category_id);
             // Extract products from the category response according to API documentation
             const categoryProducts = relatedResponse.data?.data?.category?.products || [];
             
@@ -490,8 +495,8 @@ const ProductDetail = () => {
                     <Paper key={review.id} elevation={0} sx={{ p: 2, mb: 2, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
                       <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                         <Rating value={review.rating} readOnly size="small" />
-                        <Typography variant="body2" sx={{ ml: 1 }}>
-                          by {review.user_name}
+                        <Typography variant="body2" sx={{ ml: 1, fontWeight: 'bold', color: 'text.primary' }}>
+                           {review.user?.name || review.user_name || 'Anonymous'}
                         </Typography>
                         <Typography variant="caption" color="text.secondary" sx={{ ml: 'auto' }}>
                           {new Date(review.created_at).toLocaleDateString()}
@@ -512,9 +517,98 @@ const ProductDetail = () => {
               {user && (
                 <Box sx={{ mt: 3 }}>
                   <Typography variant="subtitle1" gutterBottom>Write a Review</Typography>
-                  <Button variant="outlined" size="small">
+                  <Button 
+                    variant="outlined" 
+                    size="small"
+                    onClick={() => {
+                      setShowReviewForm(true);
+                      setTabValue(2); // Ensure we're on the reviews tab
+                    }}
+                  >
                     Add Your Review
                   </Button>
+                  
+                  {showReviewForm && (
+                    <Paper elevation={0} sx={{ mt: 2, p: 3, border: '1px solid', borderColor: 'divider' }}>
+                      <Typography variant="h6" gutterBottom>Your Review</Typography>
+                      
+                      <Box sx={{ mb: 2 }}>
+                        <Typography component="legend">Your Rating</Typography>
+                        <Rating
+                          name="review-rating"
+                          value={reviewRating}
+                          onChange={(event, newValue) => {
+                            setReviewRating(newValue);
+                          }}
+                          size="large"
+                        />
+                      </Box>
+                      
+                      <TextField
+                        label="Your Comment"
+                        multiline
+                        rows={4}
+                        fullWidth
+                        value={reviewComment}
+                        onChange={(e) => setReviewComment(e.target.value)}
+                        sx={{ mb: 2 }}
+                      />
+                      
+                      <Box sx={{ display: 'flex', gap: 2 }}>
+                        <Button 
+                          variant="contained" 
+                          color="primary"
+                          disabled={reviewSubmitting || !reviewComment.trim()}
+                          onClick={async () => {
+                            if (!reviewComment.trim()) {
+                              toast.error('Please enter a comment');
+                              return;
+                            }
+                            
+                            setReviewSubmitting(true);
+                            try {
+                              // Using the correct endpoint format for your backend
+                              const response = await api.post(`/products/${product.id}/reviews`, {
+                                rating: reviewRating,
+                                comment: reviewComment
+                              });
+                              
+                              if (response.data?.status === 'success') {
+                                toast.success('Review submitted successfully!');
+                                // Refresh product data to show the new review
+                                const updatedProduct = await apiService.products.getById(id);
+                                setProduct(updatedProduct.data?.data?.product || updatedProduct.data?.product);
+                                
+                                // Reset form
+                                setShowReviewForm(false);
+                                setReviewComment('');
+                                setReviewRating(5);
+                              } else {
+                                toast.error(response.data?.message || 'Failed to submit review');
+                              }
+                            } catch (err) {
+                              console.error('Error submitting review:', err);
+                              toast.error(err.response?.data?.message || 'Failed to submit review');
+                            } finally {
+                              setReviewSubmitting(false);
+                            }
+                          }}
+                        >
+                          {reviewSubmitting ? 'Submitting...' : 'Submit Review'}
+                        </Button>
+                        <Button 
+                          variant="outlined" 
+                          onClick={() => {
+                            setShowReviewForm(false);
+                            setReviewComment('');
+                            setReviewRating(5);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </Box>
+                    </Paper>
+                  )}
                 </Box>
               )}
             </Box>
@@ -528,76 +622,10 @@ const ProductDetail = () => {
           <Typography variant="h5" gutterBottom>
             Related Products
           </Typography>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
             {relatedProducts.map((relatedProduct) => (
-              <Grid item xs={12} sm={6} md={3} key={relatedProduct.id}>
-                <Paper
-                  elevation={1}
-                  component={Link}
-                  to={`/products/${relatedProduct.id}`}
-                  sx={{
-                    display: 'block',
-                    textDecoration: 'none',
-                    color: 'inherit',
-                    height: '100%',
-                    transition: 'transform 0.2s, box-shadow 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-5px)',
-                      boxShadow: 3,
-                    },
-                  }}
-                >
-                  <Box
-                    sx={{
-                      height: 200,
-                      width: '100%',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      p: 2,
-                    }}
-                  >
-                    <img
-                    src={
-                    relatedProduct.thumbnail
-                    ? `${storageUrl}/${relatedProduct.thumbnail}`
-                    : '/placeholder.png'
-                    }
-                    alt={relatedProduct.name}
-                    style={{
-                    maxWidth: '100%',
-                    maxHeight: '100%',
-                    objectFit: 'contain',
-                    }}
-                    />
-                  </Box>
-                  <Box sx={{ p: 2 }}>
-                    <Typography variant="subtitle1" noWrap>
-                      {relatedProduct.name}
-                    </Typography>
-                    <Typography variant="body2" fontWeight="bold">
-                      {relatedProduct.on_sale && relatedProduct.sale_price ? (
-                        <>
-                          <Typography 
-                            component="span" 
-                            variant="body2" 
-                            color="text.secondary" 
-                            sx={{ textDecoration: 'line-through', mr: 1 }}
-                          >
-                            ${parseFloat(relatedProduct.price).toFixed(2)}
-                          </Typography>
-                          <Typography component="span" variant="body2" color="error">
-                            ${parseFloat(relatedProduct.sale_price).toFixed(2)}
-                          </Typography>
-                        </>
-                      ) : (
-                        <Typography component="span" color="primary">
-                          ${parseFloat(relatedProduct.price).toFixed(2)}
-                        </Typography>
-                      )}
-                    </Typography>
-                  </Box>
-                </Paper>
+              <Grid item xs={12} sm={6} md={4} lg={4} key={relatedProduct.id}>
+                <EnhancedProductCard product={relatedProduct} />
               </Grid>
             ))}
           </Grid>

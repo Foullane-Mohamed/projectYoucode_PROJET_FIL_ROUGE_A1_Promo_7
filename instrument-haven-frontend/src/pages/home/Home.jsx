@@ -2,180 +2,27 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../services/api';
 import ProductCard from '../../components/common/ProductCard';
-import {
-  Container,
-  Typography,
-  Box,
-  Grid,
-  Button,
-  Divider,
-  Card,
-  CardContent,
-  CardMedia,
-  CircularProgress,
-  Paper,
-  useTheme,
-  useMediaQuery,
-  Rating,
-  Chip,
-  Avatar
-} from '@mui/material';
-import { 
-  MusicNote as MusicNoteIcon, 
-  LocalShipping as ShippingIcon,
-  Security as SecurityIcon,
-  Support as SupportIcon,
-  ArrowForward as ArrowForwardIcon
-} from '@mui/icons-material';
-
-const CATEGORY_COLORS = {
-  'Guitars': '#FF2B52',
-  'Drums': '#FF9800',
-  'Keyboards': '#4CAF50',
-  'Wind Instruments': '#3F51B5',
-  'Accessories': '#9C27B0',
-  'Electric Guitars': '#E91E63',
-  'Acoustic Guitars': '#8BC34A',
-  'Bass Guitars': '#FF5722',
-  'Acoustic Drums': '#FFC107',
-  'Electronic Drums': '#009688',
-  'Digital Pianos': '#2196F3',
-  'Synthesizers': '#673AB7'
-};
-const SAMPLE_CATEGORIES = [
-  { id: 1, name: 'Guitars', description: 'All types of guitars' },
-  { id: 2, name: 'Drums', description: 'Acoustic and electronic drums' },
-  { id: 3, name: 'Keyboards', description: 'Electronic keyboards and pianos' },
-  { id: 4, name: 'Wind Instruments', description: 'All types of wind instruments' },
-  { id: 5, name: 'Accessories', description: 'Accessories for all instruments' },
-  { id: 6, name: 'Electric Guitars', description: 'Electric guitars for all styles' },
-  { id: 7, name: 'Acoustic Guitars', description: 'Classical and acoustic guitars' },
-  { id: 8, name: 'Bass Guitars', description: 'Electric and acoustic bass guitars' },
-  { id: 9, name: 'Acoustic Drums', description: 'Traditional acoustic drum sets' },
-  { id: 10, name: 'Electronic Drums', description: 'Digital and electronic drum kits' },
-  { id: 11, name: 'Digital Pianos', description: 'Digital pianos with weighted keys' },
-  { id: 12, name: 'Synthesizers', description: 'Analog and digital synthesizers' }
-];
-
-const FEATURED_INSTRUMENTS = [
-  {
-    id: 1,
-    name: "Fender Stratocaster",
-    price: 799.99,
-    thumbnail: "fender-strat.jpg",
-    rating: 4.8,
-    on_sale: true,
-    sale_price: 699.99,
-    stock: 12
-  },
-  {
-    id: 2,
-    name: "Gibson Les Paul",
-    price: 1299.99,
-    thumbnail: "gibson-les-paul.jpg",
-    rating: 4.9,
-    on_sale: false,
-    stock: 8
-  },
-  {
-    id: 3,
-    name: "Roland TD-17KVX",
-    price: 1699.99,
-    thumbnail: "roland-drums.jpg",
-    rating: 4.7,
-    on_sale: true,
-    sale_price: 1499.99,
-    stock: 5
-  },
-  {
-    id: 4,
-    name: "Yamaha P-125",
-    price: 649.99,
-    thumbnail: "yamaha-p125.jpg",
-    rating: 4.6,
-    on_sale: false,
-    stock: 15
-  },
-  {
-    id: 5,
-    name: "Martin D-28",
-    price: 2999.99,
-    thumbnail: "martin-d28.jpg",
-    rating: 4.9,
-    on_sale: false,
-    stock: 3
-  },
-  {
-    id: 6,
-    name: "Fender Precision Bass",
-    price: 899.99,
-    thumbnail: "fender-pbass.jpg",
-    rating: 4.7,
-    on_sale: true,
-    sale_price: 799.99,
-    stock: 7
-  },
-  {
-    id: 7,
-    name: "Pearl Export",
-    price: 699.99,
-    thumbnail: "pearl-export.jpg",
-    rating: 4.5,
-    on_sale: false,
-    stock: 4
-  },
-  {
-    id: 8,
-    name: "Korg Minilogue",
-    price: 499.99,
-    thumbnail: "korg-minilogue.jpg",
-    rating: 4.8,
-    on_sale: false,
-    stock: 10
-  }
-];
-
-
-const TESTIMONIALS = [
-  {
-    id: 1,
-    name: "David Johnson",
-    role: "Professional Guitarist",
-    comment: "The quality of instruments at Instrument Haven is outstanding. I've been buying my gear here for years and have never been disappointed.",
-    avatar: "avatar1.jpg",
-    rating: 5
-  },
-  {
-    id: 2,
-    name: "Sarah Williams",
-    role: "Music Teacher",
-    comment: "As a music educator, I always recommend Instrument Haven to my students. Great selection, great prices, and fantastic customer service.",
-    avatar: "avatar2.jpg",
-    rating: 5
-  },
-  {
-    id: 3,
-    name: "Michael Brown",
-    role: "Studio Producer",
-    comment: "I've equipped my entire studio with instruments from Instrument Haven. Their quality and reliability are exactly what professionals need.",
-    avatar: "avatar3.jpg",
-    rating: 4.5
-  }
-];
-
-
-const FEATURED_BRANDS = [
-  "fender.png", "gibson.png", "yamaha.png", "roland.png", 
-  "korg.png", "martin.png", "pearl.png", "ibanez.png"
-];
+import EnhancedProductCard from '../../components/common/EnhancedProductCard';
+import FeaturesRow from '../../components/common/FeaturesRow';
+import '../../styles/features.css';
+import { CircularProgress } from '@mui/material';
+import { ArrowForward as ArrowForwardIcon } from '@mui/icons-material';
 
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [testimonials, setTestimonials] = useState([]);
   const [loading, setLoading] = useState(true);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const isSmall = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isSmallScreen, setIsSmallScreen] = useState(window.innerWidth < 640);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsSmallScreen(window.innerWidth < 640);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -185,45 +32,46 @@ const Home = () => {
         try {
           const productsResponse = await api.products.getAll();
           
-          // Properly extract products from the response structure
-          if (productsResponse && productsResponse.data && 
-              productsResponse.data.status === 'success' && 
-              productsResponse.data.data && 
-              productsResponse.data.data.products) {
-            // Extract products array from the nested structure
+          if (productsResponse?.data?.status === 'success' && 
+              productsResponse?.data?.data?.products) {
             setFeaturedProducts(productsResponse.data.data.products.slice(0, 8));
           } else {
-
-            setFeaturedProducts(FEATURED_INSTRUMENTS);
+            setFeaturedProducts([]);
           }
         } catch (error) {
-
-          setFeaturedProducts(FEATURED_INSTRUMENTS);
+          console.error('Error fetching products:', error);
+          setFeaturedProducts([]);
         }
         
         // Fetch categories
         try {
           const categoriesResponse = await api.categories.getParentCategories();
           
-          // Properly extract categories from the response structure
-          if (categoriesResponse && categoriesResponse.data && 
-              categoriesResponse.data.status === 'success' && 
-              categoriesResponse.data.data && 
-              categoriesResponse.data.data.categories) {
-            // Extract categories array from the nested structure
+          if (categoriesResponse?.data?.status === 'success' && 
+              categoriesResponse?.data?.data?.categories) {
             setCategories(categoriesResponse.data.data.categories);
           } else {
-
-            setCategories(SAMPLE_CATEGORIES);
+            setCategories([]);
           }
         } catch (error) {
-
-          setCategories(SAMPLE_CATEGORIES);
+          console.error('Error fetching categories:', error);
+          setCategories([]);
         }
-      } catch (error) {
-
-        setFeaturedProducts(FEATURED_INSTRUMENTS);
-        setCategories(SAMPLE_CATEGORIES);
+        
+        // Fetch testimonials
+        try {
+          // When API route is implemented:
+          const testimonialsResponse = await api.testimonials.getAll();
+          if (testimonialsResponse?.data?.status === 'success' && 
+              testimonialsResponse?.data?.data?.testimonials) {
+            setTestimonials(testimonialsResponse.data.data.testimonials);
+          } else {
+            setTestimonials([]);
+          }
+        } catch (error) {
+          console.error('Error fetching testimonials:', error);
+          setTestimonials([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -233,836 +81,291 @@ const Home = () => {
   }, []);
 
   const heroSection = () => (
-    <Box
-      sx={{
-        position: 'relative',
-        height: { xs: '50vh', md: '60vh' },
-        overflow: 'hidden',
-        backgroundImage: 'linear-gradient(135deg, #FF6B87 0%, #FF2B52 100%)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        display: 'flex',
-        alignItems: 'center',
-        mb: 4,
-        borderRadius: { xs: 0, md: '16px' },
-        mx: { xs: 0, md: 2 },
-        mt: { xs: 0, md: 2 },
-      }}
-    >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          bgcolor: 'rgba(0, 0, 0, 0.15)',
-          zIndex: 1,
-        }}
-      />
-      <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-        <Grid container spacing={2} sx={{ mx: 2 }}>
-          <Grid item xs={12} md={7}>
-            <Box sx={{ color: 'white', textShadow: '1px 1px 4px rgba(0,0,0,0.5)' }}>
-              <Typography 
-                variant="h2" 
-                component="h1" 
-                gutterBottom
-                sx={{ 
-                  fontWeight: 'bold',
-                  fontSize: { xs: '2.2rem', md: '3.2rem' },
-                  letterSpacing: '-0.5px'
-                }}
-              >
+    <div className="relative h-[50vh] md:h-[60vh] overflow-hidden bg-gradient-to-br from-pink-400 to-red-500 flex items-center mb-4 md:rounded-2xl md:mx-2 md:mt-2">
+      <div className="absolute inset-0 bg-black bg-opacity-15 z-10"></div>
+      <div className="container mx-auto px-4 relative z-20">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mx-2">
+          <div className="md:col-span-7">
+            <div className="text-white drop-shadow-md">
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 leading-tight -tracking-wide">
                 Discover Your Sound
-              </Typography>
-              <Typography 
-                variant="h5" 
-                sx={{ mb: 4, maxWidth: '600px', lineHeight: 1.5 }}
-              >
+              </h1>
+              <p className="text-xl mb-8 max-w-xl leading-relaxed">
                 Premium musical instruments for every musician, from beginner to professional.
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                <Button 
-                  component={Link} 
+              </p>
+              <div className="flex flex-wrap gap-4">
+                <Link 
                   to="/products" 
-                  variant="contained" 
-                  size="medium"
-                  sx={{ 
-                    px: 4, 
-                    py: 1.2,
-                    borderRadius: '30px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                  }}
+                  className="px-8 py-3 bg-red-500 text-white rounded-full text-lg font-bold shadow-lg hover:bg-red-600 transition-all"
                 >
                   Shop Now
-                </Button>
-                <Button 
-                  component={Link} 
+                </Link>
+                <Link 
                   to="/categories" 
-                  variant="contained" 
-                  size="large"
-                  sx={{ 
-                    px: 4, 
-                    py: 1.2,
-                    borderRadius: '30px',
-                    fontSize: '1.1rem',
-                    fontWeight: 'bold',
-                    bgcolor: 'white',
-                    color: '#ff4081',
-                    border: 'none',
-                    '&:hover': {
-                      bgcolor: 'white',
-                      opacity: 0.9,
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                    }
-                  }}
+                  className="px-8 py-3 bg-white text-pink-500 rounded-full text-lg font-bold shadow-lg hover:opacity-90 transition-all"
                 >
                   Browse Categories
-                </Button>
-              </Box>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Box 
-              sx={{ 
-                mt: 4,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 2
-              }}
-            >
-              {/* Special offers cards */}
-              <Paper 
-                elevation={3} 
-                sx={{ 
-                  p: 2, 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  borderLeft: '4px solid',
-                  borderColor: 'primary.main',
-                  borderRadius: '8px'
-                }}
-              >
-                <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
+                </Link>
+              </div>
+            </div>
+          </div>
+          <div className="hidden md:block md:col-span-5">
+            <div className="mt-4 flex flex-col gap-4">
+              <div className="p-4 bg-white bg-opacity-90 rounded-lg border-l-4 border-red-500 shadow-md">
+                <h3 className="text-lg font-bold text-red-500">
                   Special Offer
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
-                  Get 10% off your first purchase with code <b>WELCOME10</b>
-                </Typography>
-              </Paper>
+                </h3>
+                <p className="font-medium">
+                  Get 10% off your first purchase with code <strong>WELCOME10</strong>
+                </p>
+              </div>
               
-              <Paper 
-                elevation={3} 
-                sx={{ 
-                  p: 2, 
-                  bgcolor: 'rgba(255,255,255,0.9)',
-                  borderLeft: '4px solid',
-                  borderColor: 'secondary.main',
-                  borderRadius: '8px'
-                }}
-              >
-                <Typography variant="h6" color="secondary.main" sx={{ fontWeight: 'bold' }}>
+              <div className="p-4 bg-white bg-opacity-90 rounded-lg border-l-4 border-pink-500 shadow-md">
+                <h3 className="text-lg font-bold text-pink-500">
                   Free Shipping
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 'medium' }}>
+                </h3>
+                <p className="font-medium">
                   On all orders over $100
-                </Typography>
-              </Paper>
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
   const categorySection = () => (
-    <Container maxWidth="lg" sx={{ px: { xs: 1, md: 2 } }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography 
-          variant="h5" 
-          component="h2" 
-          sx={{ fontWeight: 'bold', position: 'relative', fontSize: '1.2rem', color: '#333' }}
-        >
-          <Box 
-            component="span"
-            sx={{
-              position: 'absolute',
-              height: '8px',
-              width: '50%',
-              bottom: 0,
-              left: 0,
-              backgroundColor: 'secondary.light',
-              opacity: 0.5,
-              zIndex: -1
-            }}
-          />
+    <div className="container mx-auto px-4 md:px-8">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-gray-800 relative">
+          <span className="absolute h-2 w-1/2 bottom-0 left-0 bg-pink-300 bg-opacity-50 -z-10"></span>
           Shop by Category
-        </Typography>
-        <Button 
-          component={Link} 
+        </h2>
+        <Link 
           to="/categories" 
-          variant="text" 
-          endIcon={<ArrowForwardIcon />}
-          sx={{ 
-            color: '#ff4081',
-            fontWeight: 'medium',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 64, 129, 0.04)'
-            },
-          }}
+          className="text-pink-500 font-medium hover:bg-pink-50 flex items-center gap-1 px-2 py-1 rounded-md"
         >
           View All
-        </Button>
-      </Box>
+          <ArrowForwardIcon fontSize="small" />
+        </Link>
+      </div>
       
-      <Grid container spacing={2} sx={{ display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', mb: 1 }}>
-        {categories.slice(0, isSmall ? 4 : 8).map((category) => (
-          <Grid item xs={6} sm={4} md={2.4} sx={{ maxWidth: '200px', minWidth: '120px' }} key={category.id}>
-            <Card
-              component={Link}
-              to={`/categories/${category.id}`}
-              className="category-card"
-              sx={{
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                textDecoration: 'none',
-                color: 'inherit',
-                position: 'relative'
-              }}
-            >
-              <Box 
-                className="category-header"
-                sx={{ 
-                  background: `${CATEGORY_COLORS[category.name] || '#FF2B52'}`,
-                }}
-              >
-                <Box 
-                  component="div"
-                  className="category-circle category-circle-1"
-                />
-                <Box 
-                  component="div"
-                  className="category-circle category-circle-2"
-                />
-                <Typography 
-                  variant="h5" 
-                  component="div" 
-                  className="category-title"
-                >
-                  {category.name}
-                </Typography>
-              </Box>
-              <CardContent className="category-content" sx={{ bgcolor: 'background.paper' }}>
-                <Typography 
-                  variant="body2" 
-                  className="category-description"
-                >
-                  {category.description}
-                </Typography>
-                <Button
-                  component={Link}
-                  to={`/categories/${category.id}`} 
-                  variant="text"
-                  className="category-button"
-                  sx={{ 
-                    color: '#ff4081',
-                    '&:hover': {
-                      backgroundColor: 'rgba(255, 64, 129, 0.04)'
-                    },
-                    fontWeight: 'normal',
-                    textTransform: 'none'
-                  }}
-                >
-                  View
-                </Button>
-              </CardContent>
-              <Box 
-                component="div"
-                className="category-badge"
-                sx={{ color: CATEGORY_COLORS[category.name] || 'primary.main' }}
-              >
-                {category.id}
-              </Box>
-            </Card>
-          </Grid>
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-4">
+        {categories.slice(0, isSmallScreen ? 4 : 8).map((category) => (
+          <Link
+            to={`/categories/${category.id}`}
+            key={category.id}
+            className="h-full flex flex-col rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all hover:-translate-y-1 no-underline text-inherit relative"
+          >
+            <div className={`p-4 bg-${category.id % 2 === 0 ? 'red' : 'pink'}-${400 + (category.id % 3) * 100} relative`}>
+              <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-white bg-opacity-10"></div>
+              <div className="absolute bottom-4 left-4 w-8 h-8 rounded-full bg-white bg-opacity-10"></div>
+              <h3 className="text-white text-lg font-semibold z-10 relative">
+                {category.name}
+              </h3>
+            </div>
+            <div className="bg-white p-4 flex-grow">
+              <p className="text-sm text-gray-600 mb-2">
+                {category.description}
+              </p>
+              <span className="text-pink-500 font-normal hover:bg-pink-50 text-sm">
+                View
+              </span>
+            </div>
+            <div className="absolute top-2 left-2 w-6 h-6 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-xs font-bold text-pink-500">
+              {category.id}
+            </div>
+          </Link>
         ))}
-      </Grid>
+      </div>
       
-      <Box sx={{ textAlign: 'right', mt: 2 }}>
-        <Button 
-          component={Link} 
+      <div className="text-right mt-4">
+        <Link 
           to="/categories" 
-          variant="text" 
-          endIcon={<ArrowForwardIcon />}
-          sx={{ 
-            color: '#ff4081',
-            fontWeight: 'medium',
-            textTransform: 'none',
-            fontSize: '0.875rem',
-            '&:hover': {
-              backgroundColor: 'rgba(255, 64, 129, 0.04)'
-            },
-          }}
+          className="text-pink-500 font-medium hover:bg-pink-50 text-sm flex items-center gap-1 justify-end px-2 py-1 rounded-md inline-flex"
         >
           View All Categories
-        </Button>
-      </Box>
-    </Container>
+          <ArrowForwardIcon fontSize="small" />
+        </Link>
+      </div>
+    </div>
   );
 
   const featuredProductsSection = () => (
-    <Box sx={{ bgcolor: 'background.default', py: 5 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Box>
-            <Typography 
-              variant="h4" 
-              component="h2" 
-              sx={{ fontWeight: 'bold', position: 'relative' }}
-            >
-              <Box 
-                component="span"
-                sx={{
-                  position: 'absolute',
-                  height: '8px',
-                  width: '40%',
-                  bottom: 0,
-                  left: 0,
-                  backgroundColor: 'primary.light',
-                  opacity: 0.3,
-                  zIndex: -1
-                }}
-              />
+    <div className="bg-gray-50 py-12">
+      <div className="container mx-auto px-4">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-2xl font-bold relative">
+              <span className="absolute h-2 w-2/5 bottom-0 left-0 bg-red-300 bg-opacity-30 -z-10"></span>
               Hot Deals
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+            </h2>
+            <p className="text-gray-600 mt-2">
               Limited time offers on popular instruments
-            </Typography>
-          </Box>
-          <Box>
-            <Button 
-              component={Link} 
-              to="/products" 
-              variant="text" 
-              endIcon={<ArrowForwardIcon />}
-              sx={{ 
-                color: 'primary.main',
-                fontWeight: 'medium'
-              }}
-            >
-              View All
-            </Button>
-          </Box>
-        </Box>
-        
-        <Grid container spacing={3}>
-          {featuredProducts.map((product) => (
-            <Grid item xs={12} sm={6} md={3} key={product.id}>
-              <ProductCard product={product} />
-            </Grid>
-          ))}
-        </Grid>
-        
-        <Box 
-        sx={{ 
-        bgcolor: 'white',
-        borderRadius: '16px',
-        p: 3,
-        mt: 6,
-        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
-        display: 'flex',
-        flexDirection: { xs: 'column', md: 'row' },
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: 3,
-        }}
-        >
-        <Box>
-          <Typography variant="h5" fontWeight="bold">
-              Exclusive Online Discounts
-            </Typography>
-            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-              Get extra 15% off your first purchase with code <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>WELCOME15</Box>
-            </Typography>
-          </Box>
-          <Button 
-            component={Link} 
+            </p>
+          </div>
+          <Link 
             to="/products" 
-            variant="contained" 
-            size="large"
-            sx={{ 
-              borderRadius: '30px', 
-              px: 4,
-              py: 1.5,
-              fontWeight: 'bold',
-              minWidth: '200px'
-            }}
+            className="text-red-500 font-medium hover:bg-red-50 flex items-center gap-1 px-2 py-1 rounded-md"
+          >
+            View All
+            <ArrowForwardIcon fontSize="small" />
+          </Link>
+        </div>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8 px-4 mb-12 mx-auto max-w-7xl">
+          {featuredProducts.map((product) => (
+            <div key={product.id} className="flex">
+              <EnhancedProductCard product={product} />
+            </div>
+          ))}
+        </div>
+        
+        <div className="bg-white rounded-2xl p-6 mt-12 shadow-sm flex flex-col md:flex-row justify-between items-center gap-6">
+          <div>
+            <h3 className="text-xl font-bold text-gray-800">
+              Exclusive Online Discounts
+            </h3>
+            <p className="text-gray-600 mt-2">
+              Get extra 15% off your first purchase with code <span className="font-bold text-red-500">WELCOME15</span>
+            </p>
+          </div>
+          <Link 
+            to="/products" 
+            className="rounded-full px-8 py-3 bg-red-500 text-white font-bold min-w-[200px] text-center hover:bg-red-600 transition-colors"
           >
             Shop Now
-          </Button>
-        </Box>
-      </Container>
-    </Box>
+          </Link>
+        </div>
+      </div>
+    </div>
   );
 
   const testimonialsSection = () => (
-    <Box sx={{ py: 6, bgcolor: 'white', mt: 4, borderRadius: { xs: 0, md: '16px' }, mx: { xs: 0, md: 2 } }}>
-      <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography 
-            variant="h3" 
-            component="h2" 
-            gutterBottom 
-            sx={{ fontWeight: 'bold' }}
-          >
+    <div className="py-16 bg-white mt-8 md:mx-2 md:rounded-2xl">
+      <div className="container mx-auto px-4">
+        <div className="text-center mb-12">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
             What Our Customers Say
-          </Typography>
-          <Typography 
-            variant="h6" 
-            color="text.secondary" 
-            sx={{ maxWidth: '700px', mx: 'auto' }}
-          >
+          </h2>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
             Read testimonials from musicians who love our instruments
-          </Typography>
-        </Box>
+          </p>
+        </div>
         
-        <Grid container spacing={4}>
-          {TESTIMONIALS.map((testimonial) => (
-            <Grid item xs={12} md={4} key={testimonial.id}>
-              <Paper
-                elevation={3}
-                sx={{
-                  p: 4,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  borderRadius: '16px',
-                  boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-                  transition: 'transform 0.3s ease',
-                  '&:hover': {
-                    transform: 'translateY(-8px)',
-                    boxShadow: '0 10px 25px rgba(0,0,0,0.1)',
-                  }
-                }}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {testimonials.length > 0 ? (
+            testimonials.map((testimonial) => (
+              <div 
+                key={testimonial.id}
+                className="p-8 h-full flex flex-col bg-white rounded-2xl shadow-md hover:shadow-xl transition-all hover:-translate-y-2"
               >
-                <Box sx={{ mb: 2 }}>
-                  <Rating value={testimonial.rating} precision={0.5} readOnly />
-                </Box>
-                <Typography
-                  variant="body1"
-                  paragraph
-                  sx={{
-                    fontStyle: 'italic',
-                    mb: 3,
-                    flexGrow: 1,
-                    color: 'text.primary',
-                    lineHeight: 1.7
-                  }}
-                >
+                <div className="mb-4 flex">
+                  {[...Array(5)].map((_, i) => (
+                    <span key={i} className={i < Math.floor(testimonial.rating) ? "text-yellow-400" : "text-gray-300"}>
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <p className="italic text-gray-700 mb-6 flex-grow leading-relaxed">
                   "{testimonial.comment}"
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Avatar
-                    src={testimonial.avatar}
-                    alt={testimonial.name}
-                    sx={{ width: 56, height: 56, mr: 2 }}
-                  />
-                  <Box>
-                    <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+                </p>
+                <div className="flex items-center">
+                  <div className="w-14 h-14 rounded-full mr-4 overflow-hidden bg-gray-200">
+                    <img
+                      src={testimonial.avatar ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${testimonial.avatar}` : '/images/avatar-placeholder.jpg'}
+                      alt={testimonial.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-800">
                       {testimonial.name}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    </p>
+                    <p className="text-sm text-gray-600">
                       {testimonial.role}
-                    </Typography>
-                  </Box>
-                </Box>
-              </Paper>
-            </Grid>
-          ))}
-        </Grid>
-      </Container>
-    </Box>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="col-span-3 text-center py-12">
+              <p className="text-xl text-gray-500">
+                No testimonials available yet. Be the first one to share your experience!
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 
   const featuresSection = () => (
-    <Box sx={{ py: 6, bgcolor: 'background.default', mt: 2 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ mb: 5 }}>
-          <Typography 
-            variant="h4" 
-            component="h2" 
-            sx={{ fontWeight: 'bold', position: 'relative', display: 'inline-block' }}
-          >
-            <Box 
-              component="span"
-              sx={{
-                position: 'absolute',
-                height: '8px',
-                width: '50%',
-                bottom: 0,
-                left: 0,
-                backgroundColor: 'secondary.light',
-                opacity: 0.5,
-                zIndex: -1
-              }}
-            />
-            Why Choose Us
-          </Typography>
-        </Box>
-        
-        <Grid container spacing={4}>
-          <Grid item xs={12} sm={6} md={3}>
-            <Box
-              sx={{
-                textAlign: 'center',
-                p: 3,
-                height: '100%',
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: 'primary.main',
-                  color: 'white',
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                }}
-              >
-                <MusicNoteIcon sx={{ fontSize: 40 }} />
-              </Box>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Quality Instruments
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                We carefully select and test each instrument to ensure exceptional quality and sound.
-              </Typography>
-            </Box>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Box
-              sx={{
-                textAlign: 'center',
-                p: 3,
-                height: '100%',
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: 'secondary.main',
-                  color: 'white',
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                }}
-              >
-                <ShippingIcon sx={{ fontSize: 40 }} />
-              </Box>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Fast Delivery
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Free shipping on orders over $100, with quick and reliable delivery to your door.
-              </Typography>
-            </Box>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Box
-              sx={{
-                textAlign: 'center',
-                p: 3,
-                height: '100%',
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: '#4caf50',
-                  color: 'white',
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                }}
-              >
-                <SecurityIcon sx={{ fontSize: 40 }} />
-              </Box>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Secure Payment
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Shop with confidence with our secure payment system and satisfaction guarantee.
-              </Typography>
-            </Box>
-          </Grid>
-          
-          <Grid item xs={12} sm={6} md={3}>
-            <Box
-              sx={{
-                textAlign: 'center',
-                p: 3,
-                height: '100%',
-              }}
-            >
-              <Box
-                sx={{
-                  bgcolor: '#ff9800',
-                  color: 'white',
-                  width: 80,
-                  height: 80,
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  mx: 'auto',
-                  mb: 3,
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                }}
-              >
-                <SupportIcon sx={{ fontSize: 40 }} />
-              </Box>
-              <Typography variant="h6" gutterBottom fontWeight="bold">
-                Expert Support
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Our team of musicians is here to help you find the perfect instrument for your needs.
-              </Typography>
-            </Box>
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+    <FeaturesRow />
   );
 
-  const brandsSection = () => (
-    <Box sx={{ py: 5, bgcolor: 'white', borderRadius: { xs: 0, md: '16px' }, mx: { xs: 0, md: 2 }, mt: 4 }}>
-      <Container maxWidth="lg">
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-          <Typography 
-            variant="h4" 
-            component="h2" 
-            sx={{ fontWeight: 'bold', position: 'relative' }}
-          >
-            <Box 
-              component="span"
-              sx={{
-                position: 'absolute',
-                height: '8px',
-                width: '40%',
-                bottom: 0,
-                left: 0,
-                backgroundColor: 'secondary.light',
-                opacity: 0.5,
-                zIndex: -1
-              }}
-            />
-            Top Brands
-          </Typography>
-          <Typography variant="body1" color="primary.main" fontWeight="medium">
-            Quality you can trust
-          </Typography>
-        </Box>
-        
-        <Box 
-          sx={{ 
-            display: 'flex', 
-            flexWrap: 'wrap', 
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: { xs: 3, md: 6 },
-            opacity: 0.7
-          }}
-        >
-          {FEATURED_BRANDS.map((brand, index) => (
-            <Box 
-              key={index} 
-              component="img"
-              src={`/brands/${brand}`}
-              alt={`Brand ${index+1}`}
-              sx={{ 
-                height: { xs: 40, md: 50 },
-                filter: 'grayscale(100%)',
-                opacity: 0.7,
-                transition: 'all 0.3s ease',
-                '&:hover': {
-                  filter: 'grayscale(0%)',
-                  opacity: 1,
-                }
-              }}
-            />
-          ))}
-        </Box>
-      </Container>
-    </Box>
-  );
+
 
   const ctaSection = () => (
-    <Box 
-      sx={{ 
-        py: 6, 
-        backgroundImage: 'linear-gradient(135deg, #FF2B52 0%, #FF6B87 100%)',
-        color: 'white',
-        borderRadius: { xs: 0, md: '16px' },
-        mx: { xs: 0, md: 2 },
-        mb: { xs: 0, md: 2 },
-        mt: 4,
-        overflow: 'hidden',
-        position: 'relative'
-      }}
-    >
-      <Box 
-        sx={{ 
-          position: 'absolute',
-          top: 0,
-          right: 0,
-          width: '300px',
-          height: '300px',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '50%',
-          transform: 'translate(30%, -30%)',
-          zIndex: 0
-        }}
-      />
-      <Box 
-        sx={{ 
-          position: 'absolute',
-          bottom: 0,
-          left: 0,
-          width: '200px',
-          height: '200px',
-          backgroundColor: 'rgba(255, 255, 255, 0.1)',
-          borderRadius: '50%',
-          transform: 'translate(-30%, 30%)',
-          zIndex: 0
-        }}
-      />
-      <Container maxWidth="md">
-        <Grid container spacing={4} alignItems="center">
-          <Grid item xs={12} md={8}>
-            <Typography 
-              variant="h3" 
-              component="h2" 
-              gutterBottom 
-              sx={{ 
-                fontWeight: 'bold',
-                textShadow: '1px 1px 3px rgba(0,0,0,0.2)'
-              }}
-            >
+    <div className="py-16 bg-gradient-to-br from-red-500 to-pink-400 text-white mt-16 relative overflow-hidden md:mx-2 md:mb-2 md:rounded-2xl">
+      <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-white bg-opacity-10 rounded-full transform translate-x-1/3 -translate-y-1/3 z-0"></div>
+      <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-white bg-opacity-10 rounded-full transform -translate-x-1/3 translate-y-1/3 z-0"></div>
+      
+      <div className="container mx-auto px-4 max-w-3xl relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          <div className="md:col-span-8">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 drop-shadow-sm">
               Find Your Perfect Sound Today
-            </Typography>
-            <Typography variant="h6" paragraph sx={{ mb: 4, maxWidth: '600px' }}>
+            </h2>
+            <p className="text-lg md:text-xl mb-8 max-w-xl">
               Join thousands of musicians who trust Instrument Haven for quality instruments and exceptional service.
-            </Typography>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-              <Button 
-                component={Link} 
+            </p>
+            <div className="flex flex-wrap gap-4">
+              <Link 
                 to="/products" 
-                variant="contained" 
-                color="secondary"
-                size="large"
-                sx={{ 
-                  px: 4, 
-                  py: 1.5,
-                  borderRadius: '30px',
-                  fontSize: '1rem',
-                  fontWeight: 'bold',
-                  backgroundColor: 'white',
-                  color: 'primary.main',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.9)',
-                  }
-                }}
+                className="px-8 py-3 rounded-full text-base font-bold bg-white text-red-500 shadow-lg hover:bg-white hover:bg-opacity-90 inline-block transition-all"
               >
                 Shop Now
-              </Button>
-              <Button 
-                component={Link} 
+              </Link>
+              <Link 
                 to="/contact" 
-                variant="outlined" 
-                size="large"
-                sx={{ 
-                  px: 4, 
-                  py: 1.2,
-                  borderRadius: '30px',
-                  fontSize: '1.1rem',
-                  fontWeight: 'bold',
-                  border: '2px solid',
-                  color: 'white',
-                  borderColor: 'white',
-                  '&:hover': {
-                    borderColor: 'white',
-                    backgroundColor: 'rgba(255,255,255,0.1)'
-                  }
-                }}
+                className="px-8 py-3 rounded-full text-lg font-bold border-2 border-white text-white hover:border-white hover:bg-white hover:bg-opacity-10 inline-block transition-all"
               >
                 Contact Us
-              </Button>
-            </Box>
-          </Grid>
-          <Grid item xs={12} md={4} sx={{ display: { xs: 'none', md: 'block' } }}>
-            <Box 
-              component="img"
-              src="/cta-image.png"
-              alt="Musical instruments"
-              sx={{ 
-                width: '100%',
-                maxWidth: '300px',
-                display: 'block',
-                margin: '0 auto',
-              }}
+              </Link>
+            </div>
+          </div>
+          <div className="hidden md:block md:col-span-4">
+            <img 
+              src="/cta-image.png" 
+              alt="Musical instruments" 
+              className="w-full max-w-[300px] mx-auto block"
             />
-          </Grid>
-        </Grid>
-      </Container>
-    </Box>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 
   if (loading) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '300px',
-        }}
-      >
+      <div className="flex justify-center items-center min-h-[300px]">
         <CircularProgress />
-      </Box>
+      </div>
     );
   }
 
   return (
-    <Box>
+    <div className="space-y-8">
       {heroSection()}
-      {categorySection()}
-      {featuredProductsSection()}
+      {categories.length > 0 && categorySection()}
+      {featuredProducts.length > 0 && featuredProductsSection()}
+      {testimonials.length > 0 && testimonialsSection()}
       {featuresSection()}
-      {testimonialsSection()}
-      {brandsSection()}
       {ctaSection()}
-    </Box>
+    </div>
   );
 };
 

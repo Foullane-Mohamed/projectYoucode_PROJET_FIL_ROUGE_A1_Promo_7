@@ -67,36 +67,49 @@ const Dashboard = () => {
     { text: 'Coupons', icon: <CouponIcon />, path: '/admin/coupons' },
     { text: 'Users', icon: <UsersIcon />, path: '/admin/users' },
   ];
+  
+  // This function returns the icon color based on the path and current location
+  const getIconColor = (itemPath) => {
+    if (itemPath === '/admin') {
+      return (location.pathname === '/admin' || location.pathname === '/admin/') ? 'white' : '#FF2B52';
+    }
+    return location.pathname.startsWith(itemPath) ? 'white' : '#FF2B52';
+  };
 
   const drawer = (
     <>
       <Toolbar sx={{ 
         bgcolor: 'primary.main', 
         color: 'white', 
-        mb: 1,
-        height: 80,
+        height: 64,
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderRadius: 0,
+        padding: 0,
+        borderTopLeftRadius: 0,
+        borderTopRightRadius: 0
       }}>
-        <Typography variant="h6" noWrap sx={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
+        <Typography variant="h6" noWrap sx={{ fontSize: '1.3rem', fontWeight: 'bold', textAlign: 'center' }}>
           Admin Panel
         </Typography>
       </Toolbar>
       <Divider />
-      <List sx={{ px: 2 }}>
+      <List sx={{ px: 0 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+          <ListItem key={item.text} disablePadding sx={{ mb: 0 }}>
             <ListItemButton
               component={Link}
               to={item.path}
               selected={
                 item.path === '/admin'
-                  ? location.pathname === '/admin'
+                  ? location.pathname === '/admin' || location.pathname === '/admin/'
                   : location.pathname.startsWith(item.path)
               }
               onClick={() => isMobile && setMobileOpen(false)}
               sx={{
                 borderRadius: 2,
+                height: 50,
                 '&.Mui-selected': {
                   bgcolor: 'primary.main',
                   color: 'white',
@@ -104,8 +117,11 @@ const Dashboard = () => {
                     bgcolor: 'primary.dark',
                   },
                   '& .MuiListItemIcon-root': {
-                    color: 'white',
+                    color: 'white !important',
                   },
+                  '& .MuiSvgIcon-root': {
+                    color: 'white !important',
+                  }
                 },
                 '&:hover': {
                   bgcolor: 'rgba(255, 43, 82, 0.1)',
@@ -115,7 +131,10 @@ const Dashboard = () => {
               <ListItemIcon
                 sx={{
                   minWidth: 40,
-                  color: location.pathname.startsWith(item.path) ? 'white' : 'primary.main',
+                  ml: 2,
+                  '& .MuiSvgIcon-root': {
+                    color: getIconColor(item.path)
+                  }
                 }}
               >
                 {item.icon}
@@ -123,7 +142,8 @@ const Dashboard = () => {
               <ListItemText 
                 primary={item.text} 
                 primaryTypographyProps={{
-                  fontWeight: location.pathname.startsWith(item.path) ? 'bold' : 'medium',
+                  fontWeight: (location.pathname === item.path || location.pathname.startsWith(item.path)) ? 'bold' : 'medium',
+                  ml: 1
                 }}
               />
             </ListItemButton>
@@ -131,26 +151,28 @@ const Dashboard = () => {
         ))}
       </List>
       <Divider />
-      <List sx={{ px: 2 }}>
-        <ListItem disablePadding sx={{ mt: 1 }}>
+      <List sx={{ px: 0 }}>
+        <ListItem disablePadding sx={{ mt: 0 }}>
           <ListItemButton 
             onClick={handleLogout}
             sx={{
               borderRadius: 2,
+              height: 50,
               '&:hover': {
                 bgcolor: 'rgba(211, 47, 47, 0.1)',
               },
             }}
           >
-            <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+            <ListItemIcon sx={{ minWidth: 40, ml: 2, color: 'error.main' }}>
               <LogoutIcon />
             </ListItemIcon>
             <ListItemText 
               primary="Logout" 
               primaryTypographyProps={{
-                color: 'error.main',
-                fontWeight: 'medium',
-              }}
+              color: 'error.main',
+              fontWeight: 'medium',
+                ml: 1
+                }}
             />
           </ListItemButton>
         </ListItem>
@@ -190,7 +212,14 @@ const Dashboard = () => {
       </AppBar>
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ 
+          width: { sm: drawerWidth }, 
+          flexShrink: { sm: 0 }, 
+          borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+          '& .MuiPaper-root': {
+            borderRadius: 0
+          }
+        }}
       >
         {/* The implementation can be swapped with js to avoid SEO duplication of links. */}
         <Drawer
@@ -202,7 +231,11 @@ const Dashboard = () => {
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              borderRadius: 0 
+            },
           }}
         >
           {drawer}
@@ -211,7 +244,11 @@ const Dashboard = () => {
           variant="permanent"
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': { 
+              boxSizing: 'border-box', 
+              width: drawerWidth,
+              borderRadius: 0 
+            },
           }}
           open
         >

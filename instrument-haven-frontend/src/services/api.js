@@ -178,9 +178,12 @@ const ordersAPI = {
 
 const reviewsAPI = {
   getByProduct: (productId) => api.get(`/products/${productId}/reviews`),
-  create: (productId, data) => api.post(`/products/${productId}/reviews`, data),
-  update: (productId, reviewId, data) => api.put(`/products/${productId}/reviews/${reviewId}`, data),
-  delete: (productId, reviewId) => api.delete(`/products/${productId}/reviews/${reviewId}`),
+  create: (data) => api.post(`/products/${data.product_id}/reviews`, {
+    rating: data.rating,
+    comment: data.comment
+  }),
+  update: (reviewId, data) => api.put(`/reviews/${reviewId}`, data),
+  delete: (reviewId) => api.delete(`/reviews/${reviewId}`),
 };
 
 
@@ -267,6 +270,8 @@ const adminAPI = {
   
   // Tags are not supported in the backend
 };
+
+export { api };
 
 export default {
   auth: authAPI,

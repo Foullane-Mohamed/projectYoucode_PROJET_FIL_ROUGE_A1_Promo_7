@@ -203,8 +203,8 @@ body {
 }
 
 .MuiCard-root:hover {
-  transform: translateY(-5px) !important;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* Make inputs and forms more Temu-like */

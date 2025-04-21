@@ -3,6 +3,9 @@ import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../services/api";
 import ProductCard from "../../components/common/ProductCard";
+import ListProductCard from "../../components/common/ListProductCard";
+import EnhancedProductCard from "../../components/common/EnhancedProductCard";
+import EnhancedListProductCard from "../../components/common/EnhancedListProductCard";
 import {
   Container,
   Typography,
@@ -27,8 +30,10 @@ import {
   useTheme,
   Paper,
   Alert,
+  ToggleButtonGroup,
+  ToggleButton,
 } from "@mui/material";
-import { Search, FilterList, Close } from "@mui/icons-material";
+import { Search, FilterList, Close, ViewList, ViewModule } from "@mui/icons-material";
 
 const ProductList = () => {
   const theme = useTheme();
@@ -53,6 +58,7 @@ const ProductList = () => {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentCategory, setCurrentCategory] = useState(null);
+  const [viewMode, setViewMode] = useState('grid'); // grid or list view
 
   const fetchData = useCallback(async () => {
     setError(null);
@@ -203,6 +209,12 @@ const ProductList = () => {
     handleFilterChange("page", value);
   };
 
+  const handleViewChange = (event, newView) => {
+    if (newView !== null) {
+      setViewMode(newView);
+    }
+  };
+
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
   };
@@ -318,20 +330,43 @@ const ProductList = () => {
             </Button>
           </Box>
 
-          <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-            <InputLabel>Sort By</InputLabel>
-            <Select
-              value={filters.sort}
-              onChange={(e) => handleFilterChange("sort", e.target.value)}
-              label="Sort By"
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              alignItems: 'center'
+            }}
+          >
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
+              <InputLabel>Sort By</InputLabel>
+              <Select
+                value={filters.sort}
+                onChange={(e) => handleFilterChange("sort", e.target.value)}
+                label="Sort By"
+              >
+                <MenuItem value="newest">Newest</MenuItem>
+                <MenuItem value="price-asc">Price: Low to High</MenuItem>
+                <MenuItem value="price-desc">Price: High to Low</MenuItem>
+                <MenuItem value="name-asc">Name: A to Z</MenuItem>
+                <MenuItem value="name-desc">Name: Z to A</MenuItem>
+              </Select>
+            </FormControl>
+
+            <ToggleButtonGroup
+              value={viewMode}
+              exclusive
+              onChange={handleViewChange}
+              aria-label="view mode"
+              size="small"
             >
-              <MenuItem value="newest">Newest</MenuItem>
-              <MenuItem value="price-asc">Price: Low to High</MenuItem>
-              <MenuItem value="price-desc">Price: High to Low</MenuItem>
-              <MenuItem value="name-asc">Name: A to Z</MenuItem>
-              <MenuItem value="name-desc">Name: Z to A</MenuItem>
-            </Select>
-          </FormControl>
+              <ToggleButton value="grid" aria-label="grid view">
+                <ViewModule />
+              </ToggleButton>
+              <ToggleButton value="list" aria-label="list view">
+                <ViewList />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         </Box>
 
         <Grid container spacing={2}>
@@ -593,13 +628,21 @@ const ProductList = () => {
               </Box>
             ) : products.length > 0 ? (
               <>
-                <Grid container spacing={3}>
-                  {products.map((product) => (
-                    <Grid item xs={12} md={4} key={product.id}>
-                      <ProductCard product={product} />
-                    </Grid>
-                  ))}
-                </Grid>
+                {viewMode === 'grid' ? (
+                  <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
+                    {products.map((product) => (
+                      <Grid item xs={12} sm={6} md={4} lg={4} key={product.id}>
+                        <EnhancedProductCard product={product} />
+                      </Grid>
+                    ))}
+                  </Grid>
+                ) : (
+                  <Box>
+                    {products.map((product) => (
+                      <EnhancedListProductCard key={product.id} product={product} />
+                    ))}
+                  </Box>
+                )}
 
                 <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
                   <Pagination
