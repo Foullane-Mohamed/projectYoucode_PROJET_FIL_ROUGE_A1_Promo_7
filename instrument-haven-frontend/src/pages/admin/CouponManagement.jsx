@@ -30,8 +30,7 @@ import {
   Add as AddIcon, 
   Edit as EditIcon, 
   Delete as DeleteIcon,
-  Search as SearchIcon,
-  FilterList as FilterIcon
+  Search as SearchIcon
 } from '@mui/icons-material';
 
 // Mock data for testing when API fails
@@ -342,7 +341,7 @@ const CouponManagement = () => {
             size="small"
             value={searchQuery}
             onChange={handleSearchChange}
-            sx={{ width: 300, mr: 2 }}
+            sx={{ width: 300 }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -351,13 +350,6 @@ const CouponManagement = () => {
               ),
             }}
           />
-          <Button
-            variant="outlined"
-            startIcon={<FilterIcon />}
-            sx={{ ml: 'auto' }}
-          >
-            Filter
-          </Button>
         </Box>
       </Paper>
 

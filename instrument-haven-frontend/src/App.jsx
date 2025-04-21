@@ -45,6 +45,7 @@ import UserManagement from './pages/admin/UserManagement';
 // Route Guards
 import ProtectedRoute from './components/common/ProtectedRoute';
 import AdminRoute from './components/common/AdminRoute';
+import ShopRoute from './components/common/ShopRoute';
 
 const theme = createTheme({
   palette: {
@@ -150,46 +151,58 @@ function App() {
                           <main style={{ flexGrow: 1 }}>
                             <Routes>
                               {/* Public Routes */}
-                              <Route path="/" element={<Home />} />
-                              <Route path="/products" element={<ProductList />} />
-                              <Route path="/products/:id" element={<ProductDetail />} />
-                              <Route path="/categories/:id" element={<ProductList />} />
-                              <Route path="/search" element={<ProductList />} />
-                              <Route path="/cart" element={<Cart />} />
+                              <Route path="/" element={<ShopRoute><Home /></ShopRoute>} />
+                              <Route path="/products" element={<ShopRoute><ProductList /></ShopRoute>} />
+                              <Route path="/products/:id" element={<ShopRoute><ProductDetail /></ShopRoute>} />
+                              <Route path="/categories/:id" element={<ShopRoute><ProductList /></ShopRoute>} />
+                              <Route path="/search" element={<ShopRoute><ProductList /></ShopRoute>} />
+                              <Route path="/cart" element={<ShopRoute><Cart /></ShopRoute>} />
                               <Route path="/login" element={<Login />} />
                               <Route path="/register" element={<Register />} />
-                              <Route path="/contact" element={<Contact />} />
+                              <Route path="/contact" element={<ShopRoute><Contact /></ShopRoute>} />
                               
                               {/* Protected Routes */}
                               <Route path="/checkout" element={
-                                <ProtectedRoute>
-                                  <Checkout />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <Checkout />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                               <Route path="/wishlist" element={
-                                <ProtectedRoute>
-                                  <Wishlist />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <Wishlist />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                               <Route path="/profile" element={
-                                <ProtectedRoute>
-                                  <Profile />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <Profile />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                               <Route path="/my-orders" element={
-                                <ProtectedRoute>
-                                  <MyOrders />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <MyOrders />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                               <Route path="/orders/:id" element={
-                                <ProtectedRoute>
-                                  <OrderDetail />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <OrderDetail />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                               <Route path="/order-success" element={
-                                <ProtectedRoute>
-                                  <OrderSuccess />
-                                </ProtectedRoute>
+                                <ShopRoute>
+                                  <ProtectedRoute>
+                                    <OrderSuccess />
+                                  </ProtectedRoute>
+                                </ShopRoute>
                               } />
                                   
                               {/* Not Found */}

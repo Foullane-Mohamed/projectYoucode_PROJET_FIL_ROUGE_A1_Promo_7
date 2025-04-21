@@ -67,7 +67,8 @@ const Header = () => {
     handleCloseUserMenu();
   };
 
-  const navItems = [
+  // Only show nav items if not an admin
+  const navItems = isAdmin() ? [] : [
     { title: 'Home', path: '/' },
     { title: 'Products', path: '/products' },
     { title: 'Categories', path: '/categories' },
@@ -176,46 +177,51 @@ const Header = () => {
             ))}
           </Box>
 
-          {/* Search Button */}
-          <Box sx={{ display: 'flex' }}>
-            <IconButton 
-              size="large" 
-              aria-label="search" 
-              color="primary" 
-              component={Link} 
-              to="/search"
-            >
-              <SearchIcon />
-            </IconButton>
-          </Box>
+          {/* Only show shop icons if not an admin */}
+          {!isAdmin() && (
+            <>
+              {/* Search Button */}
+              <Box sx={{ display: 'flex' }}>
+                <IconButton 
+                  size="large" 
+                  aria-label="search" 
+                  color="primary" 
+                  component={Link} 
+                  to="/search"
+                >
+                  <SearchIcon />
+                </IconButton>
+              </Box>
 
-          {/* Wishlist Button */}
-          <Box sx={{ display: 'flex' }}>
-            <IconButton 
-              size="large" 
-              aria-label="wishlist" 
-              color="primary" 
-              component={Link} 
-              to="/wishlist"
-            >
-              <Favorite />
-            </IconButton>
-          </Box>
+              {/* Wishlist Button */}
+              <Box sx={{ display: 'flex' }}>
+                <IconButton 
+                  size="large" 
+                  aria-label="wishlist" 
+                  color="primary" 
+                  component={Link} 
+                  to="/wishlist"
+                >
+                  <Favorite />
+                </IconButton>
+              </Box>
 
-          {/* Cart Button */}
-          <Box sx={{ display: 'flex' }}>
-            <IconButton 
-              size="large" 
-              aria-label="cart" 
-              color="primary" 
-              component={Link} 
-              to="/cart"
-            >
-              <Badge badgeContent={totalItems} color="error">
-                <ShoppingCart />
-              </Badge>
-            </IconButton>
-          </Box>
+              {/* Cart Button */}
+              <Box sx={{ display: 'flex' }}>
+                <IconButton 
+                  size="large" 
+                  aria-label="cart" 
+                  color="primary" 
+                  component={Link} 
+                  to="/cart"
+                >
+                  <Badge badgeContent={totalItems} color="error">
+                    <ShoppingCart />
+                  </Badge>
+                </IconButton>
+              </Box>
+            </>
+          )}
 
           {/* User Menu */}
           <Box sx={{ flexGrow: 0, ml: 2 }}>

@@ -35,7 +35,6 @@ import {
   ShoppingCart as OrdersIcon,
   Discount as CouponIcon,
   People as UsersIcon,
-  Home as HomeIcon,
   Logout as LogoutIcon,
 } from '@mui/icons-material';
 import { useContext } from 'react';
@@ -71,15 +70,22 @@ const Dashboard = () => {
 
   const drawer = (
     <>
-      <Toolbar>
-        <Typography variant="h6" noWrap>
+      <Toolbar sx={{ 
+        bgcolor: 'primary.main', 
+        color: 'white', 
+        mb: 1,
+        height: 80,
+        display: 'flex',
+        justifyContent: 'center'
+      }}>
+        <Typography variant="h6" noWrap sx={{ fontSize: '1.5rem', fontWeight: 'bold' }}>
           Admin Panel
         </Typography>
       </Toolbar>
       <Divider />
-      <List>
+      <List sx={{ px: 2 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding>
+          <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
             <ListItemButton
               component={Link}
               to={item.path}
@@ -89,25 +95,63 @@ const Dashboard = () => {
                   : location.pathname.startsWith(item.path)
               }
               onClick={() => isMobile && setMobileOpen(false)}
+              sx={{
+                borderRadius: 2,
+                '&.Mui-selected': {
+                  bgcolor: 'primary.main',
+                  color: 'white',
+                  '&:hover': {
+                    bgcolor: 'primary.dark',
+                  },
+                  '& .MuiListItemIcon-root': {
+                    color: 'white',
+                  },
+                },
+                '&:hover': {
+                  bgcolor: 'rgba(255, 43, 82, 0.1)',
+                },
+              }}
             >
-              <ListItemIcon>{item.icon}</ListItemIcon>
-              <ListItemText primary={item.text} />
+              <ListItemIcon
+                sx={{
+                  minWidth: 40,
+                  color: location.pathname.startsWith(item.path) ? 'white' : 'primary.main',
+                }}
+              >
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.text} 
+                primaryTypographyProps={{
+                  fontWeight: location.pathname.startsWith(item.path) ? 'bold' : 'medium',
+                }}
+              />
             </ListItemButton>
           </ListItem>
         ))}
       </List>
       <Divider />
-      <List>
-        <ListItem disablePadding>
-          <ListItemButton component={Link} to="/" onClick={() => isMobile && setMobileOpen(false)}>
-            <ListItemIcon><HomeIcon /></ListItemIcon>
-            <ListItemText primary="Back to Shop" />
-          </ListItemButton>
-        </ListItem>
-        <ListItem disablePadding>
-          <ListItemButton onClick={handleLogout}>
-            <ListItemIcon><LogoutIcon /></ListItemIcon>
-            <ListItemText primary="Logout" />
+      <List sx={{ px: 2 }}>
+        <ListItem disablePadding sx={{ mt: 1 }}>
+          <ListItemButton 
+            onClick={handleLogout}
+            sx={{
+              borderRadius: 2,
+              '&:hover': {
+                bgcolor: 'rgba(211, 47, 47, 0.1)',
+              },
+            }}
+          >
+            <ListItemIcon sx={{ minWidth: 40, color: 'error.main' }}>
+              <LogoutIcon />
+            </ListItemIcon>
+            <ListItemText 
+              primary="Logout" 
+              primaryTypographyProps={{
+                color: 'error.main',
+                fontWeight: 'medium',
+              }}
+            />
           </ListItemButton>
         </ListItem>
       </List>
@@ -119,9 +163,14 @@ const Dashboard = () => {
       <CssBaseline />
       <AppBar
         position="fixed"
+        elevation={2}
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
+          backgroundColor: 'white',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         <Toolbar>
@@ -134,16 +183,9 @@ const Dashboard = () => {
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Instrument Haven Administration
+          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1, fontWeight: 'bold', color: 'primary.main' }}>
+            Instrument Haven <span style={{ fontWeight: 'normal', color: '#666' }}>Administration</span>
           </Typography>
-          <Button 
-            color="inherit" 
-            startIcon={<LogoutIcon />}
-            onClick={handleLogout}
-          >
-            Logout
-          </Button>
         </Toolbar>
       </AppBar>
       <Box
@@ -180,13 +222,18 @@ const Dashboard = () => {
         component="main"
         sx={{ 
           flexGrow: 1, 
-          p: 3, 
+          p: 4, 
           width: { sm: `calc(100% - ${drawerWidth}px)` },
           ml: { sm: `${drawerWidth}px` },
           mt: { xs: 8, sm: 8 },
           display: 'flex',
           flexDirection: 'column',
-          minHeight: 'calc(100vh - 64px)' // Account for AppBar height
+          minHeight: 'calc(100vh - 64px)', // Account for AppBar height
+          backgroundColor: '#f9f9fb',
+          borderTopLeftRadius: 20,
+          borderBottomLeftRadius: 20,
+          boxShadow: 'inset 0 4px 20px -10px rgba(0,0,0,0.1)',
+          overflow: 'auto'
         }}
       >
         <Box sx={{ flexGrow: 1, mb: 4 }}>

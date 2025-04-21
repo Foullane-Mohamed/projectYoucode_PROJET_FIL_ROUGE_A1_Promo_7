@@ -136,43 +136,82 @@ const AdminHome = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          minHeight: '300px',
+          minHeight: '400px',
         }}
       >
-        <CircularProgress />
+        <CircularProgress size={60} sx={{ color: 'primary.main' }} />
+        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+          Loading Dashboard...
+        </Typography>
       </Box>
     );
   }
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Dashboard
-      </Typography>
+      <Box sx={{ mb: 4, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+          Dashboard
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+          Welcome to your Instrument Haven Admin Dashboard
+        </Typography>
+      </Box>
       
       {/* Statistic Cards */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={3} lg={2}>
+        <Grid item xs={12} sm={6} md={4} lg={2.4}>
           <Card 
             component={Link} 
             to="/admin/products"
             sx={{ 
               textDecoration: 'none',
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-5px)' }
+              transition: 'all 0.3s ease',
+              borderRadius: 3,
+              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+              overflow: 'hidden',
+              height: '100%',
+              position: 'relative',
+              background: 'linear-gradient(45deg, #ffffff 50%, #fff7f8 100%)',
+              '&:hover': { 
+                transform: 'translateY(-5px)', 
+                boxShadow: '0 10px 20px rgba(0,0,0,0.10)'
+              },
+              '&:before': {
+                content: '""',
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '3px',
+                backgroundColor: 'primary.main'
+              }
             }}
           >
-            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ mr: 2, bgcolor: 'primary.light', p: 1, borderRadius: 1 }}>
+            <CardContent sx={{ display: 'flex', alignItems: 'center', height: '100%', p: 3 }}>
+              <Box 
+                sx={{ 
+                  mr: 3, 
+                  bgcolor: 'primary.main', 
+                  p: 2, 
+                  borderRadius: 2,
+                  color: 'white',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxShadow: '0 4px 10px rgba(255, 43, 82, 0.3)'
+                }}
+              >
                 <InventoryIcon fontSize="large" />
               </Box>
               <Box>
-                <Typography variant="h5" component="div">
+                <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
                   {stats.products}
                 </Typography>
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 'medium' }}>
                   Products
                 </Typography>
               </Box>
@@ -286,14 +325,27 @@ const AdminHome = () => {
       {/* Orders and Products Tables */}
       <Grid container spacing={3} sx={{ mt: 3 }}>
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ 
+            p: 3, 
+            borderRadius: 3, 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              fontWeight: 'bold', 
+              pb: 1, 
+              mb: 2,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}>
               Recent Orders
             </Typography>
             {stats.recentOrders && stats.recentOrders.length > 0 ? (
-              <Box>
-                <TableContainer>
-                  <Table size="small">
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <TableContainer sx={{ flexGrow: 1 }}>
+                  <Table size="small" sx={{ '& .MuiTableCell-head': { fontWeight: 'bold' } }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Order ID</TableCell>
@@ -320,12 +372,22 @@ const AdminHome = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Box sx={{ textAlign: 'center', mt: 3 }}>
                   <Button 
                     component={Link} 
                     to="/admin/orders" 
-                    size="small"
+                    variant="outlined"
                     color="primary"
+                    sx={{ 
+                      borderRadius: '20px',
+                      px: 3,
+                      py: 0.8,
+                      fontWeight: 'medium',
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      }
+                    }}
                   >
                     View All Orders
                   </Button>
@@ -340,14 +402,27 @@ const AdminHome = () => {
         </Grid>
         
         <Grid item xs={12} md={6}>
-          <Paper sx={{ p: 3 }}>
-            <Typography variant="h6" gutterBottom>
+          <Paper sx={{ 
+            p: 3, 
+            borderRadius: 3, 
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            height: '100%',
+            display: 'flex',
+            flexDirection: 'column'
+          }}>
+            <Typography variant="h6" gutterBottom sx={{ 
+              fontWeight: 'bold', 
+              pb: 1, 
+              mb: 2,
+              borderBottom: '1px solid',
+              borderColor: 'divider'
+            }}>
               Top Products
             </Typography>
             {stats.topProducts && stats.topProducts.length > 0 ? (
-              <Box>
-                <TableContainer>
-                  <Table size="small">
+              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+                <TableContainer sx={{ flexGrow: 1 }}>
+                  <Table size="small" sx={{ '& .MuiTableCell-head': { fontWeight: 'bold' } }}>
                     <TableHead>
                       <TableRow>
                         <TableCell>Product</TableCell>
@@ -369,12 +444,22 @@ const AdminHome = () => {
                     </TableBody>
                   </Table>
                 </TableContainer>
-                <Box sx={{ textAlign: 'center', mt: 2 }}>
+                <Box sx={{ textAlign: 'center', mt: 3 }}>
                   <Button 
                     component={Link} 
                     to="/admin/products" 
-                    size="small"
+                    variant="outlined"
                     color="primary"
+                    sx={{ 
+                      borderRadius: '20px',
+                      px: 3,
+                      py: 0.8,
+                      fontWeight: 'medium',
+                      '&:hover': {
+                        backgroundColor: 'primary.main',
+                        color: 'white',
+                      }
+                    }}
                   >
                     View All Products
                   </Button>

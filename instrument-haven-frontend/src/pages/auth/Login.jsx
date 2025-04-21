@@ -52,10 +52,19 @@ const Login = () => {
       
       if (result.success) {
         setSuccess(result.message || 'Login successful');
-        // Delay redirect slightly to show success message
-        setTimeout(() => {
-          navigate(from, { replace: true });
-        }, 800);
+        
+        // Check if user is admin and redirect to admin dashboard
+        if (result.user && result.user.role === 'admin') {
+          // Redirect to admin dashboard
+          setTimeout(() => {
+            navigate('/admin', { replace: true });
+          }, 800);
+        } else {
+          // Redirect to the previous page or home for regular users
+          setTimeout(() => {
+            navigate(from, { replace: true });
+          }, 800);
+        }
       } else {
         setError(result.message || 'Login failed. Please check your credentials.');
       }
