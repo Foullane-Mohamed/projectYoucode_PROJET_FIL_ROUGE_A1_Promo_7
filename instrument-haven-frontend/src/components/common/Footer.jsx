@@ -1,6 +1,22 @@
-import { Box, Container, Grid, Typography, Link, Divider } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, Divider, useTheme, useMediaQuery } from '@mui/material';
+import { useLocation } from 'react-router-dom';
+
+// Define drawer width to match the admin sidebar
+const drawerWidth = 240;
 
 const Footer = () => {
+  const location = useLocation();
+  const theme = useTheme();
+  const isSmallScreen = useMediaQuery(theme.breakpoints.down('sm'));
+  
+  // Check if we're in the admin section
+  const isAdmin = location.pathname.startsWith('/admin');
+
+  // Don't render footer for admin pages
+  if (isAdmin) {
+    return null;
+  }
+  // Regular footer for other pages
   return (
     <Box
       sx={{

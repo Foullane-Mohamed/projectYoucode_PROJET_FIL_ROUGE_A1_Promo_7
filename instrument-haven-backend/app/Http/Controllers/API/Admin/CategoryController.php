@@ -16,6 +16,46 @@ class CategoryController extends Controller
     {
         $this->categoryRepository = $categoryRepository;
     }
+    
+    /**
+     * Display a paginated listing of the categories.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function index(Request $request)
+    {
+        $perPage = $request->input('per_page', 10); // Default to 10 items per page
+        $search = $request->input('search', '');
+        $orderBy = $request->input('order_by', 'id');
+        $direction = $request->input('direction', 'asc');
+        
+        // Build filters array - now only for search
+        $filters = [];
+        if (!empty($search)) {
+            $filters['search'] = $search;
+        }
+        
+        // Get paginated categories with filters
+        $categories = $this->categoryRepository->paginateWithFilters(
+            $perPage,
+            $filters,
+            $orderBy,
+            $direction
+        );
+        
+        // Add product count for each category
+        $categories->getCollection()->each(function ($category) {
+            $category->product_count = $category->products()->count();
+        });
+        
+        return response()->json([
+            'status' => 'success',
+            'data' => [
+                'categories' => $categories
+            ]
+        ]);
+    }
 
     /**
      * Create a new category.

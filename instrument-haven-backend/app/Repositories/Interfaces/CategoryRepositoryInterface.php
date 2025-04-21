@@ -18,4 +18,15 @@ interface CategoryRepositoryInterface extends RepositoryInterface
      * @return mixed
      */
     public function getCategoryWithProducts($id);
+    
+    /**
+     * Get paginated categories with filters
+     * 
+     * @param int $perPage
+     * @param array $filters
+     * @param string $orderBy
+     * @param string $direction
+     * @return mixed
+     */
+    public function paginateWithFilters($perPage, array $filters, $orderBy, $direction);
 }

@@ -25,11 +25,14 @@ import {
   MenuItem,
   Snackbar,
   Alert,
+  TablePagination,
+  InputAdornment,
 } from '@mui/material';
 import { 
   Add as AddIcon, 
   Edit as EditIcon, 
-  Delete as DeleteIcon 
+  Delete as DeleteIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 
 const CategoryManagement = () => {
@@ -42,6 +45,19 @@ const CategoryManagement = () => {
   const [currentCategory, setCurrentCategory] = useState(null);
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
+  
+  // Pagination and filtering state
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [totalItems, setTotalItems] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  // Simplified state without additional filters
+  const [orderBy] = useState('id');
+  const [direction] = useState('asc');
+  // Track if categories have been loaded
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
+  
+  
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
@@ -50,43 +66,129 @@ const CategoryManagement = () => {
 
   useEffect(() => {
     fetchCategories();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only fetch on initial component mount
 
-  const fetchCategories = async () => {
+  const fetchCategories = async (currentPage = page, currentRowsPerPage = rowsPerPage, currentSearchTerm = searchTerm) => {
     setLoading(true);
     try {
+      // Build params for API request
+      const params = {
+        page: currentPage + 1, // API uses 1-based pagination
+        per_page: currentRowsPerPage,
+        order_by: orderBy,
+        direction: direction
+      };
+      
+      // Add search param if there's a search term
+      if (currentSearchTerm && currentSearchTerm.trim()) {
+        params.search = currentSearchTerm.trim();
+      }
+      
       // First try to get categories through admin API
       let response;
       try {
-        response = await api.admin.getCategories();
+        response = await api.admin.getCategories(params);
+        
+        // Log the successful response for debugging
+        console.log('Categories API response:', response);
+        
       } catch (adminApiError) {
         console.warn('Admin API getCategories failed, trying regular API:', adminApiError);
         // Fall back to regular categories API if admin API fails
-        response = await api.categories.getAll();
+        response = await api.categories.getAll(params);
       }
       
-      console.log('Categories response:', response);
+      // Extract data based on API response format
+      let categoriesData = [];
+      let paginationData = null;
       
-      // Handle different response formats according to API documentation
-      const categoriesData = response.data?.data?.categories || 
-                         response.data?.categories || 
-                         (Array.isArray(response.data) ? response.data : []);
+      // Handle different response formats from API
+      if (response.data?.data?.categories) {
+        if (Array.isArray(response.data.data.categories)) {
+          // Not paginated
+          categoriesData = response.data.data.categories;
+        } else if (response.data.data.categories.data) {
+          // Laravel paginated format
+          categoriesData = response.data.data.categories.data;
+          paginationData = response.data.data.categories;
+        } else {
+          console.warn('Unexpected categories format:', response.data.data.categories);
+        }
+      } else if (response.data?.categories) {
+        if (Array.isArray(response.data.categories)) {
+          categoriesData = response.data.categories;
+        } else if (response.data.categories.data) {
+          categoriesData = response.data.categories.data;
+          paginationData = response.data.categories;
+        } else {
+          console.warn('Unexpected categories format:', response.data.categories);
+        }
+      } else if (Array.isArray(response.data)) {
+        categoriesData = response.data;
+      } else {
+        console.warn('Unexpected response format:', response.data);
+      }
       
+      // Safety check - ensure we have an array
+      if (!Array.isArray(categoriesData)) {
+        console.warn('Categories data is not an array, defaulting to empty array');
+        categoriesData = [];
+      }
+      
+      // Set state with fetched data
       setCategories(categoriesData);
       
-      // Filter parent categories (those with null parent_id)
-      const parentCats = categoriesData.filter(cat => !cat.parent_id);
-      setParentCategories(parentCats);
+      // Update total items if pagination info is available
+      if (paginationData && paginationData.total !== undefined) {
+        setTotalItems(paginationData.total);
+      } else {
+        setTotalItems(categoriesData.length);
+      }
       
-      toast.success('Categories loaded successfully');
+      // Get all categories for parent dropdown (not paginated)
+      try {
+        const allCatsResponse = await api.categories.getAll();
+        let allCats = [];
+        
+        if (allCatsResponse.data?.data?.categories) {
+          allCats = Array.isArray(allCatsResponse.data.data.categories) 
+            ? allCatsResponse.data.data.categories 
+            : (allCatsResponse.data.data.categories.data || []);
+        } else if (allCatsResponse.data?.categories) {
+          allCats = Array.isArray(allCatsResponse.data.categories)
+            ? allCatsResponse.data.categories
+            : (allCatsResponse.data.categories.data || []);
+        } else if (Array.isArray(allCatsResponse.data)) {
+          allCats = allCatsResponse.data;
+        }
+        
+        // Filter parent categories (those with null parent_id)
+        const parentCats = allCats.filter(cat => !cat.parent_id);
+        setParentCategories(parentCats);
+      } catch (error) {
+        console.warn('Could not fetch parent categories:', error);
+        // Don't fail the whole operation if we can't get parent categories
+      }
+      
+      // Show a toast message only if it's the first successful load (not on pagination/search)
+      if (!categoriesLoaded) {
+        toast.success('Categories loaded successfully');
+        setCategoriesLoaded(true);
+      }
     } catch (error) {
       console.error('Error fetching categories:', error);
-      toast.error('Failed to fetch categories: ' + (error.response?.data?.message || 'Unknown error'));
+      // More specific error message to help debugging
+      const errorDetail = error.response?.data?.message || error.message || 'Unknown error';
+      toast.error(`Failed to fetch categories: ${errorDetail}`);
+      
       setSnackbar({
         open: true,
-        message: 'Failed to fetch categories. Please try again.',
+        message: `Failed to fetch categories. Please try again. (${errorDetail})`,
         severity: 'error'
       });
+      
+      // Don't clear categories on error to prevent blank screen after failed update
     } finally {
       setLoading(false);
     }
@@ -243,6 +345,35 @@ const CategoryManagement = () => {
       open: false
     });
   };
+  
+  // Pagination handlers
+  const handleChangePage = (event, newPage) => {
+    setPage(newPage);
+    fetchCategories(newPage, rowsPerPage, searchTerm);
+  };
+
+  const handleChangeRowsPerPage = (event) => {
+    const newRowsPerPage = parseInt(event.target.value, 10);
+    setRowsPerPage(newRowsPerPage);
+    setPage(0); // Reset to first page when changing rows per page
+    fetchCategories(0, newRowsPerPage, searchTerm);
+  };
+  
+  // Search handler with debounce
+  const handleSearch = (event) => {
+    const value = event.target.value;
+    setSearchTerm(value);
+    // Debounce search to prevent too many API calls
+    if (window.searchTimeout) {
+      clearTimeout(window.searchTimeout);
+    }
+    window.searchTimeout = setTimeout(() => {
+      setPage(0); // Reset to first page when searching
+      fetchCategories(0, rowsPerPage, value);
+    }, 500); // Wait 500ms after user stops typing
+  };
+  
+  // We removed filter changes handler as it's no longer needed
 
   // Find category name by id
   const getCategoryName = (id) => {
@@ -250,17 +381,11 @@ const CategoryManagement = () => {
     return category ? category.name : 'None';
   };
 
-  if (loading) {
+  if (loading && categories.length === 0) {
     return (
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '300px',
-        }}
-      >
-        <CircularProgress />
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+        <CircularProgress color="error" size={60} />
+        <Typography sx={{ mt: 2 }}>Loading categories...</Typography>
       </Box>
     );
   }
@@ -275,9 +400,38 @@ const CategoryManagement = () => {
           variant="contained"
           startIcon={<AddIcon />}
           onClick={handleOpenAddDialog}
+          color="error"
+          sx={{ borderRadius: '25px', backgroundColor: '#ff445a', '&:hover': { backgroundColor: '#e03a4f' } }}
         >
           Add Category
         </Button>
+      </Box>
+      
+      {/* Search Bar */}
+      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
+        <Box sx={{ flexGrow: 1, position: 'relative' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Typography variant="body2" sx={{ mr: 1, fontWeight: 'bold' }}>
+              Search Categories
+            </Typography>
+            <TextField
+              variant="outlined"
+              size="small"
+              fullWidth
+              value={searchTerm}
+              onChange={handleSearch}
+              placeholder="Search by name or description"
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+                sx: { borderRadius: '25px' }
+              }}
+            />
+          </Box>
+        </Box>
       </Box>
 
       <TableContainer component={Paper}>
@@ -292,30 +446,54 @@ const CategoryManagement = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {categories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell>{category.id}</TableCell>
-                <TableCell>{category.name}</TableCell>
-                <TableCell>{category.description}</TableCell>
-                <TableCell>{category.parent_id ? getCategoryName(category.parent_id) : 'None'}</TableCell>
-                <TableCell>
-                  <IconButton
-                    color="primary"
-                    onClick={() => handleOpenEditDialog(category)}
-                  >
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton 
-                    color="error"
-                    onClick={() => handleOpenDeleteDialog(category)}
-                  >
-                    <DeleteIcon />
-                  </IconButton>
+            {categories.length > 0 ? (
+              categories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell>{category.id}</TableCell>
+                  <TableCell>{category.name}</TableCell>
+                  <TableCell>{category.description}</TableCell>
+                  <TableCell>{category.parent_id ? getCategoryName(category.parent_id) : 'None'}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      color="primary"
+                      onClick={() => handleOpenEditDialog(category)}
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton 
+                      color="error"
+                      onClick={() => handleOpenDeleteDialog(category)}
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                  {loading ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
+                      <CircularProgress color="error" size={40} />
+                      <Typography variant="body2" sx={{ mt: 2 }}>Loading categories...</Typography>
+                    </Box>
+                  ) : 'No categories found'}
                 </TableCell>
               </TableRow>
-            ))}
+            )}
           </TableBody>
         </Table>
+        {/* Pagination Component */}
+        <TablePagination
+          rowsPerPageOptions={[5, 10, 25, 50]}
+          component="div"
+          count={totalItems}
+          rowsPerPage={rowsPerPage}
+          page={page}
+          onPageChange={handleChangePage}
+          onRowsPerPageChange={handleChangeRowsPerPage}
+          sx={{ overflow: 'visible' }} // Prevent any overflow issues with the fixed footer
+        />
       </TableContainer>
 
       {/* Category Form Dialog */}

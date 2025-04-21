@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+
+// Import admin pages
+import AdminHome from './AdminHome';
+import ProductManagement from './ProductManagement';
+import CategoryManagement from './CategoryManagement';
+import TagManagement from './TagManagement';
+import OrderManagement from './OrderManagement';
+import CouponManagement from './CouponManagement';
+import UserManagement from './UserManagement';
 import {
   Box,
   Drawer,
@@ -106,7 +115,7 @@ const Dashboard = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -173,10 +182,26 @@ const Dashboard = () => {
           flexGrow: 1, 
           p: 3, 
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: 8, sm: 8 }
+          ml: { sm: `${drawerWidth}px` },
+          mt: { xs: 8, sm: 8 },
+          display: 'flex',
+          flexDirection: 'column',
+          minHeight: 'calc(100vh - 64px)' // Account for AppBar height
         }}
       >
-        <Outlet />
+        <Box sx={{ flexGrow: 1, mb: 4 }}>
+          <Routes>
+            <Route index element={<AdminHome />} />
+            <Route path="products" element={<ProductManagement />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="tags" element={<TagManagement />} />
+            <Route path="orders" element={<OrderManagement />} />
+            <Route path="coupons" element={<CouponManagement />} />
+            <Route path="users" element={<UserManagement />} />
+          </Routes>
+        </Box>
+        
+        {/* Footer removed from admin pages */}
       </Box>
     </Box>
   );

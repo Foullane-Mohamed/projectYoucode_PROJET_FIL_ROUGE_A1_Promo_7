@@ -139,75 +139,68 @@ function App() {
               <WishlistProvider>
                 <LoadingProvider>
                   <BrowserRouter>
-                    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
-                      <Header />
-                      <main style={{ flexGrow: 1 }}>
-                        <Routes>
-                          {/* Public Routes */}
-                          <Route path="/" element={<Home />} />
-                          <Route path="/products" element={<ProductList />} />
-                          <Route path="/products/:id" element={<ProductDetail />} />
-                          <Route path="/categories/:id" element={<ProductList />} />
-                          <Route path="/search" element={<ProductList />} />
-                          <Route path="/cart" element={<Cart />} />
-                          <Route path="/login" element={<Login />} />
-                          <Route path="/register" element={<Register />} />
-                          <Route path="/contact" element={<Contact />} />
-                          
-                          {/* Protected Routes */}
-                          <Route path="/checkout" element={
-                            <ProtectedRoute>
-                              <Checkout />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="/wishlist" element={
-                            <ProtectedRoute>
-                              <Wishlist />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="/profile" element={
-                            <ProtectedRoute>
-                              <Profile />
-                            </ProtectedRoute>
-                          } />
-                          <Route path="/my-orders" element={
-                          <ProtectedRoute>
-                          <MyOrders />
-                          </ProtectedRoute>
-                          } />
-          <Route path="/orders/:id" element={
-            <ProtectedRoute>
-              <OrderDetail />
-            </ProtectedRoute>
-          } />
-          <Route path="/order-success" element={
-            <ProtectedRoute>
-              <OrderSuccess />
-            </ProtectedRoute>
-          } />
-                          
-                          {/* Admin Routes */}
-                          <Route path="/admin" element={
-                            <AdminRoute>
-                              <AdminDashboard />
-                            </AdminRoute>
-                          }>
-                            <Route index element={<AdminHome />} />
-                            <Route path="products" element={<ProductManagement />} />
-                            <Route path="categories" element={<CategoryManagement />} />
-                            <Route path="tags" element={<TagManagement />} />
-                            <Route path="orders" element={<OrderManagement />} />
-                            <Route path="coupons" element={<CouponManagement />} />
-                            <Route path="users" element={<UserManagement />} />
-                          </Route>
-                          
-                          {/* Not Found */}
-                          <Route path="/404" element={<NotFound />} />
-                          <Route path="*" element={<Navigate to="/404" replace />} />
-                        </Routes>
-                      </main>
-                      <Footer />
-                    </div>
+                    <Routes>
+                      {/* Admin Routes - No Footer/Header */}
+                      <Route path="/admin/*" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+                      
+                      {/* Public & Protected Routes with Header/Footer */}
+                      <Route path="*" element={
+                        <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+                          <Header />
+                          <main style={{ flexGrow: 1 }}>
+                            <Routes>
+                              {/* Public Routes */}
+                              <Route path="/" element={<Home />} />
+                              <Route path="/products" element={<ProductList />} />
+                              <Route path="/products/:id" element={<ProductDetail />} />
+                              <Route path="/categories/:id" element={<ProductList />} />
+                              <Route path="/search" element={<ProductList />} />
+                              <Route path="/cart" element={<Cart />} />
+                              <Route path="/login" element={<Login />} />
+                              <Route path="/register" element={<Register />} />
+                              <Route path="/contact" element={<Contact />} />
+                              
+                              {/* Protected Routes */}
+                              <Route path="/checkout" element={
+                                <ProtectedRoute>
+                                  <Checkout />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/wishlist" element={
+                                <ProtectedRoute>
+                                  <Wishlist />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/profile" element={
+                                <ProtectedRoute>
+                                  <Profile />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/my-orders" element={
+                                <ProtectedRoute>
+                                  <MyOrders />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/orders/:id" element={
+                                <ProtectedRoute>
+                                  <OrderDetail />
+                                </ProtectedRoute>
+                              } />
+                              <Route path="/order-success" element={
+                                <ProtectedRoute>
+                                  <OrderSuccess />
+                                </ProtectedRoute>
+                              } />
+                                  
+                              {/* Not Found */}
+                              <Route path="/404" element={<NotFound />} />
+                              <Route path="*" element={<Navigate to="/404" replace />} />
+                            </Routes>
+                          </main>
+                          <Footer />
+                        </div>
+                      } />
+                    </Routes>
                     <ToastContainer position="bottom-right" />
                   </BrowserRouter>
                 </LoadingProvider>

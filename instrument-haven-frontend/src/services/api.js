@@ -231,13 +231,17 @@ const adminAPI = {
   
   // Categories management
   getCategories: (params) => {
-    try {
-      return api.get('/admin/categories', { params });
-    } catch (error) {
-      // Fallback to public categories endpoint if admin endpoint fails
-      console.warn('Admin categories endpoint failed, falling back to public endpoint');
-      return api.get('/categories', { params });
-    }
+    const defaultParams = {
+      per_page: 10,
+      page: 1
+    };
+    const mergedParams = { ...defaultParams, ...params };
+    
+    return api.get('/admin/categories', { params: mergedParams })
+      .catch(error => {
+        console.warn('Admin categories endpoint failed, falling back to public endpoint', error);
+        return api.get('/categories', { params: mergedParams });
+      });
   },
   createCategory: (data) => {
     // If the data has files, use FormData

@@ -105,6 +105,7 @@ Route::prefix('v1')->middleware(['cors'])->group(function () {
             Route::delete('/products/{id}', [AdminProductController::class, 'destroy']);
 
             // Categories management
+            Route::get('/categories', [AdminCategoryController::class, 'index']);
             Route::post('/categories', [AdminCategoryController::class, 'store']);
             Route::put('/categories/{id}', [AdminCategoryController::class, 'update']);
             Route::delete('/categories/{id}', [AdminCategoryController::class, 'destroy']);
