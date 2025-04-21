@@ -225,8 +225,30 @@ const ProductList = () => {
 
   return (
     <ErrorBoundary onReset={handleReset}>
-      <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Typography variant="h4" component="h1" gutterBottom>
+      <Container maxWidth="lg" sx={{ py: 3 }}>
+        <Typography 
+          variant="h4" 
+          component="h1" 
+          gutterBottom
+          sx={{ 
+            fontWeight: 'bold', 
+            position: 'relative',
+            display: 'inline-block'
+          }}
+        >
+          <Box 
+            component="span"
+            sx={{
+              position: 'absolute',
+              height: '8px',
+              width: '40%',
+              bottom: '8px',
+              left: 0,
+              backgroundColor: 'primary.light',
+              opacity: 0.3,
+              zIndex: -1
+            }}
+          />
           {currentCategory ? currentCategory.name : "Products"}
         </Typography>
         
@@ -242,7 +264,7 @@ const ProductList = () => {
             flexDirection: { xs: "column", md: "row" },
             alignItems: { xs: "stretch", md: "center" },
             justifyContent: "space-between",
-            mb: 4,
+            mb: 3,
             gap: 2,
           }}
         >
@@ -255,23 +277,39 @@ const ProductList = () => {
             }}
           >
             <TextField
-              label="Search Products"
-              variant="outlined"
-              size="small"
-              value={filters.search}
-              onChange={(e) => handleFilterChange("search", e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
+            label="Search Products"
+            variant="outlined"
+            size="small"
+            value={filters.search}
+            onChange={(e) => handleFilterChange("search", e.target.value)}
+            InputProps={{
+            startAdornment: (
+            <InputAdornment position="start">
+            <Search color="primary" />
+            </InputAdornment>
+            ),
+            }}
+            sx={{ 
+                minWidth: "200px",
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '30px',
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
               }}
-              sx={{ minWidth: "200px" }}
             />
 
             <Button
               variant="outlined"
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '30px',
+                  '&.Mui-focused fieldset': {
+                    borderColor: 'primary.main',
+                  },
+                },
+              }}
               startIcon={<FilterList />}
               onClick={toggleDrawer}
               sx={{ display: { xs: "flex", md: "none" } }}
@@ -298,14 +336,14 @@ const ProductList = () => {
 
         <Grid container spacing={2}>
           <Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
-            <Paper sx={{ p: 2, borderRadius: 1 }}>
-              <Typography variant="h6" gutterBottom>
+            <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
                 Filters
               </Typography>
 
               <Divider sx={{ my: 2 }} />
 
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', mt: 2 }}>
                 Categories
               </Typography>
               <List dense>
@@ -315,11 +353,14 @@ const ProductList = () => {
                   onClick={() => handleFilterChange("category", "")}
                   sx={{ 
                     cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
+                    '&:hover': { bgcolor: 'primary.light', color: 'white' },
+                    '&.Mui-selected': { bgcolor: 'primary.main', color: 'white' },
+                    '&.Mui-selected:hover': { bgcolor: 'primary.dark', color: 'white' },
                     pl: 2,
                     pr: 2,
                     py: 1,
-                    borderRadius: 1
+                    borderRadius: 20,
+                    mb: 0.5
                   }}
                 >
                   <ListItemText primary="All Categories" />
@@ -334,11 +375,14 @@ const ProductList = () => {
                     }
                     sx={{ 
                       cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' },
+                      '&:hover': { bgcolor: 'primary.light', color: 'white' },
+                      '&.Mui-selected': { bgcolor: 'primary.main', color: 'white' },
+                      '&.Mui-selected:hover': { bgcolor: 'primary.dark', color: 'white' },
                       pl: 2,
                       pr: 2,
                       py: 1,
-                      borderRadius: 1
+                      borderRadius: 20,
+                      mb: 0.5
                     }}
                   >
                     <ListItemText primary={category.name} />
@@ -348,7 +392,7 @@ const ProductList = () => {
 
               <Divider sx={{ my: 2 }} />
 
-              <Typography variant="subtitle1" gutterBottom>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', mt: 3 }}>
                 Price Range
               </Typography>
               <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
@@ -379,13 +423,23 @@ const ProductList = () => {
               </Box>
 
               <Button
-                variant="outlined"
+                variant="contained"
                 fullWidth
                 onClick={() => {
                   handleFilterChange("minPrice", "");
                   handleFilterChange("maxPrice", "");
                   handleFilterChange("category", "");
                   handleFilterChange("search", "");
+                }}
+                sx={{ 
+                  mt: 3, 
+                  borderRadius: '30px',
+                  py: 1,
+                  backgroundColor: 'grey.200',
+                  color: 'text.primary',
+                  '&:hover': {
+                    backgroundColor: 'grey.300',
+                  },
                 }}
               >
                 Clear Filters
@@ -566,7 +620,10 @@ const ProductList = () => {
                   minHeight: "300px",
                   bgcolor: "background.paper",
                   p: 4,
-                  borderRadius: 1,
+                  borderRadius: 3,
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.05)',
+                  border: '1px dashed',
+                  borderColor: 'divider'
                 }}
               >
                 <Typography variant="h6" gutterBottom>

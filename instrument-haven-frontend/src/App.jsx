@@ -49,10 +49,18 @@ import AdminRoute from './components/common/AdminRoute';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#3f51b5',
+      main: '#FF2B52',
+      light: '#FF6B87',
+      dark: '#CC0029',
     },
     secondary: {
-      main: '#f50057',
+      main: '#FFB612',
+      light: '#FFCE5A',
+      dark: '#CC8700',
+    },
+    background: {
+      default: '#F5F5F7',
+      paper: '#FFFFFF'
     },
   },
   typography: {
@@ -81,20 +89,39 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           textTransform: 'none',
+          borderRadius: 20,
+          fontWeight: 'bold',
+        },
+        contained: {
+          boxShadow: 'none',
+          '&:hover': {
+            boxShadow: 'none',
+          },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 8,
+          borderRadius: 12,
+          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.08)',
+          overflow: 'hidden',
         },
       },
     },
     MuiPaper: {
       styleOverrides: {
         rounded: {
-          borderRadius: 8,
+          borderRadius: 12,
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+          backgroundColor: '#FFFFFF',
+          color: '#333333',
         },
       },
     },

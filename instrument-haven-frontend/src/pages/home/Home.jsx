@@ -28,23 +28,20 @@ import {
   ArrowForward as ArrowForwardIcon
 } from '@mui/icons-material';
 
-// Sample images for better display
-const CATEGORY_IMAGES = {
-  'Guitars': '/guitars.jpg',
-  'Drums': '/drums.jpg',
-  'Keyboards': '/keyboards.jpg',
-  'Wind Instruments': '/wind.jpg',
-  'Accessories': '/accessories.jpg',
-  'Electric Guitars': '/electric-guitars.jpg',
-  'Acoustic Guitars': '/acoustic-guitars.jpg',
-  'Bass Guitars': '/bass-guitars.jpg',
-  'Acoustic Drums': '/acoustic-drums.jpg',
-  'Electronic Drums': '/electronic-drums.jpg',
-  'Digital Pianos': '/digital-pianos.jpg',
-  'Synthesizers': '/synthesizers.jpg'
+const CATEGORY_COLORS = {
+  'Guitars': '#FF2B52',
+  'Drums': '#FF9800',
+  'Keyboards': '#4CAF50',
+  'Wind Instruments': '#3F51B5',
+  'Accessories': '#9C27B0',
+  'Electric Guitars': '#E91E63',
+  'Acoustic Guitars': '#8BC34A',
+  'Bass Guitars': '#FF5722',
+  'Acoustic Drums': '#FFC107',
+  'Electronic Drums': '#009688',
+  'Digital Pianos': '#2196F3',
+  'Synthesizers': '#673AB7'
 };
-
-// Sample data in case the API fails
 const SAMPLE_CATEGORIES = [
   { id: 1, name: 'Guitars', description: 'All types of guitars' },
   { id: 2, name: 'Drums', description: 'Acoustic and electronic drums' },
@@ -138,7 +135,7 @@ const FEATURED_INSTRUMENTS = [
   }
 ];
 
-// Testimonials from happy customers
+
 const TESTIMONIALS = [
   {
     id: 1,
@@ -166,7 +163,7 @@ const TESTIMONIALS = [
   }
 ];
 
-// Featured brands
+
 const FEATURED_BRANDS = [
   "fender.png", "gibson.png", "yamaha.png", "roland.png", 
   "korg.png", "martin.png", "pearl.png", "ibanez.png"
@@ -196,11 +193,11 @@ const Home = () => {
             // Extract products array from the nested structure
             setFeaturedProducts(productsResponse.data.data.products.slice(0, 8));
           } else {
-            console.warn('Using sample product data due to API response format');
+
             setFeaturedProducts(FEATURED_INSTRUMENTS);
           }
         } catch (error) {
-          console.error('Error fetching products:', error);
+
           setFeaturedProducts(FEATURED_INSTRUMENTS);
         }
         
@@ -216,15 +213,15 @@ const Home = () => {
             // Extract categories array from the nested structure
             setCategories(categoriesResponse.data.data.categories);
           } else {
-            console.warn('Using sample category data due to API response format');
+
             setCategories(SAMPLE_CATEGORIES);
           }
         } catch (error) {
-          console.error('Error fetching categories:', error);
+
           setCategories(SAMPLE_CATEGORIES);
         }
       } catch (error) {
-        console.error('Error fetching home data:', error);
+
         setFeaturedProducts(FEATURED_INSTRUMENTS);
         setCategories(SAMPLE_CATEGORIES);
       } finally {
@@ -239,14 +236,17 @@ const Home = () => {
     <Box
       sx={{
         position: 'relative',
-        height: { xs: '60vh', md: '70vh' },
+        height: { xs: '50vh', md: '60vh' },
         overflow: 'hidden',
-        backgroundImage: 'url(/hero-bg.jpg)',
+        backgroundImage: 'linear-gradient(135deg, #FF6B87 0%, #FF2B52 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         display: 'flex',
         alignItems: 'center',
-        mb: 6,
+        mb: 4,
+        borderRadius: { xs: 0, md: '16px' },
+        mx: { xs: 0, md: 2 },
+        mt: { xs: 0, md: 2 },
       }}
     >
       <Box
@@ -256,12 +256,12 @@ const Home = () => {
           left: 0,
           width: '100%',
           height: '100%',
-          bgcolor: 'rgba(0, 0, 0, 0.45)',
+          bgcolor: 'rgba(0, 0, 0, 0.15)',
           zIndex: 1,
         }}
       />
       <Container maxWidth="lg" sx={{ position: 'relative', zIndex: 2 }}>
-        <Grid container spacing={3}>
+        <Grid container spacing={2} sx={{ mx: 2 }}>
           <Grid item xs={12} md={7}>
             <Box sx={{ color: 'white', textShadow: '1px 1px 4px rgba(0,0,0,0.5)' }}>
               <Typography 
@@ -270,7 +270,8 @@ const Home = () => {
                 gutterBottom
                 sx={{ 
                   fontWeight: 'bold',
-                  fontSize: { xs: '2.5rem', md: '3.5rem' }
+                  fontSize: { xs: '2.2rem', md: '3.2rem' },
+                  letterSpacing: '-0.5px'
                 }}
               >
                 Discover Your Sound
@@ -286,7 +287,7 @@ const Home = () => {
                   component={Link} 
                   to="/products" 
                   variant="contained" 
-                  size="large"
+                  size="medium"
                   sx={{ 
                     px: 4, 
                     py: 1.2,
@@ -301,7 +302,7 @@ const Home = () => {
                 <Button 
                   component={Link} 
                   to="/categories" 
-                  variant="outlined" 
+                  variant="contained" 
                   size="large"
                   sx={{ 
                     px: 4, 
@@ -309,12 +310,13 @@ const Home = () => {
                     borderRadius: '30px',
                     fontSize: '1.1rem',
                     fontWeight: 'bold',
-                    border: '2px solid',
-                    color: 'white',
-                    borderColor: 'white',
+                    bgcolor: 'white',
+                    color: '#ff4081',
+                    border: 'none',
                     '&:hover': {
-                      borderColor: 'primary.light',
-                      backgroundColor: 'rgba(255,255,255,0.05)'
+                      bgcolor: 'white',
+                      opacity: 0.9,
+                      boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                     }
                   }}
                 >
@@ -376,125 +378,133 @@ const Home = () => {
   );
 
   const categorySection = () => (
-    <Container maxWidth="lg" sx={{ my: 8 }}>
-      <Box sx={{ textAlign: 'center', mb: 6 }}>
+    <Container maxWidth="lg" sx={{ px: { xs: 1, md: 2 } }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography 
-          variant="h3" 
+          variant="h5" 
           component="h2" 
-          gutterBottom 
-          sx={{ fontWeight: 'bold' }}
+          sx={{ fontWeight: 'bold', position: 'relative', fontSize: '1.2rem', color: '#333' }}
         >
+          <Box 
+            component="span"
+            sx={{
+              position: 'absolute',
+              height: '8px',
+              width: '50%',
+              bottom: 0,
+              left: 0,
+              backgroundColor: 'secondary.light',
+              opacity: 0.5,
+              zIndex: -1
+            }}
+          />
           Shop by Category
         </Typography>
-        <Typography 
-          variant="h6" 
-          color="text.secondary" 
-          sx={{ maxWidth: '700px', mx: 'auto' }}
+        <Button 
+          component={Link} 
+          to="/categories" 
+          variant="text" 
+          endIcon={<ArrowForwardIcon />}
+          sx={{ 
+            color: '#ff4081',
+            fontWeight: 'medium',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 64, 129, 0.04)'
+            },
+          }}
         >
-          Browse our wide selection of instruments
-        </Typography>
+          View All
+        </Button>
       </Box>
       
-      <Grid container spacing={3}>
+      <Grid container spacing={2} sx={{ display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', mb: 1 }}>
         {categories.slice(0, isSmall ? 4 : 8).map((category) => (
-          <Grid item xs={12} sm={6} md={3} key={category.id}>
+          <Grid item xs={6} sm={4} md={2.4} sx={{ maxWidth: '200px', minWidth: '120px' }} key={category.id}>
             <Card
               component={Link}
               to={`/categories/${category.id}`}
+              className="category-card"
               sx={{
                 height: '100%',
                 display: 'flex',
                 flexDirection: 'column',
                 textDecoration: 'none',
                 color: 'inherit',
-                transition: 'all 0.3s ease',
-                borderRadius: '12px',
-                overflow: 'hidden',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
-                '&:hover': {
-                  transform: 'translateY(-8px)',
-                  boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-                },
+                position: 'relative'
               }}
             >
-              <Box sx={{ position: 'relative', pt: '80%' }}>
-                <CardMedia
-                  component="img"
-                  image={CATEGORY_IMAGES[category.name] || `/categories/${category.name.toLowerCase().replace(/\s+/g, '-')}.jpg`}
-                  alt={category.name}
-                  sx={{ 
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    transition: 'transform 0.5s ease',
-                    '&:hover': {
-                      transform: 'scale(1.05)'
-                    }
-                  }}
+              <Box 
+                className="category-header"
+                sx={{ 
+                  background: `${CATEGORY_COLORS[category.name] || '#FF2B52'}`,
+                }}
+              >
+                <Box 
+                  component="div"
+                  className="category-circle category-circle-1"
                 />
                 <Box 
-                  sx={{ 
-                    position: 'absolute',
-                    bottom: 0,
-                    left: 0,
-                    width: '100%',
-                    background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                    p: 2,
-                  }}
+                  component="div"
+                  className="category-circle category-circle-2"
+                />
+                <Typography 
+                  variant="h5" 
+                  component="div" 
+                  className="category-title"
                 >
-                  <Typography 
-                    gutterBottom 
-                    variant="h5" 
-                    component="div" 
-                    sx={{ 
-                      color: 'white',
-                      fontWeight: 'bold',
-                      textShadow: '1px 1px 3px rgba(0,0,0,0.5)'
-                    }}
-                  >
-                    {category.name}
-                  </Typography>
-                </Box>
+                  {category.name}
+                </Typography>
               </Box>
-              <CardContent sx={{ flexGrow: 1, bgcolor: 'background.paper' }}>
-                <Typography variant="body2" color="text.secondary">
+              <CardContent className="category-content" sx={{ bgcolor: 'background.paper' }}>
+                <Typography 
+                  variant="body2" 
+                  className="category-description"
+                >
                   {category.description}
                 </Typography>
-                <Box 
+                <Button
+                  component={Link}
+                  to={`/categories/${category.id}`} 
+                  variant="text"
+                  className="category-button"
                   sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mt: 2,
-                    color: 'primary.main',
-                    fontWeight: 'medium'
+                    color: '#ff4081',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255, 64, 129, 0.04)'
+                    },
+                    fontWeight: 'normal',
+                    textTransform: 'none'
                   }}
                 >
-                  <Typography variant="button" sx={{ mr: 1 }}>
-                    View Products
-                  </Typography>
-                  <ArrowForwardIcon fontSize="small" />
-                </Box>
+                  View
+                </Button>
               </CardContent>
+              <Box 
+                component="div"
+                className="category-badge"
+                sx={{ color: CATEGORY_COLORS[category.name] || 'primary.main' }}
+              >
+                {category.id}
+              </Box>
             </Card>
           </Grid>
         ))}
       </Grid>
       
-      <Box sx={{ textAlign: 'center', mt: 4 }}>
+      <Box sx={{ textAlign: 'right', mt: 2 }}>
         <Button 
           component={Link} 
           to="/categories" 
-          variant="outlined" 
-          size="large"
+          variant="text" 
           endIcon={<ArrowForwardIcon />}
           sx={{ 
-            borderRadius: '30px',
-            px: 4,
-            py: 1.2,
-            fontWeight: 'bold'
+            color: '#ff4081',
+            fontWeight: 'medium',
+            textTransform: 'none',
+            fontSize: '0.875rem',
+            '&:hover': {
+              backgroundColor: 'rgba(255, 64, 129, 0.04)'
+            },
           }}
         >
           View All Categories
@@ -504,24 +514,48 @@ const Home = () => {
   );
 
   const featuredProductsSection = () => (
-    <Box sx={{ bgcolor: 'background.paper', py: 8 }}>
+    <Box sx={{ bgcolor: 'background.default', py: 5 }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
-          <Typography 
-            variant="h3" 
-            component="h2" 
-            gutterBottom 
-            sx={{ fontWeight: 'bold' }}
-          >
-            Featured Products
-          </Typography>
-          <Typography 
-            variant="h6" 
-            color="text.secondary" 
-            sx={{ maxWidth: '700px', mx: 'auto' }}
-          >
-            Discover our most popular instruments
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+          <Box>
+            <Typography 
+              variant="h4" 
+              component="h2" 
+              sx={{ fontWeight: 'bold', position: 'relative' }}
+            >
+              <Box 
+                component="span"
+                sx={{
+                  position: 'absolute',
+                  height: '8px',
+                  width: '40%',
+                  bottom: 0,
+                  left: 0,
+                  backgroundColor: 'primary.light',
+                  opacity: 0.3,
+                  zIndex: -1
+                }}
+              />
+              Hot Deals
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 0.5 }}>
+              Limited time offers on popular instruments
+            </Typography>
+          </Box>
+          <Box>
+            <Button 
+              component={Link} 
+              to="/products" 
+              variant="text" 
+              endIcon={<ArrowForwardIcon />}
+              sx={{ 
+                color: 'primary.main',
+                fontWeight: 'medium'
+              }}
+            >
+              View All
+            </Button>
+          </Box>
         </Box>
         
         <Grid container spacing={3}>
@@ -532,21 +566,42 @@ const Home = () => {
           ))}
         </Grid>
         
-        <Box sx={{ textAlign: 'center', mt: 5 }}>
+        <Box 
+        sx={{ 
+        bgcolor: 'white',
+        borderRadius: '16px',
+        p: 3,
+        mt: 6,
+        boxShadow: '0 4px 15px rgba(0,0,0,0.05)',
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        gap: 3,
+        }}
+        >
+        <Box>
+          <Typography variant="h5" fontWeight="bold">
+              Exclusive Online Discounts
+            </Typography>
+            <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
+              Get extra 15% off your first purchase with code <Box component="span" sx={{ fontWeight: 'bold', color: 'primary.main' }}>WELCOME15</Box>
+            </Typography>
+          </Box>
           <Button 
             component={Link} 
             to="/products" 
             variant="contained" 
             size="large"
-            endIcon={<ArrowForwardIcon />}
             sx={{ 
               borderRadius: '30px', 
               px: 4,
-              py: 1.2,
-              fontWeight: 'bold'
+              py: 1.5,
+              fontWeight: 'bold',
+              minWidth: '200px'
             }}
           >
-            View All Products
+            Shop Now
           </Button>
         </Box>
       </Container>
@@ -554,7 +609,7 @@ const Home = () => {
   );
 
   const testimonialsSection = () => (
-    <Box sx={{ py: 8, bgcolor: 'background.default' }}>
+    <Box sx={{ py: 6, bgcolor: 'white', mt: 4, borderRadius: { xs: 0, md: '16px' }, mx: { xs: 0, md: 2 } }}>
       <Container maxWidth="lg">
         <Box sx={{ textAlign: 'center', mb: 6 }}>
           <Typography 
@@ -633,23 +688,28 @@ const Home = () => {
   );
 
   const featuresSection = () => (
-    <Box sx={{ py: 8, bgcolor: '#f8f9fa' }}>
+    <Box sx={{ py: 6, bgcolor: 'background.default', mt: 2 }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 6 }}>
+        <Box sx={{ mb: 5 }}>
           <Typography 
-            variant="h3" 
+            variant="h4" 
             component="h2" 
-            gutterBottom 
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', position: 'relative', display: 'inline-block' }}
           >
+            <Box 
+              component="span"
+              sx={{
+                position: 'absolute',
+                height: '8px',
+                width: '50%',
+                bottom: 0,
+                left: 0,
+                backgroundColor: 'secondary.light',
+                opacity: 0.5,
+                zIndex: -1
+              }}
+            />
             Why Choose Us
-          </Typography>
-          <Typography 
-            variant="h6" 
-            color="text.secondary" 
-            sx={{ maxWidth: '700px', mx: 'auto' }}
-          >
-            We're committed to providing the best musical instrument shopping experience
           </Typography>
         </Box>
         
@@ -795,19 +855,31 @@ const Home = () => {
   );
 
   const brandsSection = () => (
-    <Box sx={{ py: 6, bgcolor: 'white' }}>
+    <Box sx={{ py: 5, bgcolor: 'white', borderRadius: { xs: 0, md: '16px' }, mx: { xs: 0, md: 2 }, mt: 4 }}>
       <Container maxWidth="lg">
-        <Box sx={{ textAlign: 'center', mb: 4 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
           <Typography 
             variant="h4" 
             component="h2" 
-            gutterBottom 
-            sx={{ fontWeight: 'bold' }}
+            sx={{ fontWeight: 'bold', position: 'relative' }}
           >
+            <Box 
+              component="span"
+              sx={{
+                position: 'absolute',
+                height: '8px',
+                width: '40%',
+                bottom: 0,
+                left: 0,
+                backgroundColor: 'secondary.light',
+                opacity: 0.5,
+                zIndex: -1
+              }}
+            />
             Top Brands
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            We partner with the best brands in the music industry
+          <Typography variant="body1" color="primary.main" fontWeight="medium">
+            Quality you can trust
           </Typography>
         </Box>
         
@@ -847,11 +919,43 @@ const Home = () => {
   const ctaSection = () => (
     <Box 
       sx={{ 
-        py: 8, 
-        backgroundImage: 'linear-gradient(135deg, #3f51b5 0%, #5c6bc0 100%)',
-        color: 'white'
+        py: 6, 
+        backgroundImage: 'linear-gradient(135deg, #FF2B52 0%, #FF6B87 100%)',
+        color: 'white',
+        borderRadius: { xs: 0, md: '16px' },
+        mx: { xs: 0, md: 2 },
+        mb: { xs: 0, md: 2 },
+        mt: 4,
+        overflow: 'hidden',
+        position: 'relative'
       }}
     >
+      <Box 
+        sx={{ 
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '300px',
+          height: '300px',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '50%',
+          transform: 'translate(30%, -30%)',
+          zIndex: 0
+        }}
+      />
+      <Box 
+        sx={{ 
+          position: 'absolute',
+          bottom: 0,
+          left: 0,
+          width: '200px',
+          height: '200px',
+          backgroundColor: 'rgba(255, 255, 255, 0.1)',
+          borderRadius: '50%',
+          transform: 'translate(-30%, 30%)',
+          zIndex: 0
+        }}
+      />
       <Container maxWidth="md">
         <Grid container spacing={4} alignItems="center">
           <Grid item xs={12} md={8}>
@@ -878,11 +982,16 @@ const Home = () => {
                 size="large"
                 sx={{ 
                   px: 4, 
-                  py: 1.2,
+                  py: 1.5,
                   borderRadius: '30px',
-                  fontSize: '1.1rem',
+                  fontSize: '1rem',
                   fontWeight: 'bold',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+                  backgroundColor: 'white',
+                  color: 'primary.main',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.9)',
+                  }
                 }}
               >
                 Shop Now

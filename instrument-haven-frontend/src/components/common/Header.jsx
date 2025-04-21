@@ -84,7 +84,7 @@ const Header = () => {
   ];
 
   return (
-    <AppBar position="static">
+    <AppBar position="sticky" elevation={0}>
       <Container maxWidth="xl">
         <Toolbar disableGutters>
           {/* Desktop Logo */}
@@ -97,8 +97,9 @@ const Header = () => {
               mr: 2,
               display: { xs: 'none', md: 'flex' },
               fontWeight: 700,
-              color: 'inherit',
+              color: 'primary.main',
               textDecoration: 'none',
+              fontSize: '1.5rem'
             }}
           >
             Instrument Haven
@@ -112,7 +113,7 @@ const Header = () => {
               aria-controls="menu-appbar"
               aria-haspopup="true"
               onClick={handleDrawerToggle}
-              color="inherit"
+              color="primary"
             >
               <MenuIcon />
             </IconButton>
@@ -153,7 +154,7 @@ const Header = () => {
               display: { xs: 'flex', md: 'none' },
               flexGrow: 1,
               fontWeight: 700,
-              color: 'inherit',
+              color: 'primary.main',
               textDecoration: 'none',
             }}
           >
@@ -168,7 +169,7 @@ const Header = () => {
                 component={Link}
                 to={item.path}
                 onClick={handleCloseNavMenu}
-                sx={{ my: 2, color: 'white', display: 'block' }}
+                sx={{ my: 2, color: 'text.primary', display: 'block', fontWeight: 'medium', '&:hover': { color: 'primary.main' } }}
               >
                 {item.title}
               </Button>
@@ -180,7 +181,7 @@ const Header = () => {
             <IconButton 
               size="large" 
               aria-label="search" 
-              color="inherit" 
+              color="primary" 
               component={Link} 
               to="/search"
             >
@@ -193,7 +194,7 @@ const Header = () => {
             <IconButton 
               size="large" 
               aria-label="wishlist" 
-              color="inherit" 
+              color="primary" 
               component={Link} 
               to="/wishlist"
             >
@@ -206,7 +207,7 @@ const Header = () => {
             <IconButton 
               size="large" 
               aria-label="cart" 
-              color="inherit" 
+              color="primary" 
               component={Link} 
               to="/cart"
             >
@@ -223,7 +224,7 @@ const Header = () => {
                 {user ? (
                   <Avatar alt={user.name} src="/static/images/avatar/2.jpg" />
                 ) : (
-                  <AccountCircle fontSize="large" />
+                  <AccountCircle fontSize="large" color="primary" />
                 )}
               </IconButton>
             </Tooltip>

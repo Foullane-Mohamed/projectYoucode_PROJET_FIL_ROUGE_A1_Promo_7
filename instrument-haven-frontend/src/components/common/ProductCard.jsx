@@ -90,8 +90,10 @@ const ProductCard = ({ product }) => {
         transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
         '&:hover': {
           transform: 'translateY(-5px)',
-          boxShadow: 4,
+          boxShadow: '0 10px 20px rgba(0,0,0,0.1)',
         },
+        border: 'none',
+        borderRadius: '12px',
       }}
     >
       <IconButton
@@ -101,10 +103,13 @@ const ProductCard = ({ product }) => {
           top: 8,
           right: 8,
           zIndex: 1,
-          bgcolor: 'rgba(255, 255, 255, 0.8)',
+          bgcolor: 'rgba(255, 255, 255, 0.9)',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
           '&:hover': {
-            bgcolor: 'rgba(255, 255, 255, 0.9)',
+            bgcolor: 'white',
           },
+          width: 36,
+          height: 36,
         }}
         onClick={handleWishlistToggle}
       >
@@ -118,28 +123,43 @@ const ProductCard = ({ product }) => {
       <CardActionArea component={Link} to={`/products/${product.id}`}>
         <CardMedia
           component="img"
-          height="180"
+          height="200"
           image={
             product.thumbnail
               ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
               : (product.images && Array.isArray(product.images) && product.images.length > 0
                 ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
-                : '/placeholder.png')
+                : '/images/categories/placeholder.jpg')
           }
           alt={product.name || 'Product'}
-          sx={{ objectFit: 'contain', p: 2, bgcolor: 'background.paper' }}
+          sx={{ 
+            objectFit: 'contain', 
+            p: 2, 
+            bgcolor: 'background.paper',
+            transition: 'transform 0.3s ease',
+            '&:hover': {
+              transform: 'scale(1.05)'
+            }
+          }}
           onError={(e) => {
-            e.target.src = '/placeholder.png';
+            e.target.onerror = null; // Prevent infinite error loop
+            e.target.src = '/images/categories/placeholder.jpg';
           }}
         />
-        <CardContent sx={{ flexGrow: 1, pb: 1 }}>
-          <Typography gutterBottom variant="h6" component="div" noWrap>
+        <CardContent sx={{ flexGrow: 1, pb: 1, px: 2 }}>
+          <Typography 
+            gutterBottom 
+            variant="subtitle1" 
+            component="div" 
+            noWrap
+            sx={{ fontWeight: 'bold', fontSize: '1rem', color: '#333' }}
+          >
             {product.name || 'Unnamed Product'}
           </Typography>
           
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-            <Rating value={product.average_rating || 0} readOnly size="small" />
-            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5 }}>
+            <Rating value={product.average_rating || 0} readOnly size="small" precision={0.5} />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 0.5, fontSize: '0.75rem' }}>
               ({product.reviews ? product.reviews.length : 0})
             </Typography>
           </Box>
@@ -154,7 +174,9 @@ const ProductCard = ({ product }) => {
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               mb: 1,
-              height: '40px',
+              height: '36px',
+              fontSize: '0.8rem',
+              color: '#666'
             }}
           >
             {product.description || 'No description available'}
@@ -175,20 +197,38 @@ const ProductCard = ({ product }) => {
         }}
       >
         {product.on_sale && product.sale_price ? (
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+            <Typography 
+              variant="h6" 
+              color="primary.main" 
+              sx={{ fontWeight: 'bold' }}
+            >
+              ${(parseFloat(product.sale_price) || 0).toFixed(2)}
+            </Typography>
             <Typography 
               variant="body2" 
               color="text.secondary" 
-              sx={{ textDecoration: 'line-through' }}
+              sx={{ textDecoration: 'line-through', fontSize: '0.8rem' }}
             >
               ${(parseFloat(product.price) || 0).toFixed(2)}
             </Typography>
-            <Typography variant="h6" color="error">
-              ${(parseFloat(product.sale_price) || 0).toFixed(2)}
-            </Typography>
+            <Box 
+              sx={{ 
+                bgcolor: 'primary.main', 
+                color: 'white', 
+                px: 1, 
+                py: 0.3, 
+                borderRadius: '10px', 
+                fontSize: '0.7rem',
+                fontWeight: 'bold',
+                ml: 0.5
+              }}
+            >
+              {Math.round(100 - ((parseFloat(product.sale_price) / parseFloat(product.price)) * 100))}% OFF
+            </Box>
           </Box>
         ) : (
-          <Typography variant="h6" color="primary">
+          <Typography variant="h6" color="primary.main" sx={{ fontWeight: 'bold' }}>
             ${(parseFloat(product.price) || 0).toFixed(2)}
           </Typography>
         )}
@@ -198,6 +238,17 @@ const ProductCard = ({ product }) => {
           startIcon={<AddShoppingCart />}
           onClick={handleAddToCart}
           disabled={product.stock <= 0}
+          sx={{
+            borderRadius: '30px',
+            px: 2,
+            minWidth: '100px',
+            fontWeight: 'medium',
+            fontSize: '0.875rem',
+            boxShadow: 'none',
+            '&:hover': {
+              boxShadow: '0 3px 8px rgba(255, 43, 82, 0.3)'
+            }
+          }}
         >
           {product.stock > 0 ? 'Add' : 'Sold Out'}
         </Button>
