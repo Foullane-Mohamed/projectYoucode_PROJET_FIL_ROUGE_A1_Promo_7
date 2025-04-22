@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
+import { PRODUCT_IMAGES } from '../../components/common/constants';
 import {
   Typography,
   Box,
@@ -55,6 +56,19 @@ const ProductManagement = () => {
   const [selectedFiles, setSelectedFiles] = useState([]);
   const [filePreview, setFilePreview] = useState([]);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
+
+  // Get product image with fallback
+  const getProductImage = (product) => {
+    if (product.thumbnail) {
+      return `${storageUrl}/${product.thumbnail}`;
+    } else if (product.images && product.images.length > 0) {
+      return `${storageUrl}/${product.images[0]}`;
+    }
+    
+    // Use placeholder image as fallback
+    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    return PRODUCT_IMAGES[index];
+  };
 
   useEffect(() => {
     fetchProducts();
@@ -349,17 +363,13 @@ const ProductManagement = () => {
                       }}
                     >
                       <img
-                        src={
-                          product.thumbnail
-                            ? `${storageUrl}/${product.thumbnail}`
-                            : (product.images && product.images.length > 0
-                              ? `${storageUrl}/${product.images[0]}`
-                              : '/placeholder.png')
-                        }
+                        src={getProductImage(product)}
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
-                          e.target.src = '/placeholder.png';
+                          e.target.onerror = null; // Prevent infinite error loop
+                          const index = (product.id % PRODUCT_IMAGES.length) || 0;
+                          e.target.src = PRODUCT_IMAGES[index];
                         }}
                       />
                     </Box>
@@ -528,7 +538,9 @@ const ProductManagement = () => {
                             alt={`Current ${index + 1}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
-                              e.target.src = '/placeholder.png';
+                              e.target.onerror = null; // Prevent infinite error loop
+                              const imgIndex = (currentProduct.id % PRODUCT_IMAGES.length) || 0;
+                              e.target.src = PRODUCT_IMAGES[imgIndex];
                             }}
                           />
                         </Box>

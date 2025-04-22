@@ -4,6 +4,7 @@ import api from '../../services/api';
 import ProductCard from '../../components/common/ProductCard';
 import EnhancedProductCard from '../../components/common/EnhancedProductCard';
 import FeaturesRow from '../../components/common/FeaturesRow';
+import { getCategoryImage, getProductImage } from '../../components/common/constants';
 import '../../styles/features.css';
 import { CircularProgress } from '@mui/material';
 import { ArrowForward as ArrowForwardIcon } from '@mui/icons-material';
@@ -151,39 +152,46 @@ const Home = () => {
         </Link>
       </div>
       
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 mb-4">
-        {categories.slice(0, isSmallScreen ? 4 : 8).map((category) => (
-          <Link
-            to={`/categories/${category.id}`}
-            key={category.id}
-            className="h-full flex flex-col rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-all hover:-translate-y-1 no-underline text-inherit relative"
-          >
-            <div className={`p-4 bg-${category.id % 2 === 0 ? 'red' : 'pink'}-${400 + (category.id % 3) * 100} relative`}>
-              <div className="absolute top-2 right-2 w-12 h-12 rounded-full bg-white bg-opacity-10"></div>
-              <div className="absolute bottom-4 left-4 w-8 h-8 rounded-full bg-white bg-opacity-10"></div>
-              <h3 className="text-white text-lg font-semibold z-10 relative">
-                {category.name}
-              </h3>
-            </div>
-            <div className="bg-white p-4 flex-grow">
-              <p className="text-sm text-gray-600 mb-2">
-                {category.description}
-              </p>
-              <span className="text-pink-500 font-normal hover:bg-pink-50 text-sm">
-                View
-              </span>
-            </div>
-            <div className="absolute top-2 left-2 w-6 h-6 bg-white bg-opacity-80 rounded-full flex items-center justify-center text-xs font-bold text-pink-500">
-              {category.id}
-            </div>
-          </Link>
-        ))}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-4">
+        {categories.slice(0, isSmallScreen ? 4 : 8).map((category) => {
+          // Dynamically determine the background color based on category ID
+          const bgColor = category.id % 2 === 0 ? 'rgba(255, 43, 82, 0.06)' : 'rgba(255, 107, 135, 0.06)';
+          const borderColor = category.id % 2 === 0 ? 'rgba(255, 43, 82, 0.2)' : 'rgba(255, 107, 135, 0.2)';
+          
+          return (
+            <Link
+              to={`/categories/${category.id}`}
+              key={category.id}
+              className="flex flex-row items-center p-3 rounded-xl gap-3 hover:shadow-md transition-all hover:-translate-y-1 no-underline text-inherit relative border overflow-hidden"
+              style={{ borderColor, backgroundColor: bgColor }}
+            >
+              <div className="w-14 h-14 min-w-[56px] rounded-xl overflow-hidden bg-gray-100 flex-shrink-0">
+                {/* Use placeholder image - in a real app you'd use category.image */}
+                <img 
+                  src={getCategoryImage(category)} 
+                  alt={category.name}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="flex-grow">
+                <h3 className="text-gray-800 font-semibold text-sm mb-1">
+                  {category.name}
+                </h3>
+                <div className="flex items-center">
+                  <span className="text-pink-500 text-xs flex items-center">
+                    Browse <ArrowForwardIcon style={{ fontSize: '0.8rem' }} />
+                  </span>
+                </div>
+              </div>
+            </Link>
+          );
+        })}
       </div>
       
-      <div className="text-right mt-4">
+      <div className="text-center mt-6">
         <Link 
           to="/categories" 
-          className="text-pink-500 font-medium hover:bg-pink-50 text-sm flex items-center gap-1 justify-end px-2 py-1 rounded-md inline-flex"
+          className="inline-flex items-center gap-2 px-6 py-2 bg-pink-50 text-pink-500 rounded-full font-medium hover:bg-pink-100 transition-colors"
         >
           View All Categories
           <ArrowForwardIcon fontSize="small" />

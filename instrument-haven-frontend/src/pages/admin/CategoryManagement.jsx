@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
+import { getCategoryImage } from '../../components/common/constants';
 import {
   Typography,
   Box,
@@ -439,6 +440,7 @@ const CategoryManagement = () => {
           <TableHead>
             <TableRow>
               <TableCell>ID</TableCell>
+              <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
               <TableCell>Parent Category</TableCell>
@@ -450,6 +452,28 @@ const CategoryManagement = () => {
               categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell>{category.id}</TableCell>
+                  <TableCell>
+                    <Box
+                      sx={{
+                        width: 60,
+                        height: 60,
+                        overflow: 'hidden',
+                        borderRadius: 1,
+                      }}
+                    >
+                      <img
+                        src={category.image_url 
+                          ? `${storageUrl}/${category.image_url}` 
+                          : getCategoryImage({name: category.name})}
+                        alt={category.name}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                        onError={(e) => {
+                          e.target.onerror = null; // Prevent infinite error loop
+                          e.target.src = getCategoryImage({name: category.name});
+                        }}
+                      />
+                    </Box>
+                  </TableCell>
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
                   <TableCell>{category.parent_id ? getCategoryName(category.parent_id) : 'None'}</TableCell>
@@ -471,7 +495,7 @@ const CategoryManagement = () => {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 5 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 5 }}>
                   {loading ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexDirection: 'column' }}>
                       <CircularProgress color="error" size={40} />
@@ -565,7 +589,9 @@ const CategoryManagement = () => {
                   </Typography>
                   <Box
                     component="img"
-                    src={`${storageUrl}/${currentCategory.image_url}`}
+                    src={currentCategory?.image_url
+                      ? `${storageUrl}/${currentCategory.image_url}`
+                      : getCategoryImage({name: currentCategory?.name || ''})}
                     alt="Category image"
                     sx={{ 
                       width: 100, 
@@ -574,7 +600,8 @@ const CategoryManagement = () => {
                       borderRadius: 1 
                     }}
                     onError={(e) => {
-                      e.target.src = '/placeholder.png';
+                      e.target.onerror = null; // Prevent infinite error loop
+                      e.target.src = getCategoryImage({name: currentCategory?.name || ''});
                     }}
                   />
                 </Box>

@@ -22,6 +22,7 @@ import {
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import '../../styles/enhancedProductCard.css';
+import { PRODUCT_IMAGES } from './constants';
 
 const EnhancedListProductCard = ({ product }) => {
   if (!product) {
@@ -83,6 +84,22 @@ const EnhancedListProductCard = ({ product }) => {
       console.error('Wishlist operation error:', error);
       toast.error('An error occurred while updating wishlist');
     }
+  };
+
+  // Get a consistent product image based on product ID
+  const getProductImage = () => {
+    // Try to use actual product image first
+    if (product.thumbnail) {
+      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`;
+    }
+    
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`;
+    }
+    
+    // Use placeholder image as fallback
+    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    return PRODUCT_IMAGES[index];
   };
 
   const discountPercentage = product.on_sale && product.sale_price 
@@ -174,6 +191,8 @@ const EnhancedListProductCard = ({ product }) => {
       
       {/* Product Image */}
       <Box 
+        component={Link}
+        to={`/products/${product.id}`}
         sx={{ 
           width: { xs: '100%', md: '280px' }, 
           minWidth: { md: '280px' },
@@ -184,17 +203,12 @@ const EnhancedListProductCard = ({ product }) => {
           justifyContent: 'center',
           padding: 3,
           overflow: 'hidden',
-          height: { xs: '240px', md: 'auto' }
+          height: { xs: '240px', md: 'auto' },
+          textDecoration: 'none'
         }}
       >
         <img
-          src={
-            product.thumbnail
-              ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
-              : (product.images && Array.isArray(product.images) && product.images.length > 0
-                ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
-                : '/images/categories/placeholder.jpg')
-          }
+          src={getProductImage()}
           alt={product.name || 'Product'}
           style={{
             maxWidth: '100%',
@@ -204,7 +218,8 @@ const EnhancedListProductCard = ({ product }) => {
           }}
           onError={(e) => {
             e.target.onerror = null;
-            e.target.src = '/images/categories/placeholder.jpg';
+            const index = (product.id % PRODUCT_IMAGES.length) || 0;
+            e.target.src = PRODUCT_IMAGES[index];
           }}
         />
       </Box>

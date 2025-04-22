@@ -1,11 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import api from "../../services/api";
 import ProductCard from "../../components/common/ProductCard";
 import ListProductCard from "../../components/common/ListProductCard";
 import EnhancedProductCard from "../../components/common/EnhancedProductCard";
 import EnhancedListProductCard from "../../components/common/EnhancedListProductCard";
+import { getCategoryImage } from "../../components/common/constants";
 import {
   Container,
   Typography,
@@ -33,7 +34,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
 } from "@mui/material";
-import { Search, FilterList, Close, ViewList, ViewModule } from "@mui/icons-material";
+import { Search, FilterList, Close, ViewList, ViewModule, Category } from "@mui/icons-material";
 
 const ProductList = () => {
   const theme = useTheme();
@@ -313,17 +314,65 @@ const ProductList = () => {
               }}
             />
 
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 160 }}>
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 180 }}>
               <InputLabel>Category</InputLabel>
               <Select
                 value={filters.category}
                 onChange={(e) => handleFilterChange("category", e.target.value)}
                 label="Category"
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      maxHeight: 400,
+                      '& .MuiMenuItem-root': {
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        py: 1,
+                      },
+                    },
+                  },
+                }}
               >
-                <MenuItem value="">All Categories</MenuItem>
+                <MenuItem value="">
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                    <Box
+                      sx={{
+                        width: 30,
+                        height: 30,
+                        borderRadius: '8px',
+                        bgcolor: 'rgba(255, 43, 82, 0.1)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      <Category fontSize="small" sx={{ color: 'primary.main' }} />
+                    </Box>
+                    <Typography>All Categories</Typography>
+                  </Box>
+                </MenuItem>
                 {categories.map((category) => (
                   <MenuItem key={category.id} value={category.id.toString()}>
-                    {category.name}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                      <Box
+                        sx={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: '8px',
+                          overflow: 'hidden',
+                          flexShrink: 0,
+                          bgcolor: 'rgba(255, 43, 82, 0.05)',
+                        }}
+                      >
+                          <img
+                            src={getCategoryImage({name: category.name})}
+                            alt={category.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                      </Box>
+                      <Typography>{category.name}</Typography>
+                    </Box>
                   </MenuItem>
                 ))}
               </Select>
@@ -417,7 +466,7 @@ const ProductList = () => {
 
 
           <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
-            <Box sx={{ width: 280, p: 2 }}>
+            <Box sx={{ width: 320, p: 2 }}>
               <Box
                 sx={{
                   display: "flex",
@@ -426,7 +475,7 @@ const ProductList = () => {
                   mb: 2,
                 }}
               >
-                <Typography variant="h6">Filters</Typography>
+                <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Filters</Typography>
                 <IconButton onClick={toggleDrawer}>
                   <Close />
                 </IconButton>
@@ -434,13 +483,96 @@ const ProductList = () => {
 
               <Divider sx={{ my: 2 }} />
 
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center' }}>
+                <Category fontSize="small" sx={{ mr: 1 }} /> Categories
+              </Typography>
+              
+              <Box sx={{ mt: 2, mb: 4 }}>
+                <Box 
+                  sx={{ 
+                    display: 'grid', 
+                    gridTemplateColumns: 'repeat(2, 1fr)', 
+                    gap: 1.5 
+                  }}
+                >
+                  {categories.slice(0, 6).map((category) => {
+                    // Dynamically determine color based on ID
+                    const bgColor = category.id % 2 === 0 
+                      ? 'rgba(255, 43, 82, 0.04)' 
+                      : 'rgba(255, 107, 135, 0.04)';
+                    
+                    return (
+                      <Box
+                        key={category.id}
+                        sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          border: '1px solid',
+                          borderColor: 'divider',
+                          bgcolor: bgColor,
+                          cursor: 'pointer',
+                          transition: 'all 0.2s',
+                          '&:hover': {
+                            borderColor: 'primary.main',
+                            bgcolor: 'rgba(255, 43, 82, 0.08)',
+                            transform: 'translateY(-2px)'
+                          },
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 1
+                        }}
+                        onClick={() => {
+                          handleFilterChange("category", category.id.toString());
+                          toggleDrawer();
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            width: 30,
+                            height: 30,
+                            borderRadius: 1,
+                            overflow: 'hidden',
+                            flexShrink: 0
+                          }}
+                        >
+                          <img
+                            src={getCategoryImage({name: category.name})}
+                            alt={category.name}
+                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                          />
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {category.name}
+                        </Typography>
+                      </Box>
+                    );
+                  })}
+                </Box>
+                
+                <Box sx={{ mt: 2, textAlign: 'center' }}>
+                  <Button 
+                    component={Link}
+                    to="/categories"
+                    size="small"
+                    startIcon={<Category fontSize="small" />}
+                    sx={{ 
+                      mt: 1,
+                      color: 'primary.main',
+                      borderRadius: 10,
+                      bgcolor: 'rgba(255, 43, 82, 0.08)'
+                    }}
+                  >
+                    View All Categories
+                  </Button>
+                </Box>
+              </Box>
+              
+              <Divider sx={{ my: 2 }} />
+
               <Typography variant="subtitle1" gutterBottom>
                 Additional Filters
               </Typography>
-              <Typography variant="body2" color="text.secondary" paragraph>
-                Price and category filters are available in the main view.
-              </Typography>
-
+              
               <Button
                 variant="outlined"
                 fullWidth
@@ -451,8 +583,9 @@ const ProductList = () => {
                   handleFilterChange("search", "");
                   if (isMobile) toggleDrawer();
                 }}
+                sx={{ mt: 2, borderRadius: 10 }}
               >
-                Clear Filters
+                Clear All Filters
               </Button>
             </Box>
           </Drawer>

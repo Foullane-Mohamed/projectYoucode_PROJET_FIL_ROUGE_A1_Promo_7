@@ -5,6 +5,7 @@ import { CartContext } from '../../context/CartContext';
 import { WishlistContext } from '../../context/WishlistContext';
 import { AuthContext } from '../../context/AuthContext';
 import EnhancedProductCard from '../../components/common/EnhancedProductCard';
+import { PRODUCT_IMAGES, getCategoryImage } from '../../components/common/constants';
 import {
   Container,
   Grid,
@@ -96,6 +97,21 @@ const ProductDetail = () => {
 
     fetchProductDetails();
   }, [id]);
+
+  // Get a consistent product image
+  const getProductImage = (imageIndex = 0) => {
+    if (!product) return '';
+    
+    if (product.images && product.images.length > imageIndex) {
+      return `${storageUrl}/${product.images[imageIndex]}`;
+    } else if (product.thumbnail) {
+      return `${storageUrl}/${product.thumbnail}`;
+    }
+    
+    // Use placeholder image as fallback
+    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    return PRODUCT_IMAGES[index];
+  };
 
   const handleQuantityChange = (newQuantity) => {
     if (product && newQuantity >= 1 && newQuantity <= product.stock) {
@@ -221,22 +237,32 @@ const ProductDetail = () => {
             >
               {product.images && product.images.length > 0 ? (
                 <img
-                  src={`${storageUrl}/${product.images[currentImage]}`}
+                  src={getProductImage(currentImage)}
                   alt={product.name}
                   style={{
                     maxWidth: '100%',
                     maxHeight: '100%',
                     objectFit: 'contain',
                   }}
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite error loop
+                    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+                    e.target.src = PRODUCT_IMAGES[index];
+                  }}
                 />
               ) : (
                 <img
-                  src="/placeholder.png"
+                  src={getProductImage()}
                   alt={product.name}
                   style={{
                     maxWidth: '100%',
                     maxHeight: '100%',
                     objectFit: 'contain',
+                  }}
+                  onError={(e) => {
+                    e.target.onerror = null; // Prevent infinite error loop
+                    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+                    e.target.src = PRODUCT_IMAGES[index];
                   }}
                 />
               )}
@@ -273,6 +299,11 @@ const ProductDetail = () => {
                         width: '100%',
                         height: '100%',
                         objectFit: 'cover',
+                      }}
+                      onError={(e) => {
+                        e.target.onerror = null; // Prevent infinite error loop
+                        const imgIndex = (product.id % PRODUCT_IMAGES.length) || 0;
+                        e.target.src = PRODUCT_IMAGES[imgIndex];
                       }}
                     />
                   </Paper>

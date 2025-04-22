@@ -11,10 +11,7 @@ import {
   Typography,
   Rating,
   IconButton,
-  Badge,
-  Avatar,
   Chip,
-  Divider,
   CardActionArea,
   CardMedia
 } from '@mui/material';
@@ -23,11 +20,10 @@ import {
   Favorite,
   AddShoppingCart,
   Visibility,
-  LocalShipping,
-  CheckCircle,
 } from '@mui/icons-material';
 import { toast } from 'react-toastify';
 import '../../styles/enhancedProductCard.css';
+import { PRODUCT_IMAGES } from './constants';
 
 const EnhancedProductCard = ({ product }) => {
   if (!product) {
@@ -91,6 +87,22 @@ const EnhancedProductCard = ({ product }) => {
     }
   };
 
+  // Get a consistent product image based on product ID
+  const getProductImage = () => {
+    // Try to use actual product image first
+    if (product.thumbnail) {
+      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`;
+    }
+    
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`;
+    }
+    
+    // Use placeholder image as fallback
+    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    return PRODUCT_IMAGES[index];
+  };
+
   const discountPercentage = product.on_sale && product.sale_price 
     ? Math.round(100 - ((parseFloat(product.sale_price) / parseFloat(product.price)) * 100)) 
     : 0;
@@ -107,7 +119,12 @@ const EnhancedProductCard = ({ product }) => {
         overflow: 'hidden',
         backgroundColor: 'white',
         maxWidth: '100%',
-        m: 0
+        m: 0,
+        transition: 'transform 0.3s, box-shadow 0.3s',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
+        }
       }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -138,17 +155,21 @@ const EnhancedProductCard = ({ product }) => {
       </IconButton>
 
       <CardActionArea component={Link} to={`/products/${product.id}`}>
-        <Box sx={{ position: 'relative', bgcolor: '#f5f7fa', pt: 2, px: 2, pb: 2, height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Box sx={{ 
+          position: 'relative', 
+          bgcolor: '#f5f7fa', 
+          pt: 2, 
+          px: 2, 
+          pb: 2, 
+          height: '200px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center' 
+        }}>
           <CardMedia
             component="img"
             height="160"
-            image={
-              product.thumbnail
-                ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
-                : (product.images && Array.isArray(product.images) && product.images.length > 0
-                  ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
-                  : `/images/placeholders/instrument-${(product.id % 6) + 1 || 1}.jpg`)
-            }
+            image={getProductImage()}
             alt={product.name || 'Product'}
             sx={{ 
               objectFit: 'contain', 
@@ -160,11 +181,8 @@ const EnhancedProductCard = ({ product }) => {
             }}
             onError={(e) => {
               e.target.onerror = null; // Prevent infinite error loop
-              const placeholderId = (product.id % 6) + 1 || 1;
-              e.target.src = `/images/placeholders/instrument-${placeholderId}.jpg`;
-              e.target.onerror = () => {
-                e.target.src = '/images/categories/placeholder.jpg';
-              };
+              const index = (product.id % PRODUCT_IMAGES.length) || 0;
+              e.target.src = PRODUCT_IMAGES[index];
             }}
           />
           
@@ -256,7 +274,11 @@ const EnhancedProductCard = ({ product }) => {
               lineHeight: 1.3
             }}
           >
-            {product.description || 'No description available'}
+            {product.description 
+              ? (product.description.length > 60 
+                  ? `${product.description.substring(0, 60)}...` 
+                  : product.description)
+              : 'No description available'}
           </Typography>
         </CardContent>
       </CardActionArea>
