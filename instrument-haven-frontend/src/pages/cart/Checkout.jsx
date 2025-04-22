@@ -19,13 +19,15 @@ import {
 import ShippingForm from './ShippingForm';
 import PaymentMethod from './PaymentMethod';
 import OrderReview from './OrderReview';
+import OrderConfirmation from './confirmations/OrderConfirmation';
 
-const steps = ['Shipping Information', 'Payment Method', 'Review Order'];
+const steps = ['Shipping Information', 'Payment Method', 'Review Order', 'Confirm Order'];
 
 const Checkout = () => {
   const navigate = useNavigate();
   const { user } = useContext(AuthContext);
-  const { cart, totalPrice, totalItems, clearCart } = useContext(CartContext);
+  const { cart, totalItems, clearCart } = useContext(CartContext);
+  const [totalPrice, setTotalPrice] = useState(0);
   
   const [activeStep, setActiveStep] = useState(0);
   const [shippingData, setShippingData] = useState({
@@ -41,7 +43,7 @@ const Checkout = () => {
   });
   
   const [paymentData, setPaymentData] = useState({
-    method: 'credit_card',
+    method: 'cash_on_delivery',
   });
   
   const [loading, setLoading] = useState(false);
@@ -49,10 +51,22 @@ const Checkout = () => {
   const [couponCode, setCouponCode] = useState('');
   const [couponData, setCouponData] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
+  const [orderData, setOrderData] = useState(null);
+  
+  // Calculate total price from cart items
+  useEffect(() => {
+    if (cart && cart.items) {
+      const total = cart.items.reduce((sum, item) => {
+        const itemPrice = item.price || (item.product ? item.product.price : 0);
+        return sum + (itemPrice * item.quantity);
+      }, 0);
+      setTotalPrice(total);
+    }
+  }, [cart]);
   
   useEffect(() => {
     // Redirect if cart is empty
-    if (cart.length === 0) {
+    if (cart.items.length === 0) {
       navigate('/cart');
     }
     
@@ -124,55 +138,80 @@ const Checkout = () => {
     }
   };
   
+  const prepareOrderData = () => {
+    // Format addresses according to backend requirements
+    const fullName = `${shippingData.firstName} ${shippingData.lastName}`;
+    
+    // Prepare shipping address in the format backend expects
+    const shippingAddressData = {
+      name: fullName,
+      address: shippingData.address,
+      city: shippingData.city,
+      state: shippingData.state,
+      zip_code: shippingData.zipCode,
+      country: shippingData.country,
+      phone: shippingData.phone
+    };
+    
+    // For this implementation, use same address for billing
+    const billingAddressData = { ...shippingAddressData };
+    
+    // Prepare order data matching backend validation requirements
+    return {
+      items: cart.items.map(item => ({
+        product_id: item.product_id,
+        quantity: item.quantity
+      })),
+      shipping_address: shippingAddressData,
+      billing_address: billingAddressData,
+      payment_method: paymentData.method,
+      payment_id: 'COD-' + Date.now(), // Generate a payment ID for cash on delivery
+      coupon_code: couponData?.code || null
+    };
+  };
+
+  const handleShowOrderConfirmation = () => {
+    const data = prepareOrderData();
+    setOrderData(data);
+    setActiveStep(3); // Move to confirmation step
+  };
+
+  // No longer needed as we use the stepper navigation
+  
   const handlePlaceOrder = async () => {
     setLoading(true);
     setError('');
     
     try {
-      // Format shipping address
-      const shippingAddress = `${shippingData.firstName} ${shippingData.lastName}
-${shippingData.address}
-${shippingData.city}, ${shippingData.state} ${shippingData.zipCode}
-${shippingData.country}
-${shippingData.phone}`;
-      
-      // Prepare order data
-      const orderData = {
-        items: cart.map(item => ({
-          product_id: item.id,
-          quantity: item.quantity
-        })),
-        shipping_address: shippingAddress,
-        payment_method: paymentData.method,
-        coupon_code: couponData?.code || null
-      };
-      
-      // Add payment details if using credit card
-      if (paymentData.method === 'credit_card' && paymentData.card_number) {
-        orderData.payment_details = {
-          card_number: paymentData.card_number,
-          card_name: paymentData.card_name,
-          card_expiry: paymentData.card_expiry,
-          card_cvc: paymentData.card_cvc
-        };
-      }
-      
       const response = await api.orders.create(orderData);
       
-      // Clear cart and navigate to success page
+      // Clear cart
       clearCart();
-      navigate('/order-success', { state: { order: response.data.data } });
+      
+      // Don't navigate - the OrderConfirmation component will handle redirect
+      return true; // Return success status
     } catch (err) {
       console.error('Error placing order:', err);
-      setError(err.response?.data?.message || 'Failed to place order. Please try again.');
+      const errorMessage = err.response?.data?.message || 'Failed to place order. Please try again.';
+      
+      // Show specific validation errors if available
+      if (err.response?.data?.errors) {
+        const validationErrors = Object.values(err.response.data.errors).flat();
+        setError(validationErrors.join(', '));
+      } else {
+        setError(errorMessage);
+      }
+      
       // Scroll to the top to show the error
       window.scrollTo(0, 0);
+      return false; // Return failure status
     } finally {
       setLoading(false);
+      // No need to close dialog as we're using a page now
     }
   };
   
-  if (cart.length === 0) {
+  if (cart.items.length === 0) {
     return null; // Will redirect in useEffect
   }
   
@@ -195,7 +234,8 @@ ${shippingData.phone}`;
       
       {error && (
         <Alert severity="error" sx={{ mb: 3 }}>
-          {error}
+          <Typography variant="subtitle1">Validation error</Typography>
+          <Typography variant="body2">{error}</Typography>
         </Alert>
       )}
       
@@ -229,22 +269,39 @@ ${shippingData.phone}`;
                 shippingData={shippingData}
                 paymentData={paymentData}
                 totalItems={totalItems}
-                subtotal={totalPrice}
+                subtotal={totalPrice || 0}
                 discount={discountAmount}
-                total={finalPrice}
+                total={finalPrice || 0}
                 couponCode={couponCode}
                 couponData={couponData}
                 onApplyCoupon={handleApplyCoupon}
                 onRemoveCoupon={handleRemoveCoupon}
                 onCouponCodeChange={(e) => setCouponCode(e.target.value)}
                 onBack={handleBack}
-                onPlaceOrder={handlePlaceOrder}
+                onPlaceOrder={handleShowOrderConfirmation}
+                loading={loading}
+              />
+            )}
+            
+            {activeStep === 3 && orderData && (
+              <OrderConfirmation
+                orderData={orderData}
+                cart={cart}
+                shippingData={shippingData}
+                paymentData={paymentData}
+                totalPrice={totalPrice || 0}
+                discountAmount={discountAmount}
+                finalPrice={finalPrice || 0}
+                onBack={handleBack}
+                onConfirm={handlePlaceOrder}
                 loading={loading}
               />
             )}
           </>
         )}
       </Paper>
+
+      {/* No dialog needed as we're using a full page for confirmation */}
     </Container>
   );
 };

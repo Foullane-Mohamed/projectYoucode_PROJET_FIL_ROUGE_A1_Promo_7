@@ -32,9 +32,9 @@ const OrderReview = ({
   shippingData,
   paymentData,
   totalItems,
-  subtotal,
-  discount,
-  total,
+  subtotal = 0,
+  discount = 0,
+  total = 0,
   couponCode,
   couponData,
   onApplyCoupon,
@@ -54,14 +54,10 @@ const OrderReview = ({
   
   const formatPaymentMethod = (method) => {
     switch (method) {
-      case 'credit_card':
-        return 'Credit/Debit Card';
-      case 'bank_transfer':
-        return 'Bank Transfer';
       case 'cash_on_delivery':
         return 'Cash on Delivery';
       default:
-        return method.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase());
+        return method ? method.replace('_', ' ').replace(/\b\w/g, (l) => l.toUpperCase()) : 'Cash on Delivery';
     }
   };
   
@@ -76,8 +72,16 @@ const OrderReview = ({
       'ES': 'Spain',
       'IT': 'Italy',
     };
-    return countries[code] || code;
+    return code ? (countries[code] || code) : '';
   };
+
+  // Ensure cart items exist before rendering
+  const cartItems = cart && cart.items ? cart.items : [];
+  
+  // Calculate safeguarded subtotal
+  const safeSubtotal = typeof subtotal === 'number' ? subtotal : 0;
+  const safeDiscount = typeof discount === 'number' ? discount : 0;
+  const safeTotal = typeof total === 'number' ? total : 0;
   
   return (
     <Box>
@@ -90,56 +94,66 @@ const OrderReview = ({
           {/* Order Items */}
           <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
             <Typography variant="subtitle1" gutterBottom>
-              Order Items ({totalItems})
+              Order Items ({totalItems || 0})
             </Typography>
             
             <List sx={{ width: '100%' }}>
-              {cart.map((item) => (
-                <ListItem
-                  key={item.id}
-                  alignItems="flex-start"
-                  sx={{ 
-                    px: 0,
-                    borderBottom: '1px solid',
-                    borderColor: 'divider',
-                    '&:last-child': { 
-                      borderBottom: 'none' 
-                    } 
-                  }}
-                >
-                  <ListItemAvatar>
-                    <Avatar
-                      variant="rounded"
-                      alt={item.name}
-                      src={item.image ? `${import.meta.env.VITE_STORAGE_URL}/${item.image}` : '/placeholder.png'}
-                      sx={{ width: 60, height: 60, mr: 1 }}
+              {cartItems.map((item) => {
+                // Get safe price value
+                const itemPrice = item.price || (item.product ? item.product.price : 0) || 0;
+                return (
+                  <ListItem
+                    key={item.id}
+                    alignItems="flex-start"
+                    sx={{ 
+                      px: 0,
+                      borderBottom: '1px solid',
+                      borderColor: 'divider',
+                      '&:last-child': { 
+                        borderBottom: 'none' 
+                      } 
+                    }}
+                  >
+                    <ListItemAvatar>
+                      <Avatar
+                        variant="rounded"
+                        alt={item.product ? item.product.name : 'Product'}
+                        src={item.product && item.product.thumbnail ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.thumbnail}` : '/placeholder.png'}
+                        sx={{ width: 60, height: 60, mr: 1 }}
+                      />
+                    </ListItemAvatar>
+                    <ListItemText
+                      primary={
+                        <Link 
+                          to={`/products/${item.product_id}`} 
+                          style={{ textDecoration: 'none', color: 'inherit' }}
+                        >
+                          <Typography variant="subtitle1" component="span">
+                            {item.product ? item.product.name : 'Product'}
+                          </Typography>
+                        </Link>
+                      }
+                      secondary={
+                        <>
+                          <Typography component="span" variant="body2" color="text.secondary">
+                            Qty: {item.quantity || 1} × ${parseFloat(itemPrice).toFixed(2)}
+                          </Typography>
+                        </>
+                      }
+                      sx={{ mr: 2 }}
                     />
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={
-                      <Link 
-                        to={`/products/${item.id}`} 
-                        style={{ textDecoration: 'none', color: 'inherit' }}
-                      >
-                        <Typography variant="subtitle1" component="span">
-                          {item.name}
-                        </Typography>
-                      </Link>
-                    }
-                    secondary={
-                      <>
-                        <Typography component="span" variant="body2" color="text.secondary">
-                          Qty: {item.quantity} × ${parseFloat(item.price).toFixed(2)}
-                        </Typography>
-                      </>
-                    }
-                    sx={{ mr: 2 }}
-                  />
-                  <Typography variant="subtitle1" component="span">
-                    ${(item.quantity * item.price).toFixed(2)}
-                  </Typography>
+                    <Typography variant="subtitle1" component="span">
+                      ${((item.quantity || 1) * itemPrice).toFixed(2)}
+                    </Typography>
+                  </ListItem>
+                );
+              })}
+              
+              {cartItems.length === 0 && (
+                <ListItem>
+                  <ListItemText primary="No items in cart" />
                 </ListItem>
-              ))}
+              )}
             </List>
           </Paper>
           
@@ -154,22 +168,22 @@ const OrderReview = ({
             
             <Box sx={{ ml: 4 }}>
               <Typography variant="body1">
-                {`${shippingData.firstName} ${shippingData.lastName}`}
+                {`${shippingData?.firstName || ''} ${shippingData?.lastName || ''}`}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {shippingData.address}
+                {shippingData?.address || ''}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {`${shippingData.city}, ${shippingData.state} ${shippingData.zipCode}`}
+                {`${shippingData?.city || ''}, ${shippingData?.state || ''} ${shippingData?.zipCode || ''}`}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {getCountryName(shippingData.country)}
+                {getCountryName(shippingData?.country || '')}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {`Phone: ${shippingData.phone}`}
+                {`Phone: ${shippingData?.phone || ''}`}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {`Email: ${shippingData.email}`}
+                {`Email: ${shippingData?.email || ''}`}
               </Typography>
             </Box>
           </Paper>
@@ -185,14 +199,8 @@ const OrderReview = ({
             
             <Box sx={{ ml: 4 }}>
               <Typography variant="body1">
-                {formatPaymentMethod(paymentData.method)}
+                {formatPaymentMethod(paymentData?.method)}
               </Typography>
-              
-              {paymentData.method === 'credit_card' && paymentData.card_number && (
-                <Typography variant="body2" color="text.secondary">
-                  Card ending in {paymentData.card_number.slice(-4)}
-                </Typography>
-              )}
             </Box>
           </Paper>
         </Grid>
@@ -211,10 +219,10 @@ const OrderReview = ({
                 mb: 1 
               }}>
                 <Typography variant="body1">Subtotal:</Typography>
-                <Typography variant="body1">${subtotal.toFixed(2)}</Typography>
+                <Typography variant="body1">${safeSubtotal.toFixed(2)}</Typography>
               </Box>
               
-              {discount > 0 && (
+              {safeDiscount > 0 && (
                 <Box sx={{ 
                   display: 'flex', 
                   justifyContent: 'space-between', 
@@ -222,7 +230,7 @@ const OrderReview = ({
                 }}>
                   <Typography variant="body1">Discount:</Typography>
                   <Typography variant="body1" color="error">
-                    -${discount.toFixed(2)}
+                    -${safeDiscount.toFixed(2)}
                   </Typography>
                 </Box>
               )}
@@ -245,7 +253,7 @@ const OrderReview = ({
               }}>
                 <Typography variant="h6">Total:</Typography>
                 <Typography variant="h6" color="primary">
-                  ${total.toFixed(2)}
+                  ${safeTotal.toFixed(2)}
                 </Typography>
               </Box>
             </Box>
@@ -260,7 +268,7 @@ const OrderReview = ({
                   <TextField
                     size="small"
                     placeholder="Enter coupon code"
-                    value={couponCode}
+                    value={couponCode || ''}
                     onChange={onCouponCodeChange}
                     sx={{ flexGrow: 1, mr: 1 }}
                     InputProps={{
@@ -274,7 +282,7 @@ const OrderReview = ({
                   <Button
                     variant="outlined"
                     onClick={handleApplyCoupon}
-                    disabled={!couponCode.trim() || applyingCoupon}
+                    disabled={!(couponCode || '').trim() || applyingCoupon}
                   >
                     {applyingCoupon ? (
                       <CircularProgress size={24} />
@@ -349,10 +357,6 @@ const OrderReview = ({
               </Button>
             </Box>
           </Paper>
-          
-          <Alert severity="info" variant="outlined">
-            This is a demo application. No real payments will be processed.
-          </Alert>
         </Grid>
       </Grid>
     </Box>
