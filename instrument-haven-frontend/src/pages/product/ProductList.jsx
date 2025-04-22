@@ -285,7 +285,8 @@ const ProductList = () => {
               display: "flex",
               flexDirection: { xs: "column", sm: "row" },
               gap: 2,
-              width: { xs: "100%", md: "auto" },
+              width: "100%",
+              flexWrap: "wrap"
             }}
           >
             <TextField
@@ -312,21 +313,78 @@ const ProductList = () => {
               }}
             />
 
+            <FormControl variant="outlined" size="small" sx={{ minWidth: 160 }}>
+              <InputLabel>Category</InputLabel>
+              <Select
+                value={filters.category}
+                onChange={(e) => handleFilterChange("category", e.target.value)}
+                label="Category"
+              >
+                <MenuItem value="">All Categories</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category.id} value={category.id.toString()}>
+                    {category.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <TextField
+                label="Min Price"
+                type="number"
+                size="small"
+                value={filters.minPrice}
+                onChange={(e) => handleFilterChange("minPrice", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">$</InputAdornment>
+                  ),
+                }}
+                sx={{ width: 120 }}
+              />
+              <TextField
+                label="Max Price"
+                type="number"
+                size="small"
+                value={filters.maxPrice}
+                onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">$</InputAdornment>
+                  ),
+                }}
+                sx={{ width: 120 }}
+              />
+            </Box>
+
             <Button
               variant="outlined"
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: '30px',
-                  '&.Mui-focused fieldset': {
-                    borderColor: 'primary.main',
-                  },
-                },
-              }}
               startIcon={<FilterList />}
               onClick={toggleDrawer}
               sx={{ display: { xs: "flex", md: "none" } }}
             >
-              Filters
+              More Filters
+            </Button>
+            
+            <Button
+              variant="contained"
+              onClick={() => {
+                handleFilterChange("minPrice", "");
+                handleFilterChange("maxPrice", "");
+                handleFilterChange("category", "");
+                handleFilterChange("search", "");
+              }}
+              sx={{ 
+                borderRadius: '30px',
+                backgroundColor: 'grey.200',
+                color: 'text.primary',
+                '&:hover': {
+                  backgroundColor: 'grey.300',
+                },
+              }}
+            >
+              Clear Filters
             </Button>
           </Box>
 
@@ -337,20 +395,6 @@ const ProductList = () => {
               alignItems: 'center'
             }}
           >
-            <FormControl variant="outlined" size="small" sx={{ minWidth: 200 }}>
-              <InputLabel>Sort By</InputLabel>
-              <Select
-                value={filters.sort}
-                onChange={(e) => handleFilterChange("sort", e.target.value)}
-                label="Sort By"
-              >
-                <MenuItem value="newest">Newest</MenuItem>
-                <MenuItem value="price-asc">Price: Low to High</MenuItem>
-                <MenuItem value="price-desc">Price: High to Low</MenuItem>
-                <MenuItem value="name-asc">Name: A to Z</MenuItem>
-                <MenuItem value="name-desc">Name: Z to A</MenuItem>
-              </Select>
-            </FormControl>
 
             <ToggleButtonGroup
               value={viewMode}
@@ -370,117 +414,7 @@ const ProductList = () => {
         </Box>
 
         <Grid container spacing={2}>
-          <Grid item md={3} sx={{ display: { xs: "none", md: "block" } }}>
-            <Paper sx={{ p: 3, borderRadius: 3, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
-              <Typography variant="h6" gutterBottom sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-                Filters
-              </Typography>
 
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', mt: 2 }}>
-                Categories
-              </Typography>
-              <List dense>
-                <ListItem
-                  disablePadding
-                  selected={filters.category === ""}
-                  onClick={() => handleFilterChange("category", "")}
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'primary.light', color: 'white' },
-                    '&.Mui-selected': { bgcolor: 'primary.main', color: 'white' },
-                    '&.Mui-selected:hover': { bgcolor: 'primary.dark', color: 'white' },
-                    pl: 2,
-                    pr: 2,
-                    py: 1,
-                    borderRadius: 20,
-                    mb: 0.5
-                  }}
-                >
-                  <ListItemText primary="All Categories" />
-                </ListItem>
-                {categories.map((category) => (
-                  <ListItem
-                    disablePadding
-                    key={category.id}
-                    selected={filters.category === category.id.toString()}
-                    onClick={() =>
-                      handleFilterChange("category", category.id.toString())
-                    }
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'primary.light', color: 'white' },
-                      '&.Mui-selected': { bgcolor: 'primary.main', color: 'white' },
-                      '&.Mui-selected:hover': { bgcolor: 'primary.dark', color: 'white' },
-                      pl: 2,
-                      pr: 2,
-                      py: 1,
-                      borderRadius: 20,
-                      mb: 0.5
-                    }}
-                  >
-                    <ListItemText primary={category.name} />
-                  </ListItem>
-                ))}
-              </List>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'medium', mt: 3 }}>
-                Price Range
-              </Typography>
-              <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                <TextField
-                  label="Min"
-                  type="number"
-                  size="small"
-                  value={filters.minPrice}
-                  onChange={(e) => handleFilterChange("minPrice", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  label="Max"
-                  type="number"
-                  size="small"
-                  value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
-                    ),
-                  }}
-                />
-              </Box>
-
-              <Button
-                variant="contained"
-                fullWidth
-                onClick={() => {
-                  handleFilterChange("minPrice", "");
-                  handleFilterChange("maxPrice", "");
-                  handleFilterChange("category", "");
-                  handleFilterChange("search", "");
-                }}
-                sx={{ 
-                  mt: 3, 
-                  borderRadius: '30px',
-                  py: 1,
-                  backgroundColor: 'grey.200',
-                  color: 'text.primary',
-                  '&:hover': {
-                    backgroundColor: 'grey.300',
-                  },
-                }}
-              >
-                Clear Filters
-              </Button>
-            </Paper>
-          </Grid>
 
           <Drawer anchor="left" open={drawerOpen} onClose={toggleDrawer}>
             <Box sx={{ width: 280, p: 2 }}>
@@ -501,81 +435,11 @@ const ProductList = () => {
               <Divider sx={{ my: 2 }} />
 
               <Typography variant="subtitle1" gutterBottom>
-                Categories
+                Additional Filters
               </Typography>
-              <List dense>
-                <ListItem
-                  disablePadding
-                  selected={filters.category === ""}
-                  onClick={() => {
-                    handleFilterChange("category", "");
-                    if (isMobile) toggleDrawer();
-                  }}
-                  sx={{ 
-                    cursor: 'pointer',
-                    '&:hover': { bgcolor: 'action.hover' },
-                    pl: 2,
-                    pr: 2,
-                    py: 1,
-                    borderRadius: 1
-                  }}
-                >
-                  <ListItemText primary="All Categories" />
-                </ListItem>
-                {categories.map((category) => (
-                  <ListItem
-                    disablePadding
-                    key={category.id}
-                    selected={filters.category === category.id.toString()}
-                    onClick={() => {
-                      handleFilterChange("category", category.id.toString());
-                      if (isMobile) toggleDrawer();
-                    }}
-                    sx={{ 
-                      cursor: 'pointer',
-                      '&:hover': { bgcolor: 'action.hover' },
-                      pl: 2,
-                      pr: 2,
-                      py: 1,
-                      borderRadius: 1
-                    }}
-                  >
-                    <ListItemText primary={category.name} />
-                  </ListItem>
-                ))}
-              </List>
-
-              <Divider sx={{ my: 2 }} />
-
-              <Typography variant="subtitle1" gutterBottom>
-                Price Range
+              <Typography variant="body2" color="text.secondary" paragraph>
+                Price and category filters are available in the main view.
               </Typography>
-              <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-                <TextField
-                  label="Min"
-                  type="number"
-                  size="small"
-                  value={filters.minPrice}
-                  onChange={(e) => handleFilterChange("minPrice", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
-                    ),
-                  }}
-                />
-                <TextField
-                  label="Max"
-                  type="number"
-                  size="small"
-                  value={filters.maxPrice}
-                  onChange={(e) => handleFilterChange("maxPrice", e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">$</InputAdornment>
-                    ),
-                  }}
-                />
-              </Box>
 
               <Button
                 variant="outlined"
@@ -593,7 +457,7 @@ const ProductList = () => {
             </Box>
           </Drawer>
 
-          <Grid item xs={12} md={9}>
+          <Grid item xs={12}>
             {loading ? (
               <Box
                 sx={{

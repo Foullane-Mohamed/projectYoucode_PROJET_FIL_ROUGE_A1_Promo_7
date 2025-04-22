@@ -107,17 +107,25 @@ const EnhancedProductCard = ({ product }) => {
                 ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
                 : (product.images && Array.isArray(product.images) && product.images.length > 0
                   ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
-                  : '/images/categories/placeholder.jpg')
+                  : `/images/placeholders/instrument-${(product.id % 6) + 1 || 1}.jpg`)
             }
             alt={product.name || 'Product'}
             className="product-image"
             style={{
               transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-              transition: 'transform 0.5s ease'
+              transition: 'transform 0.5s ease',
+              opacity: 1 /* Ensure visibility */
             }}
             onError={(e) => {
+              console.log('Image load error, using fallback for product:', product.id);
               e.target.onerror = null;
-              e.target.src = '/images/categories/placeholder.jpg';
+              // Use a variety of fallback images based on product ID to make them look different
+              const placeholderId = (product.id % 6) + 1 || 1; // Fallback to 1 if calculation fails
+              e.target.src = `/images/placeholders/instrument-${placeholderId}.jpg`;
+              // If secondary fallback is needed
+              e.target.onerror = () => {
+                e.target.src = '/images/categories/placeholder.jpg';
+              };
             }}
           />
           
