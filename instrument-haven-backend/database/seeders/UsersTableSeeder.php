@@ -9,16 +9,14 @@ use Illuminate\Support\Facades\Hash;
 
 class UsersTableSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
+  
     public function run(): void
     {
         // Create admin user
         User::create([
-            'name' => 'Admin User',
-            'email' => 'admin@example.com',
-            'password' => Hash::make('password123'),
+            'name' => 'foullane mohamed',
+            'email' => 'foullane@gmail.com',
+            'password' => Hash::make('foullane1996@'),
             'role' => 'admin',
             'is_active' => true,
         ]);
