@@ -470,32 +470,15 @@ const ProductList = () => {
                 <CircularProgress />
               </Box>
             ) : error ? (
-              <Box sx={{ width: '100%', textAlign: 'center', py: 4 }}>
-                <Alert severity="error" sx={{ mb: 3, maxWidth: 600, mx: 'auto' }}>
-                  {error}
-                </Alert>
-                <Button 
-                  variant="contained" 
-                  color="primary" 
-                  onClick={() => {
-                    setError(null);
-                    setLoading(true);
-                    handleFilterChange("search", "");
-                    handleFilterChange("minPrice", "");
-                    handleFilterChange("maxPrice", "");
-                    handleFilterChange("category", "");
-                  }}
-                  sx={{ mt: 2 }}
-                >
-                  Try Again
-                </Button>
-              </Box>
+              <Typography variant="body1" color="error" align="center" sx={{ my: 4 }}>
+                {error}
+              </Typography>
             ) : products.length > 0 ? (
               <>
                 {viewMode === 'grid' ? (
-                  <Grid container spacing={3} sx={{ justifyContent: 'center' }}>
+                  <Grid container spacing={2}>
                     {products.map((product) => (
-                      <Grid item xs={12} sm={6} md={4} lg={4} key={product.id}>
+                      <Grid item xs={12} sm={6} md={4} key={product.id}>
                         <EnhancedProductCard product={product} />
                       </Grid>
                     ))}

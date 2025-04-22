@@ -16,7 +16,7 @@ import {
 import {
   FavoriteBorder,
   Favorite,
-  ShoppingCart,
+  AddShoppingCart,
   Visibility,
   CheckCircle,
 } from '@mui/icons-material';
@@ -90,19 +90,40 @@ const EnhancedListProductCard = ({ product }) => {
     : 0;
 
   return (
-    <Card className="enhanced-list-product-card">
+    <Card 
+      sx={{
+        display: 'flex',
+        flexDirection: { xs: 'column', md: 'row' },
+        marginBottom: 3,
+        borderRadius: '20px',
+        overflow: 'hidden',
+        border: '1px solid #e0e0e0',
+        boxShadow: '0 3px 15px rgba(0,0,0,0.05)',
+        transition: 'all 0.3s ease',
+        position: 'relative',
+        width: '100%',
+        backgroundColor: 'white',
+        '&:hover': {
+          transform: 'translateY(-4px)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.1)'
+        }
+      }}
+    >
       {/* Product Badges */}
-      <Box className="product-badges">
-        {product.on_sale && product.sale_price && (
+      <Box sx={{ position: 'absolute', top: 16, left: 16, display: 'flex', gap: 1, zIndex: 5 }}>
+        {product.on_sale && product.sale_price && discountPercentage > 0 && (
           <Chip 
             label={`${discountPercentage}% OFF`}
-            color="error"
             size="small"
             sx={{ 
               fontWeight: 'bold',
-              background: 'linear-gradient(135deg, #ff6b6b, #ff2b52)',
+              backgroundColor: 'rgba(255, 43, 82, 0.95)',
               color: 'white',
-              boxShadow: '0 2px 8px rgba(255, 43, 82, 0.3)',
+              fontWeight: '600',
+              fontSize: '0.8rem',
+              boxShadow: '0 3px 6px rgba(0,0,0,0.2)',
+              py: 0.8,
+              borderRadius: '6px'
             }}
           />
         )}
@@ -110,35 +131,62 @@ const EnhancedListProductCard = ({ product }) => {
         {product.stock <= 0 && (
           <Chip 
             label="Out of Stock"
-            color="error"
-            variant="filled"
             size="small"
-            sx={{ fontWeight: 'bold' }}
+            sx={{ 
+              fontWeight: 'bold',
+              backgroundColor: 'rgba(211, 47, 47, 0.95)',
+              color: 'white',
+              fontWeight: '600',
+              fontSize: '0.8rem',
+              boxShadow: '0 3px 6px rgba(0,0,0,0.2)',
+              py: 0.8,
+              borderRadius: '6px'
+            }}
           />
         )}
       </Box>
       
       {/* Wishlist Button */}
       <IconButton 
-        className="wishlist-button"
         onClick={handleWishlistToggle}
         aria-label="Add to wishlist"
         sx={{
           position: 'absolute',
-          top: 16,
-          right: 16,
+          top: 12,
+          right: 12,
           zIndex: 10,
+          bgcolor: 'rgba(255, 255, 255, 0.95)',
+          boxShadow: '0 2px 5px rgba(0,0,0,0.08)',
+          '&:hover': {
+            bgcolor: 'white',
+            boxShadow: '0 3px 8px rgba(0,0,0,0.12)',
+          },
+          width: 40,
+          height: 40,
         }}
       >
         {isInWishlist(product.id) ? (
           <Favorite sx={{ color: '#FF2B52' }} />
         ) : (
-          <FavoriteBorder sx={{ color: '#555' }} />
+          <FavoriteBorder sx={{ color: '#777' }} />
         )}
       </IconButton>
       
       {/* Product Image */}
-      <Box className="product-image-section">
+      <Box 
+        sx={{ 
+          width: { xs: '100%', md: '280px' }, 
+          minWidth: { md: '280px' },
+          position: 'relative',
+          backgroundColor: '#f5f7fa',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 3,
+          overflow: 'hidden',
+          height: { xs: '240px', md: 'auto' }
+        }}
+      >
         <img
           src={
             product.thumbnail
@@ -148,6 +196,12 @@ const EnhancedListProductCard = ({ product }) => {
                 : '/images/categories/placeholder.jpg')
           }
           alt={product.name || 'Product'}
+          style={{
+            maxWidth: '100%',
+            maxHeight: '200px',
+            objectFit: 'contain',
+            transition: 'transform 0.4s ease'
+          }}
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = '/images/categories/placeholder.jpg';
@@ -156,86 +210,142 @@ const EnhancedListProductCard = ({ product }) => {
       </Box>
       
       {/* Product Details */}
-      <Box className="product-details">
-        <Box className="product-title-row">
-          <Box className="product-title-section">
+      <Box sx={{ flex: 1, padding: 3, display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', marginBottom: 1.5 }}>
+          <Box>
             <Typography 
               component={Link} 
               to={`/products/${product.id}`}
-              className="product-title"
-              variant="h5"
+              variant="h6"
+              sx={{ 
+                fontSize: '1.1rem', 
+                fontWeight: 600, 
+                color: '#333',
+                textDecoration: 'none',
+                marginBottom: 1,
+                transition: 'color 0.2s ease',
+                '&:hover': {
+                  color: '#FF2B52'
+                }
+              }}
             >
               {product.name || 'Unnamed Product'}
             </Typography>
             
-            <Box className="product-rating">
+            <Box sx={{ display: 'flex', alignItems: 'center', mb: 1.5, mt: 0.5, bgcolor: '#fff9f9', py: 0.5, px: 1, borderRadius: 2, width: 'fit-content' }}>
               <Rating 
                 value={product.average_rating || 0} 
                 readOnly 
-                precision={0.5} 
                 size="small" 
+                precision={0.5} 
+                sx={{ 
+                  color: '#FFB612', 
+                  '& .MuiRating-iconEmpty': {
+                    color: '#e0e0e0'
+                  }
+                }}
               />
-              <Typography variant="body2" sx={{ ml: 1, color: '#666' }}>
-                ({product.reviews ? product.reviews.length : 0} reviews)
+              <Typography variant="body2" sx={{ ml: 0.5, fontSize: '0.75rem', color: '#666', fontWeight: 500 }}>
+                ({product.reviews ? product.reviews.length : 0})
               </Typography>
-              
-              {product.stock > 0 && (
-                <Chip 
-                  icon={<CheckCircle fontSize="small" />}
-                  label={`In Stock (${product.stock})`}
-                  size="small"
-                  color="success"
-                  variant="outlined"
-                  sx={{ ml: 2 }}
-                />
-              )}
             </Box>
           </Box>
         </Box>
         
-        <Divider sx={{ my: 1.5 }} />
-        
-        <Typography className="product-description">
+        <Typography
+          variant="body2"
+          sx={{
+            color: '#666',
+            marginBottom: 2,
+            lineHeight: 1.6,
+            fontSize: '0.9rem'
+          }}
+        >
           {product.description || 'No description available'}
         </Typography>
         
-        <Box className="product-footer">
-          <Box className="price-section">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
+          <Box>
             {product.on_sale && product.sale_price ? (
-              <>
-                <Typography className="sale-price">
-                  ${parseFloat(product.sale_price).toFixed(2)}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontSize: '1.4rem',
+                    fontWeight: 700, 
+                    color: '#FF2B52',
+                    letterSpacing: '-0.03em',
+                    display: 'flex',
+                    alignItems: 'center',
+                    '&::before': {
+                      content: '"$"',
+                      fontSize: '1rem',
+                      position: 'relative',
+                      top: '-0.2em',
+                      mr: 0.3,
+                      opacity: 0.8
+                    }
+                  }}
+                >
+                  {(parseFloat(product.sale_price) || 0).toFixed(2)}
                 </Typography>
-                <Typography className="regular-price">
-                  ${parseFloat(product.price).toFixed(2)}
+                <Typography 
+                  variant="body2"
+                  sx={{ 
+                    textDecoration: 'line-through', 
+                    fontSize: '0.9rem', 
+                    color: '#999',
+                    mt: 0.5
+                  }}
+                >
+                  ${(parseFloat(product.price) || 0).toFixed(2)}
                 </Typography>
-              </>
+              </Box>
             ) : (
-              <Typography className="sale-price">
-                ${parseFloat(product.price).toFixed(2)}
+              <Typography variant="h6" sx={{ 
+                fontWeight: 700, 
+                color: '#FF2B52', 
+                fontSize: '1.4rem',
+                letterSpacing: '-0.03em',
+                display: 'flex',
+                alignItems: 'center',
+                '&::before': {
+                  content: '"$"',
+                  fontSize: '1rem',
+                  position: 'relative',
+                  top: '-0.2em',
+                  mr: 0.3,
+                  opacity: 0.8
+                }
+              }}>
+                {(parseFloat(product.price) || 0).toFixed(2)}
               </Typography>
             )}
           </Box>
           
-          <Box className="actions-section">
+          <Box sx={{ display: 'flex', gap: 2 }}>
             <Button
+              size="small"
               variant="contained"
-              startIcon={<ShoppingCart />}
+              startIcon={<AddShoppingCart fontSize="small" />}
               onClick={handleAddToCart}
               disabled={product.stock <= 0}
               sx={{
+                px: 2.5,
+                py: 1,
+                minWidth: '120px',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                boxShadow: '0 4px 10px rgba(255, 43, 82, 0.25)',
                 backgroundColor: '#FF2B52',
-                fontWeight: 600,
-                borderRadius: '8px',
-                padding: '8px 24px',
-                boxShadow: '0 4px 12px rgba(255, 43, 82, 0.2)',
+                borderRadius: '10px',
                 '&:hover': {
                   backgroundColor: '#e01e41',
-                  boxShadow: '0 6px 16px rgba(255, 43, 82, 0.3)',
+                  boxShadow: '0 6px 12px rgba(255, 43, 82, 0.35)'
                 },
                 '&.Mui-disabled': {
                   backgroundColor: '#f5f5f5',
-                  color: '#999',
+                  color: '#999'
                 }
               }}
             >
@@ -243,20 +353,23 @@ const EnhancedListProductCard = ({ product }) => {
             </Button>
             
             <Button
+              size="small"
               variant="outlined"
-              startIcon={<Visibility />}
+              startIcon={<Visibility fontSize="small" />}
               component={Link}
               to={`/products/${product.id}`}
               sx={{
                 borderColor: '#ccc',
                 color: '#666',
-                fontWeight: 600,
-                borderRadius: '8px',
-                padding: '8px 16px',
+                fontWeight: '600',
+                fontSize: '0.85rem',
+                py: 1,
+                px: 2,
+                borderRadius: '10px',
                 '&:hover': {
                   borderColor: '#FF2B52',
                   color: '#FF2B52',
-                  backgroundColor: 'rgba(255, 43, 82, 0.04)',
+                  backgroundColor: 'rgba(255, 43, 82, 0.04)'
                 }
               }}
             >
