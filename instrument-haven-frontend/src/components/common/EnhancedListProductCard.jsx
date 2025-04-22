@@ -194,8 +194,8 @@ const EnhancedListProductCard = ({ product }) => {
         component={Link}
         to={`/products/${product.id}`}
         sx={{ 
-          width: { xs: '100%', md: '280px' }, 
-          minWidth: { md: '280px' },
+          width: { xs: '100%', md: '300px' }, 
+          minWidth: { md: '300px' },
           position: 'relative',
           backgroundColor: '#f5f7fa',
           display: 'flex',
@@ -203,25 +203,35 @@ const EnhancedListProductCard = ({ product }) => {
           justifyContent: 'center',
           padding: 3,
           overflow: 'hidden',
-          height: { xs: '240px', md: 'auto' },
+          height: { xs: '280px', md: '240px' },
           textDecoration: 'none'
         }}
       >
-        <img
-          src={getProductImage()}
-          alt={product.name || 'Product'}
-          style={{
-            maxWidth: '100%',
-            maxHeight: '200px',
-            objectFit: 'contain',
-            transition: 'transform 0.4s ease'
+        <Box
+          sx={{
+            width: '100%',
+            height: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
           }}
-          onError={(e) => {
-            e.target.onerror = null;
-            const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
-            e.target.src = PRODUCT_IMAGES[index];
-          }}
-        />
+        >
+          <img
+            src={getProductImage()}
+            alt={product.name || 'Product'}
+            style={{
+              maxWidth: '90%',
+              maxHeight: '90%',
+              objectFit: 'contain',
+              transition: 'transform 0.4s ease'
+            }}
+            onError={(e) => {
+              e.target.onerror = null;
+              const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
+              e.target.src = PRODUCT_IMAGES[index];
+            }}
+          />
+        </Box>
       </Box>
       
       {/* Product Details */}
@@ -273,7 +283,13 @@ const EnhancedListProductCard = ({ product }) => {
             color: '#666',
             marginBottom: 2,
             lineHeight: 1.6,
-            fontSize: '0.9rem'
+            fontSize: '0.9rem',
+            // Add text overflow handling
+            overflow: 'hidden',
+            display: '-webkit-box',
+            WebkitLineClamp: 3,
+            WebkitBoxOrient: 'vertical',
+            maxHeight: '4.8em', // 3 lines x 1.6 line-height
           }}
         >
           {product.description || 'No description available'}

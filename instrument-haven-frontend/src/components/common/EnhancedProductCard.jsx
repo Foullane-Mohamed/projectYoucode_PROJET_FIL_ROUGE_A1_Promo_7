@@ -161,30 +161,41 @@ const EnhancedProductCard = ({ product }) => {
           pt: 2, 
           px: 2, 
           pb: 2, 
-          height: '200px', 
+          height: '240px', 
           display: 'flex', 
           alignItems: 'center', 
           justifyContent: 'center' 
         }}>
-          <CardMedia
-            component="img"
-            height="160"
-            image={getProductImage()}
-            alt={product.name || 'Product'}
-            sx={{ 
-              objectFit: 'contain', 
-              maxHeight: '180px',
-              transition: 'transform 0.4s ease',
-              '&:hover': {
-                transform: 'scale(1.05)'
-              }
+          <Box
+            sx={{
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              overflow: 'hidden'
             }}
-            onError={(e) => {
-              e.target.onerror = null; // Prevent infinite error loop
-              const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
-              e.target.src = PRODUCT_IMAGES[index];
-            }}
-          />
+          >
+            <CardMedia
+              component="img"
+              image={getProductImage()}
+              alt={product.name || 'Product'}
+              sx={{ 
+                maxWidth: '85%',
+                maxHeight: '85%',
+                objectFit: 'contain',
+                transition: 'transform 0.4s ease',
+                '&:hover': {
+                  transform: 'scale(1.05)'
+                }
+              }}
+              onError={(e) => {
+                e.target.onerror = null; // Prevent infinite error loop
+                const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
+                e.target.src = PRODUCT_IMAGES[index];
+              }}
+            />
+          </Box>
           
           {product.on_sale && product.sale_price && discountPercentage > 0 && (
             <Chip 
@@ -227,7 +238,7 @@ const EnhancedProductCard = ({ product }) => {
           )}
         </Box>
         
-        <CardContent sx={{ flexGrow: 1, p: 2, pt: 1.5, height: '100px', overflow: 'hidden' }}>
+        <CardContent sx={{ flexGrow: 1, p: 2, pt: 1.5, height: '120px', overflow: 'hidden' }}>
           <Typography 
             gutterBottom 
             variant="subtitle1" 
@@ -268,10 +279,14 @@ const EnhancedProductCard = ({ product }) => {
             color="text.secondary"
             sx={{
               mb: 1,
-              minHeight: '36px',
+              maxHeight: '36px',
               fontSize: '0.8rem',
               color: '#666',
-              lineHeight: 1.3
+              lineHeight: 1.3,
+              overflow: 'hidden',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical'
             }}
           >
             {product.description 

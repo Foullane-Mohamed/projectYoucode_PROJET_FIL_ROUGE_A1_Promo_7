@@ -215,8 +215,8 @@ const HeroCarousel = () => {
     },
     {
       image: 'https://images.unsplash.com/photo-1514119412350-e174d90d280e?w=1600&h=900&fit=crop&q=80',
-      title: 'Summer Sale',
-      subtitle: 'Up to 40% off on selected guitars, pianos, and other instruments',
+      title: 'Special Discounts',
+      subtitle: 'Amazing deals on selected guitars, pianos, and other instruments',
       primaryAction: 'View Deals',
       secondaryAction: 'See All'
     },
@@ -347,7 +347,6 @@ const Home = () => {
   // State for API data
   const [categories, setCategories] = useState([]);
   const [featuredProducts, setFeaturedProducts] = useState([]);
-  const [newArrivals, setNewArrivals] = useState([]);
   const [saleProducts, setSaleProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -366,15 +365,10 @@ const Home = () => {
         const categoriesData = categoriesResponse.data?.data?.categories || categoriesResponse.data?.categories || [];
         setCategories(categoriesData.slice(0, 6)); // Limit to 6 categories
 
-        // Fetch featured products (popular items)
-        const featuredResponse = await apiService.products.getAll({ sort_by: 'popularity', sort_dir: 'desc', per_page: 8 });
+        // Fetch featured products (products marked as featured)
+        const featuredResponse = await apiService.products.getAll({ featured: true, per_page: 8 });
         const featuredData = featuredResponse.data?.data?.products || featuredResponse.data?.products || [];
         setFeaturedProducts(featuredData);
-
-        // Fetch new arrivals
-        const newArrivalsResponse = await apiService.products.getAll({ sort_by: 'created_at', sort_dir: 'desc', per_page: 8 });
-        const newArrivalsData = newArrivalsResponse.data?.data?.products || newArrivalsResponse.data?.products || [];
-        setNewArrivals(newArrivalsData);
 
         // Fetch sale products
         const saleResponse = await apiService.products.getAll({ on_sale: true, per_page: 8 });
@@ -558,7 +552,7 @@ const Home = () => {
             Featured Products
           </Typography>
           <Typography variant="subtitle1" sx={styles.sectionSubtitle}>
-            Discover our most popular instruments loved by musicians
+            Handpicked by our music experts
           </Typography>
         </Box>
 
@@ -566,187 +560,57 @@ const Home = () => {
           {loading ? (
             // Skeleton loading for products
             Array(8).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={3} key={`product-skeleton-${index}`}>
+              <Grid item xs={12} sm={6} md={3} key={`featured-skeleton-${index}`}>
                 <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px', mb: 1 }} />
                 <Skeleton width="60%" height={24} sx={{ mb: 1 }} />
                 <Skeleton width="40%" height={20} sx={{ mb: 1 }} />
                 <Skeleton width="30%" height={20} />
               </Grid>
             ))
-          ) : (
-            // Actual products
+          ) : featuredProducts.length > 0 ? (
+            // Actual featured products
             featuredProducts.map((product) => (
               <Grid item xs={12} sm={6} md={3} key={product.id}>
                 <EnhancedProductCard product={product} />
               </Grid>
             ))
-          )}
-        </Grid>
-
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Button
-            variant="outlined"
-            size="large"
-            endIcon={<ArrowForward />}
-            onClick={() => navigate('/products')}
-            sx={{
-              borderRadius: '30px',
-              px: 4,
-              py: 1.5,
-              borderColor: '#FF2B52',
-              color: '#FF2B52',
-              fontWeight: 'bold',
-              '&:hover': {
-                borderColor: '#e01641',
-                backgroundColor: 'rgba(255, 43, 82, 0.04)'
-              }
-            }}
-          >
-            View All Products
-          </Button>
-        </Box>
-      </Container>
-
-      {/* Special Offer Banner */}
-      <Container maxWidth="xl" sx={{ my: 8 }}>
-        <Paper
-          elevation={0}
-          sx={{
-            borderRadius: '20px',
-            overflow: 'hidden',
-            position: 'relative',
-            minHeight: '250px',
-            display: 'flex',
-            alignItems: 'center',
-            background: 'linear-gradient(to right, #FF2B52, #FF6B87)',
-            boxShadow: '0 10px 30px rgba(255, 43, 82, 0.2)'
-          }}
-        >
-          <Container>
-            <Grid container spacing={3} alignItems="center">
-              <Grid item xs={12} md={7}>
-                <Box sx={{ p: { xs: 4, md: 6 }, color: 'white' }}>
-                  <Chip
-                    icon={<Discount sx={{ color: '#FF2B52 !important' }} />}
-                    label="Limited Time Offer"
-                    sx={{ 
-                      backgroundColor: 'white', 
-                      color: '#FF2B52',
-                      fontWeight: 'bold', 
-                      mb: 2 
-                    }}
-                  />
-                  <Typography 
-                    variant="h3" 
-                    component="h2" 
-                    sx={{ 
-                      fontWeight: 800,
-                      mb: 2,
-                      textShadow: '0px 2px 4px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    Summer Sale
-                  </Typography>
-                  <Typography variant="h6" sx={{ mb: 3 }}>
-                    Get up to 40% off on selected items and free shipping on all orders over $100
-                  </Typography>
-                  <Button
-                    variant="contained"
-                    size="large"
-                    endIcon={<ArrowForward />}
-                    onClick={() => navigate('/products?on_sale=true')}
-                    sx={{
-                      backgroundColor: 'white',
-                      color: '#FF2B52',
-                      fontWeight: 'bold',
-                      borderRadius: '30px',
-                      px: 4,
-                      py: 1.5,
-                      '&:hover': {
-                        backgroundColor: 'rgba(255, 255, 255, 0.9)'
-                      }
-                    }}
-                  >
-                    Shop Now
-                  </Button>
-                </Box>
-              </Grid>
-              <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
-                <Box 
-                  component="img"
-                  src="https://images.unsplash.com/photo-1571327073757-71d13c24de30?w=600&h=800&fit=crop&q=80"
-                  alt="Electric Guitar Special Offer"
-                  sx={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    maxHeight: '350px',
-                    borderRadius: '20px',
-                    transform: 'rotate(5deg) scale(1.1)',
-                    boxShadow: '0 10px 30px rgba(0, 0, 0, 0.2)'
-                  }}
-                />
-              </Grid>
-            </Grid>
-          </Container>
-        </Paper>
-      </Container>
-
-      {/* New Arrivals Section */}
-      <Container maxWidth="xl">
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h2" sx={styles.sectionTitle}>
-            New Arrivals
-          </Typography>
-          <Typography variant="subtitle1" sx={styles.sectionSubtitle}>
-            Check out the latest additions to our collection
-          </Typography>
-        </Box>
-
-        <Grid container spacing={3}>
-          {loading ? (
-            // Skeleton loading for products
-            Array(8).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={3} key={`new-arrival-skeleton-${index}`}>
-                <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px', mb: 1 }} />
-                <Skeleton width="60%" height={24} sx={{ mb: 1 }} />
-                <Skeleton width="40%" height={20} sx={{ mb: 1 }} />
-                <Skeleton width="30%" height={20} />
-              </Grid>
-            ))
           ) : (
-            // Actual products
-            newArrivals.map((product) => (
-              <Grid item xs={12} sm={6} md={3} key={product.id}>
-                <EnhancedProductCard product={product} />
-              </Grid>
-            ))
+            // Display a message if no featured products
+            <Grid item xs={12}>
+              <Typography variant="body1" textAlign="center" sx={{ py: 4, color: '#666' }}>
+                Featured products coming soon!
+              </Typography>
+            </Grid>
           )}
         </Grid>
 
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <Button
-            variant="outlined"
-            size="large"
-            endIcon={<ArrowForward />}
-            onClick={() => navigate('/products?sort=newest')}
-            sx={{
-              borderRadius: '30px',
-              px: 4,
-              py: 1.5,
-              borderColor: '#FF2B52',
-              color: '#FF2B52',
-              fontWeight: 'bold',
-              '&:hover': {
-                borderColor: '#e01641',
-                backgroundColor: 'rgba(255, 43, 82, 0.04)'
-              }
-            }}
-          >
-            View All New Arrivals
-          </Button>
-        </Box>
+        {featuredProducts.length > 0 && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Button
+              variant="outlined"
+              size="large"
+              endIcon={<ArrowForward />}
+              onClick={() => navigate('/products?featured=true')}
+              sx={{
+                borderRadius: '30px',
+                px: 4,
+                py: 1.5,
+                borderColor: '#FF2B52',
+                color: '#FF2B52',
+                fontWeight: 'bold',
+                '&:hover': {
+                  borderColor: '#e01641',
+                  backgroundColor: 'rgba(255, 43, 82, 0.04)'
+                }
+              }}
+            >
+              View All Featured Products
+            </Button>
+          </Box>
+        )}
       </Container>
+
+
     </Box>
   );
 };
