@@ -19,6 +19,7 @@ import ErrorBoundary from './components/common/ErrorBoundary/index';
 // Page Components
 import Home from './pages/home/Home';
 import ProductList from './pages/product/ProductList';
+import Categories from './pages/categories/Categories';
 import ProductDetail from './pages/product/ProductDetail';
 import Cart from './pages/cart/Cart';
 import Checkout from './pages/cart/Checkout';
@@ -154,7 +155,8 @@ function App() {
                               <Route path="/" element={<ShopRoute><Home /></ShopRoute>} />
                               <Route path="/products" element={<ShopRoute><ProductList /></ShopRoute>} />
                               <Route path="/products/:id" element={<ShopRoute><ProductDetail /></ShopRoute>} />
-                              <Route path="/categories/:id" element={<ShopRoute><ProductList /></ShopRoute>} />
+                              <Route path="/categories" element={<ShopRoute><Categories /></ShopRoute>} />
+              <Route path="/categories/:id" element={<ShopRoute><ProductList /></ShopRoute>} />
                               <Route path="/search" element={<ShopRoute><ProductList /></ShopRoute>} />
                               <Route path="/cart" element={<ShopRoute><Cart /></ShopRoute>} />
                               <Route path="/login" element={<Login />} />
