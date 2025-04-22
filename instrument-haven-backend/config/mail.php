@@ -121,4 +121,15 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Email Address
+    |--------------------------------------------------------------------------
+    |
+    | This is the email address where contact form submissions will be sent.
+    |
+    */
+
+    'admin_email' => env('MAIL_ADMIN_EMAIL', 'mohamedfoullane@gmail.com'),
+
 ];

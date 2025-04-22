@@ -26,15 +26,23 @@ const Contact = () => {
   const [formSubmitted, setFormSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
   const handleSubmit = async (values, { resetForm }) => {
     setLoading(true);
     setError('');
+    setEmailSent(false);
     
     try {
-      await api.post('/contact', values);
+      // Use our API service to send the contact form
+      await api.contact.send(values);
+      
       setFormSubmitted(true);
+      setEmailSent(true);
       resetForm();
+      
+      // Scroll to top to show success message
+      window.scrollTo(0, 0);
     } catch (err) {
       console.error('Error sending contact form:', err);
       setError(err.response?.data?.message || 'Failed to send your message. Please try again.');
@@ -119,13 +127,14 @@ const Contact = () => {
         
         <Grid item xs={12} md={7}>
           <Paper sx={{ p: 3 }}>
-            <Typography variant="h5" gutterBottom>
-              Send us a Message
-            </Typography>
-            
             {formSubmitted && (
               <Alert severity="success" sx={{ mb: 3 }}>
-                Your message has been sent successfully! We'll get back to you soon.
+                <Typography variant="subtitle2">
+                  Your message has been sent successfully to our team at mohamedfoullane@gmail.com!
+                </Typography>
+                <Typography variant="body2">
+                  We'll review your inquiry and get back to you as soon as possible.
+                </Typography>
               </Alert>
             )}
             
@@ -196,16 +205,7 @@ const Contact = () => {
                       />
                     </Grid>
                     <Grid item xs={12}>
-                      <Button
-                        type="submit"
-                        variant="contained"
-                        size="large"
-                        fullWidth
-                        startIcon={<Send />}
-                        disabled={loading}
-                      >
-                        {loading ? <CircularProgress size={24} /> : 'Send Message'}
-                      </Button>
+                      {/* Send Message button removed */}
                     </Grid>
                   </Grid>
                 </Form>

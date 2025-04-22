@@ -33,11 +33,10 @@ class ContactController extends Controller
             ], 422);
         }
 
-        // Store in database or send email
+        // Send email to specified address
         try {
-            // Mail::to(config('mail.admin_email'))->send(new ContactFormMail($request->all()));
+            Mail::to(config('mail.admin_email'))->send(new ContactFormMail($request->all()));
             
-            // For now, just return success without actually sending email (configure mail later)
             return response()->json([
                 'status' => 'success',
                 'message' => 'Your message has been sent successfully.'
