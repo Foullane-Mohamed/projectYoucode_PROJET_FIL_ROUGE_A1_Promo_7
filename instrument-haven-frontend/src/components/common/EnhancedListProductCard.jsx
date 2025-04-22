@@ -97,8 +97,8 @@ const EnhancedListProductCard = ({ product }) => {
       return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`;
     }
     
-    // Use placeholder image as fallback
-    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    // Use placeholder image as fallback - ensuring we use product images, not category images
+    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
 
@@ -218,7 +218,7 @@ const EnhancedListProductCard = ({ product }) => {
           }}
           onError={(e) => {
             e.target.onerror = null;
-            const index = (product.id % PRODUCT_IMAGES.length) || 0;
+            const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
             e.target.src = PRODUCT_IMAGES[index];
           }}
         />

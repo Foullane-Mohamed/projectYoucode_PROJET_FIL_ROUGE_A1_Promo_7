@@ -108,8 +108,8 @@ const ProductDetail = () => {
       return `${storageUrl}/${product.thumbnail}`;
     }
     
-    // Use placeholder image as fallback
-    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    // Use placeholder image as fallback - ensuring we use product images, not category images
+    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
 
@@ -246,7 +246,7 @@ const ProductDetail = () => {
                   }}
                   onError={(e) => {
                     e.target.onerror = null; // Prevent infinite error loop
-                    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+                    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
                     e.target.src = PRODUCT_IMAGES[index];
                   }}
                 />
@@ -302,7 +302,7 @@ const ProductDetail = () => {
                       }}
                       onError={(e) => {
                         e.target.onerror = null; // Prevent infinite error loop
-                        const imgIndex = (product.id % PRODUCT_IMAGES.length) || 0;
+                        const imgIndex = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
                         e.target.src = PRODUCT_IMAGES[imgIndex];
                       }}
                     />

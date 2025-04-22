@@ -1,0 +1,135 @@
+/* Home Page Specific Styles */
+
+/* Hero Section Animation */
+.hero-slide-in {
+  animation: slideIn 0.8s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Button Pulse Animation */
+.pulse-button {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 43, 82, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 15px rgba(255, 43, 82, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 43, 82, 0);
+  }
+}
+
+/* Category Card Hover Effect */
+.category-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.category-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
+}
+
+.category-card:hover .category-image {
+  transform: scale(1.05);
+}
+
+.category-image {
+  transition: transform 0.5s ease;
+}
+
+/* Featured Product Badge */
+.featured-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #FFB612;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.8rem;
+  z-index: 2;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Sale Banner Gradient Animation */
+.sale-banner {
+  background: linear-gradient(-45deg, #FF2B52, #FF6B87, #FFB612, #FF2B52);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+}
+
+@keyframes gradientBG {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Testimonial Card Hover Effect */
+.testimonial-card {
+  transition: all 0.3s ease;
+}
+
+.testimonial-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Newsletter Input Focus Effect */
+.newsletter-input:focus {
+  box-shadow: 0 0 0 2px rgba(255, 43, 82, 0.2);
+  border-color: #FF2B52;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 600px) {
+  .section-title {
+    font-size: 1.8rem !important;
+  }
+  
+  .section-subtitle {
+    font-size: 1rem !important;
+  }
+  
+  .hero-title {
+    font-size: 2rem !important;
+  }
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF2B52;
+  border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #e01641;
+}

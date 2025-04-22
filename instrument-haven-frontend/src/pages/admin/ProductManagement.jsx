@@ -57,7 +57,7 @@ const ProductManagement = () => {
   const [filePreview, setFilePreview] = useState([]);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
 
-  // Get product image with fallback
+  // Get product image with fallback - using only product images
   const getProductImage = (product) => {
     if (product.thumbnail) {
       return `${storageUrl}/${product.thumbnail}`;
@@ -65,8 +65,8 @@ const ProductManagement = () => {
       return `${storageUrl}/${product.images[0]}`;
     }
     
-    // Use placeholder image as fallback
-    const index = (product.id % PRODUCT_IMAGES.length) || 0;
+    // Use placeholder image as fallback - ensuring we use product images, not category images
+    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
 
@@ -368,7 +368,7 @@ const ProductManagement = () => {
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
                           e.target.onerror = null; // Prevent infinite error loop
-                          const index = (product.id % PRODUCT_IMAGES.length) || 0;
+                          const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
                           e.target.src = PRODUCT_IMAGES[index];
                         }}
                       />
@@ -539,7 +539,7 @@ const ProductManagement = () => {
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {
                               e.target.onerror = null; // Prevent infinite error loop
-                              const imgIndex = (currentProduct.id % PRODUCT_IMAGES.length) || 0;
+                              const imgIndex = Math.abs((currentProduct.id % PRODUCT_IMAGES.length)) || 0;
                               e.target.src = PRODUCT_IMAGES[imgIndex];
                             }}
                           />
