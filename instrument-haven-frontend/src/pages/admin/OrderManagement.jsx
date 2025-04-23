@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { toast } from 'react-toastify';
-import {
+import { 
   Typography,
   Box,
   Paper,
@@ -33,6 +32,7 @@ import {
   Tabs,
   Tab,
   useTheme,
+  alpha,
 } from '@mui/material';
 import { 
   Visibility as VisibilityIcon,
@@ -105,14 +105,25 @@ const OrderManagement = () => {
             email: order.user_email || ''
           };
         }
+        
+        // Ensure email is always accessible from both locations
+        if (!order.user_email && order.user?.email) {
+          order.user_email = order.user.email;
+        } else if (order.user_email && order.user && !order.user.email) {
+          order.user.email = order.user_email;
+        }
+        
         return order;
       });
       
       setOrders(processedOrders);
-      toast.success('Orders loaded successfully');
+      setSnackbar({
+        open: true,
+        message: 'Orders loaded successfully',
+        severity: 'success'
+      });
     } catch (error) {
       console.error('Error fetching orders:', error);
-      toast.error('Failed to fetch orders: ' + (error.response?.data?.message || 'Unknown error'));
       setSnackbar({
         open: true,
         message: 'Failed to fetch orders. Please try again.',
@@ -161,7 +172,6 @@ const OrderManagement = () => {
         });
       }
       
-      toast.success('Order status updated successfully!');
       setSnackbar({
         open: true,
         message: 'Order status updated successfully!',
@@ -184,7 +194,6 @@ const OrderManagement = () => {
         errorMessage = error.message;
       }
       
-      toast.error('Failed to update order status: ' + errorMessage);
       setSnackbar({
         open: true,
         message: `Failed to update order status: ${errorMessage}`,
@@ -194,6 +203,11 @@ const OrderManagement = () => {
   };
 
   const handleViewOrder = (order) => {
+    console.log('Viewing order details:', order);
+    console.log('Order email info:', {
+      user_email: order.user_email,
+      user_obj_email: order.user?.email
+    });
     setCurrentOrder(order);
     setOpenOrderDetails(true);
   };
@@ -436,147 +450,307 @@ const OrderManagement = () => {
         onClose={handleCloseOrderDetails}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.12)',
+            overflow: 'hidden'
+          }
+        }}
       >
-        <DialogTitle>
-          Order #{currentOrder?.id}
+        <DialogTitle sx={{ 
+          borderBottom: '1px solid', 
+          borderColor: 'divider',
+          bgcolor: '#f8f9fa',
+          px: 3,
+          py: 2,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }}>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            Order #{currentOrder?.id}
+          </Typography>
+          <IconButton onClick={handleCloseOrderDetails} size="small" sx={{ color: 'text.secondary' }}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </IconButton>
         </DialogTitle>
-        <DialogContent>
+        <DialogContent sx={{ p: 0 }}>
           {currentOrder && (
             <Box>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Customer Information
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Name:</strong> {currentOrder.user_name || currentOrder.user?.name || 'Unknown'}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Email:</strong> {currentOrder.user_email || currentOrder.user?.email || 'Not provided'}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Shipping Address:</strong> {
-                      typeof currentOrder.shipping_address === 'string' 
-                        ? currentOrder.shipping_address 
-                        : typeof currentOrder.shipping_address === 'object' && currentOrder.shipping_address 
-                          ? Object.values(currentOrder.shipping_address).filter(Boolean).join(', ')
-                          : 'Not provided'
-                    }
-                  </Typography>
+              {/* Info Cards Section */}
+              <Box sx={{ p: 3 }}>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2.5,
+                        height: '100%',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1a1a2e' }}>
+                        Customer Information
+                      </Typography>
+                      
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Name
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {currentOrder.user_name || currentOrder.user?.name || 'Unknown'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Email
+                        </Typography>
+                        <Typography variant="body1" sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                          {currentOrder.user_email || currentOrder.user?.email || 'Not provided'}
+                        </Typography>
+                      </Box>
+                      
+                      <Box>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Shipping Address
+                        </Typography>
+                        <Typography variant="body1">
+                          {
+                            typeof currentOrder.shipping_address === 'string' 
+                              ? currentOrder.shipping_address 
+                              : typeof currentOrder.shipping_address === 'object' && currentOrder.shipping_address 
+                                ? Object.values(currentOrder.shipping_address).filter(Boolean).join(', ')
+                                : 'Not provided'
+                          }
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <Paper
+                      elevation={0}
+                      sx={{
+                        p: 2.5,
+                        height: '100%',
+                        borderRadius: 2,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1a1a2e' }}>
+                        Order Information
+                      </Typography>
+                      
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Date
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                          {new Date(currentOrder.created_at).toLocaleString()}
+                        </Typography>
+                      </Box>
+                      
+                      <Box sx={{ mb: 1.5 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Status
+                        </Typography>
+                        <Chip 
+                          label={currentOrder.status?.charAt(0).toUpperCase() + currentOrder.status?.slice(1)} 
+                          color={getStatusColor(currentOrder.status)} 
+                          size="small"
+                          sx={{ fontWeight: 500, borderRadius: 1 }}
+                        />
+                      </Box>
+                      
+                      <Box sx={{ mb: currentOrder.coupon ? 1.5 : 0 }}>
+                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                          Payment Method
+                        </Typography>
+                        <Typography variant="body1">
+                          {currentOrder.payment_method || 'Not specified'}
+                        </Typography>
+                      </Box>
+                      
+                      {currentOrder.coupon && (
+                        <Box>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Coupon Applied
+                          </Typography>
+                          <Chip 
+                            label={currentOrder.coupon.code}
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            sx={{ borderRadius: 1 }}
+                          />
+                        </Box>
+                      )}
+                    </Paper>
+                  </Grid>
                 </Grid>
-                <Grid item xs={12} md={6}>
-                  <Typography variant="subtitle1" gutterBottom>
-                    Order Information
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Date:</strong> {new Date(currentOrder.created_at).toLocaleString()}
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Status:</strong>{' '}
-                    <Chip 
-                      label={currentOrder.status} 
-                      color={getStatusColor(currentOrder.status)} 
-                      size="small" 
-                    />
-                  </Typography>
-                  <Typography variant="body2">
-                    <strong>Payment Method:</strong> {currentOrder.payment_method}
-                  </Typography>
-                  {currentOrder.coupon && (
-                    <Typography variant="body2">
-                      <strong>Coupon Applied:</strong> {currentOrder.coupon.code}
-                    </Typography>
-                  )}
-                </Grid>
-              </Grid>
+              </Box>
               
-              <Typography variant="subtitle1" sx={{ mt: 3, mb: 1 }}>
-                Order Items
-              </Typography>
-              <TableContainer component={Paper} variant="outlined">
-                <Table size="small">
-                  <TableHead>
-                    <TableRow>
-                      <TableCell>Product</TableCell>
-                      <TableCell align="right">Price</TableCell>
-                      <TableCell align="right">Quantity</TableCell>
-                      <TableCell align="right">Subtotal</TableCell>
-                    </TableRow>
-                  </TableHead>
-                  <TableBody>
-                    {currentOrder.items && currentOrder.items.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            {item.product && (
-                              <>
-                                {item.product.images && item.product.images.length > 0 && (
-                                  <Box
-                                    sx={{
-                                      width: 40,
-                                      height: 40,
-                                      overflow: 'hidden',
-                                      borderRadius: 1,
-                                      mr: 1,
-                                      flexShrink: 0,
-                                    }}
-                                  >
-                                    <img
-                                      src={`${storageUrl}/${item.product.thumbnail || (item.product.images && item.product.images.length > 0 ? item.product.images[0] : '')}`}
-                                      alt={item.product.name}
-                                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                      onError={(e) => {
-                                        e.target.src = '/placeholder.png';
-                                      }}
-                                    />
-                                  </Box>
-                                )}
-                                <Typography variant="body2">{item.product.name}</Typography>
-                              </>
-                            )}
-                          </Box>
-                        </TableCell>
-                        <TableCell align="right">${parseFloat(item.price).toFixed(2)}</TableCell>
-                        <TableCell align="right">{item.quantity}</TableCell>
-                        <TableCell align="right">${(parseFloat(item.price) * item.quantity).toFixed(2)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableBody>
-                    <TableRow>
-                      <TableCell colSpan={3} align="right">
-                        <Typography variant="subtitle2">Total:</Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography variant="subtitle2">${parseFloat(currentOrder.total).toFixed(2)}</Typography>
-                      </TableCell>
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </TableContainer>
-              
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle1" gutterBottom>
-                  Update Order Status
+              {/* Order Items Section */}
+              <Box sx={{ px: 3, pb: 3 }}>
+                <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1a1a2e' }}>
+                  Order Items
                 </Typography>
-                <FormControl fullWidth>
-                  <Select
-                    value={currentOrder.status}
-                    onChange={(e) => handleStatusChange(currentOrder.id, e.target.value)}
-                  >
-                    <MenuItem value="pending">Pending</MenuItem>
-                    <MenuItem value="processing">Processing</MenuItem>
-                    <MenuItem value="shipped">Shipped</MenuItem>
-                    <MenuItem value="delivered">Delivered</MenuItem>
-                    <MenuItem value="cancelled">Cancelled</MenuItem>
-                  </Select>
-                </FormControl>
+                
+                <TableContainer 
+                  component={Paper} 
+                  elevation={0}
+                  sx={{ 
+                    borderRadius: 2, 
+                    border: '1px solid', 
+                    borderColor: 'divider',
+                    mb: 3,
+                    overflow: 'hidden'
+                  }}
+                >
+                  <Table size="medium">
+                    <TableHead sx={{ bgcolor: '#f8f9fa' }}>
+                      <TableRow>
+                        <TableCell sx={{ fontWeight: 600 }}>Product</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Price</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Quantity</TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 600 }}>Subtotal</TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {currentOrder.items && currentOrder.items.map((item) => (
+                        <TableRow key={item.id} sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                          <TableCell>
+                            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                              {item.product && (
+                                <>
+                                  {item.product.images && item.product.images.length > 0 && (
+                                    <Box
+                                      sx={{
+                                        width: 48,
+                                        height: 48,
+                                        overflow: 'hidden',
+                                        borderRadius: 1.5,
+                                        mr: 2,
+                                        flexShrink: 0,
+                                        border: '1px solid',
+                                        borderColor: 'divider'
+                                      }}
+                                    >
+                                      <img
+                                        src={`${storageUrl}/${item.product.thumbnail || (item.product.images && item.product.images.length > 0 ? item.product.images[0] : '')}`}
+                                        alt={item.product.name}
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        onError={(e) => {
+                                          e.target.src = '/placeholder.png';
+                                        }}
+                                      />
+                                    </Box>
+                                  )}
+                                  <Typography variant="body1" sx={{ fontWeight: 500 }}>{item.product.name}</Typography>
+                                </>
+                              )}
+                            </Box>
+                          </TableCell>
+                          <TableCell align="right">${parseFloat(item.price).toFixed(2)}</TableCell>
+                          <TableCell align="right">{item.quantity}</TableCell>
+                          <TableCell align="right" sx={{ fontWeight: 500 }}>${(parseFloat(item.price) * item.quantity).toFixed(2)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                    <TableBody>
+                      <TableRow sx={{ '& td': { borderTop: '1px solid', borderColor: 'divider', py: 1.5 } }}>
+                        <TableCell colSpan={3} align="right" sx={{ fontWeight: 600 }}>
+                          Total:
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography variant="subtitle1" sx={{ fontWeight: 600, color: 'primary.main' }}>
+                            ${parseFloat(currentOrder.total).toFixed(2)}
+                          </Typography>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </TableContainer>
+                
+                {/* Update Status Section */}
+                <Paper
+                  elevation={0}
+                  sx={{
+                    p: 2.5,
+                    borderRadius: 2,
+                    border: '1px solid',
+                    borderColor: 'divider'
+                  }}
+                >
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1a1a2e' }}>
+                    Update Order Status
+                  </Typography>
+                  
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={8}>
+                      <FormControl fullWidth size="small">
+                        <Select
+                          value={currentOrder.status}
+                          onChange={(e) => handleStatusChange(currentOrder.id, e.target.value)}
+                          sx={{ 
+                            borderRadius: 1.5,
+                            '& .MuiOutlinedInput-notchedOutline': {
+                              borderColor: `${getStatusColor(currentOrder.status)}.main`,
+                            },
+                            '&:hover .MuiOutlinedInput-notchedOutline': {
+                              borderColor: `${getStatusColor(currentOrder.status)}.main`,
+                            }
+                          }}
+                        >
+                          <MenuItem value="pending">Pending</MenuItem>
+                          <MenuItem value="processing">Processing</MenuItem>
+                          <MenuItem value="shipped">Shipped</MenuItem>
+                          <MenuItem value="delivered">Delivered</MenuItem>
+                          <MenuItem value="cancelled">Cancelled</MenuItem>
+                        </Select>
+                      </FormControl>
+                    </Grid>
+                    <Grid item xs={12} sm={4}>
+                      <Button 
+                        fullWidth 
+                        variant="contained" 
+                        color={getStatusColor(currentOrder.status)}
+                        onClick={() => handleStatusChange(currentOrder.id, currentOrder.status)}
+                        sx={{ 
+                          borderRadius: 1.5,
+                          textTransform: 'none',
+                          height: '100%'  
+                        }}
+                      >
+                        Update Status
+                      </Button>
+                    </Grid>
+                  </Grid>
+                </Paper>
               </Box>
             </Box>
           )}
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseOrderDetails}>Close</Button>
+        <DialogActions sx={{ borderTop: '1px solid', borderColor: 'divider', px: 3, py: 2 }}>
+          <Button 
+            onClick={handleCloseOrderDetails} 
+            variant="outlined" 
+            sx={{ borderRadius: 1.5, textTransform: 'none', px: 3 }}
+          >
+            Close
+          </Button>
         </DialogActions>
       </Dialog>
 
