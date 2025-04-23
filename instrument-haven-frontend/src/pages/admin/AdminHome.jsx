@@ -21,7 +21,6 @@ import {
   ShoppingCart as CartIcon,
   Inventory as InventoryIcon,
   Category as CategoryIcon,
-  AttachMoney as MoneyIcon,
   TrendingUp as ArrowUpIcon,
   Autorenew as AutorenewIcon,
   TrendingUp as TrendingUpIcon,
@@ -37,7 +36,6 @@ const AdminHome = () => {
     categories: 0,
     orders: 0,
     users: 0,
-    totalSales: 0,
   });
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
@@ -77,7 +75,6 @@ const AdminHome = () => {
           categories: dashboardData.total_categories || 0,
           orders: dashboardData.total_orders || 0,
           users: dashboardData.total_users || 0,
-          totalSales: dashboardData.total_sales || 0,
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -179,8 +176,23 @@ const AdminHome = () => {
                   <InventoryIcon />
                 </Avatar>
               </Box>
+              <Button 
+                component={Link} 
+                to="/admin/products"
+                variant="outlined" 
+                color="primary" 
+                size="small"
+                startIcon={<VisibilityIcon fontSize="small" />}
+                sx={{ 
+                  mt: 2,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 500
+                }}
+              >
+                See Details
+              </Button>
               
-
             </CardContent>
           </Card>
         </Grid>
@@ -228,8 +240,29 @@ const AdminHome = () => {
                   <CategoryIcon />
                 </Avatar>
               </Box>
+              <Button 
+                component={Link} 
+                to="/admin/categories"
+                variant="outlined" 
+                color="secondary" 
+                size="small"
+                startIcon={<VisibilityIcon fontSize="small" />}
+                sx={{ 
+                  mt: 2,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  borderColor: '#6B46C1',
+                  color: '#6B46C1',
+                  '&:hover': {
+                    borderColor: '#5a3ca4',
+                    bgcolor: 'rgba(107, 70, 193, 0.04)'
+                  }
+                }}
+              >
+                See Details
+              </Button>
               
-
             </CardContent>
           </Card>
         </Grid>
@@ -277,8 +310,28 @@ const AdminHome = () => {
                   <CartIcon />
                 </Avatar>
               </Box>
+              <Button 
+                component={Link} 
+                to="/admin/orders"
+                variant="outlined" 
+                size="small"
+                startIcon={<VisibilityIcon fontSize="small" />}
+                sx={{ 
+                  mt: 2,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  borderColor: theme.palette.warning.main,
+                  color: theme.palette.warning.main,
+                  '&:hover': {
+                    borderColor: theme.palette.warning.dark,
+                    bgcolor: 'rgba(255, 152, 0, 0.04)'
+                  }
+                }}
+              >
+                See Details
+              </Button>
               
-
             </CardContent>
           </Card>
         </Grid>
@@ -326,60 +379,33 @@ const AdminHome = () => {
                   <PeopleIcon />
                 </Avatar>
               </Box>
+              <Button 
+                component={Link} 
+                to="/admin/users"
+                variant="outlined" 
+                size="small"
+                startIcon={<VisibilityIcon fontSize="small" />}
+                sx={{ 
+                  mt: 2,
+                  borderRadius: '8px',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  borderColor: theme.palette.info.main,
+                  color: theme.palette.info.main,
+                  '&:hover': {
+                    borderColor: theme.palette.info.dark,
+                    bgcolor: 'rgba(3, 169, 244, 0.04)'
+                  }
+                }}
+              >
+                See Details
+              </Button>
               
-
             </CardContent>
           </Card>
         </Grid>
         
-        {/* Revenue Card */}
-        <Grid item xs={12} sm={6} lg={3}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'transform 0.3s',
-            '&:hover': { 
-              transform: 'translateY(-5px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
-            }
-          }}>
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              height: '4px', 
-              bgcolor: theme.palette.success.main 
-            }} />
-            
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    Total Revenue
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                    ${parseFloat(stats.totalSales || 0).toFixed(2)}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: theme.palette.success.main, 
-                    boxShadow: `0 4px 12px ${theme.palette.success.light}`,
-                    p: 1.5
-                  }}
-                >
-                  <MoneyIcon />
-                </Avatar>
-              </Box>
-              
 
-            </CardContent>
-          </Card>
-        </Grid>
       </Grid>
     </Box>
   );
