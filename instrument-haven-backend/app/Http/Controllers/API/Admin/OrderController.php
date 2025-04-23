@@ -56,6 +56,12 @@ class OrderController extends Controller
                 'order_number' => $order->order_number,
                 'user_id' => $order->user_id,
                 'user_name' => $order->user->name,
+                'user_email' => $order->user->email,
+                'user' => [
+                    'id' => $order->user->id,
+                    'name' => $order->user->name,
+                    'email' => $order->user->email
+                ],
                 'status' => $order->status,
                 'payment_status' => $order->payment_status,
                 'total' => $order->total,
@@ -88,6 +94,15 @@ class OrderController extends Controller
      */
     public function update(Request $request, $id)
     {
+        try {
+            $order = Order::findOrFail($id);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Order not found'
+            ], 404);
+        }
+        
         $validator = Validator::make($request->all(), [
             'status' => 'required|string|in:pending,processing,shipped,delivered,cancelled',
             'payment_status' => 'nullable|string|in:pending,paid,failed,refunded',
@@ -119,9 +134,18 @@ class OrderController extends Controller
                     'order' => [
                         'id' => $order->id,
                         'order_number' => $order->order_number,
+                        'user_id' => $order->user_id,
+                        'user_name' => $order->user->name,
+                        'user_email' => $order->user->email,
+                        'user' => [
+                            'id' => $order->user->id,
+                            'name' => $order->user->name,
+                            'email' => $order->user->email
+                        ],
                         'status' => $order->status,
                         'payment_status' => $order->payment_status,
                         'tracking_number' => $order->tracking_number,
+                        'total' => $order->total,
                         'updated_at' => $order->updated_at
                     ]
                 ]

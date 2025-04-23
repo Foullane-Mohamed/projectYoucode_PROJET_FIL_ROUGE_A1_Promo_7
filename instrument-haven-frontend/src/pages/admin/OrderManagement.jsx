@@ -26,10 +26,20 @@ import {
   Snackbar,
   Alert,
   Grid,
+  Avatar,
+  TextField,
+  InputAdornment,
+  Tooltip,
+  Tabs,
+  Tab,
+  useTheme,
 } from '@mui/material';
 import { 
   Visibility as VisibilityIcon,
   MoreVert as MoreVertIcon,
+  Search as SearchIcon,
+  FilterList as FilterListIcon,
+  ArrowBack as ArrowBackIcon,
 } from '@mui/icons-material';
 
 const OrderManagement = () => {
@@ -39,13 +49,36 @@ const OrderManagement = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [openOrderDetails, setOpenOrderDetails] = useState(false);
   const [currentOrder, setCurrentOrder] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [snackbar, setSnackbar] = useState({
     open: false,
     message: '',
     severity: 'success'
   });
+  const [tabValue, setTabValue] = useState(0);
+  const theme = useTheme();
 
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
+  
+  // Define counts for each status category
+  const statusCounts = orders.reduce((acc, order) => {
+    const status = order.status?.toLowerCase() || 'pending';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, {});
+  
+  // Filter orders based on status and search query
+  const filteredOrders = orders.filter(order => {
+    const matchesStatus = statusFilter === 'all' || order.status?.toLowerCase() === statusFilter;
+    
+    const matchesSearch = searchQuery === '' || 
+      (order.id?.toString().includes(searchQuery) || 
+       (order.user_name || order.user?.name || '')?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       (order.order_number || '')?.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    return matchesStatus && matchesSearch;
+  });
   
   useEffect(() => {
     fetchOrders();
@@ -63,7 +96,19 @@ const OrderManagement = () => {
                       response.data?.orders || 
                       (Array.isArray(response.data) ? response.data : []);
       
-      setOrders(ordersData);
+      // Ensure each order has appropriate user data
+      const processedOrders = ordersData.map(order => {
+        // Create a proper user object if not present but user_name exists
+        if (!order.user && order.user_name) {
+          order.user = {
+            name: order.user_name,
+            email: order.user_email || ''
+          };
+        }
+        return order;
+      });
+      
+      setOrders(processedOrders);
       toast.success('Orders loaded successfully');
     } catch (error) {
       console.error('Error fetching orders:', error);
@@ -87,9 +132,14 @@ const OrderManagement = () => {
     setPage(0);
   };
 
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+    setStatusFilter(['all', 'pending', 'processing', 'shipped', 'delivered', 'cancelled'][newValue]);
+    setPage(0);
+  };
+  
   const handleStatusChange = async (orderId, newStatus) => {
     try {
-      // Use the admin API to update order status
       const response = await api.admin.updateOrder(orderId, { status: newStatus });
       console.log('Update order response:', response);
       
@@ -119,10 +169,25 @@ const OrderManagement = () => {
       });
     } catch (error) {
       console.error('Error updating order status:', error.response?.data || error);
-      toast.error('Failed to update order status: ' + (error.response?.data?.message || 'Unknown error'));
+      
+      // Extract detailed error information
+      let errorMessage = 'Unknown error';
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.response?.data?.errors) {
+        // Handle Laravel validation errors
+        const validationErrors = error.response.data.errors;
+        errorMessage = Object.values(validationErrors)
+          .flat()
+          .join(', ');
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error('Failed to update order status: ' + errorMessage);
       setSnackbar({
         open: true,
-        message: `Failed to update order status: ${error.response?.data?.message || error.message || 'Unknown error'}`,
+        message: `Failed to update order status: ${errorMessage}`,
         severity: 'error'
       });
     }
@@ -150,7 +215,9 @@ const OrderManagement = () => {
         return 'warning';
       case 'processing':
         return 'info';
-      case 'completed':
+      case 'shipped':
+        return 'primary';
+      case 'delivered':
         return 'success';
       case 'cancelled':
       case 'canceled': // Handle both spellings
@@ -177,29 +244,136 @@ const OrderManagement = () => {
 
   return (
     <Box>
-      <Typography variant="h4" component="h1" gutterBottom>
-        Order Management
-      </Typography>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+          Order Management
+        </Typography>
+        <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+          Manage your store orders and track status updates
+        </Typography>
+      </Box>
 
-      <TableContainer component={Paper}>
+      {/* Search and Filter Bar */}
+      <Paper sx={{ mb: 3, p: 2, borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={6}>
+            <TextField
+              fullWidth
+              placeholder="Search by order ID, customer name..."
+              variant="outlined"
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon fontSize="small" color="action" />
+                  </InputAdornment>
+                ),
+                sx: { borderRadius: 2 }
+              }}
+            />
+          </Grid>
+          <Grid item xs={12} md={6} sx={{ display: 'flex', justifyContent: { xs: 'flex-start', md: 'flex-end' } }}>
+            <Button
+              variant="outlined"
+              startIcon={<FilterListIcon />}
+              onClick={() => setStatusFilter('all')}
+              sx={{ 
+                borderRadius: 2,
+                mr: 1,
+                textTransform: 'none',
+                fontWeight: 500,
+                ...(statusFilter === 'all' && {
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  borderColor: theme.palette.primary.main,
+                })
+              }}
+            >
+              All ({orders.length})
+            </Button>
+            <Button
+              variant="outlined"
+              color="warning"
+              onClick={() => setStatusFilter('pending')}
+              sx={{ 
+                borderRadius: 2,
+                mr: 1,
+                textTransform: 'none',
+                fontWeight: 500,
+                ...(statusFilter === 'pending' && {
+                  bgcolor: alpha(theme.palette.warning.main, 0.1),
+                })
+              }}
+            >
+              Pending ({statusCounts.pending || 0})
+            </Button>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {/* Status Tabs */}
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+        <Tabs 
+          value={tabValue} 
+          onChange={handleTabChange}
+          variant="scrollable"
+          scrollButtons="auto"
+          sx={{ 
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 500,
+              fontSize: '0.95rem',
+              minWidth: 100,
+            }
+          }}
+        >
+          <Tab label={`All Orders (${orders.length})`} />
+          <Tab label={`Pending (${statusCounts.pending || 0})`} />
+          <Tab label={`Processing (${statusCounts.processing || 0})`} />
+          <Tab label={`Shipped (${statusCounts.shipped || 0})`} />
+          <Tab label={`Delivered (${statusCounts.delivered || 0})`} />
+          <Tab label={`Cancelled (${statusCounts.cancelled || 0})`} />
+        </Tabs>
+      </Box>
+
+      <TableContainer component={Paper} sx={{ borderRadius: 2, boxShadow: '0 4px 20px rgba(0,0,0,0.05)' }}>
         <Table>
-          <TableHead>
+          <TableHead sx={{ backgroundColor: '#f8f9fa' }}>
             <TableRow>
-              <TableCell>Order ID</TableCell>
-              <TableCell>Customer</TableCell>
-              <TableCell>Date</TableCell>
-              <TableCell>Total</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Actions</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Order ID</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Customer</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Date</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Total</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {orders
+            {filteredOrders
               .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
               .map((order) => (
-                <TableRow key={order.id}>
+                <TableRow key={order.id} sx={{ '&:hover': { bgcolor: 'rgba(0,0,0,0.02)' } }}>
                   <TableCell>#{order.id}</TableCell>
-                  <TableCell>{order.user?.name || 'Unknown'}</TableCell>
+                  <TableCell>
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      <Avatar 
+                        sx={{ 
+                          width: 30, 
+                          height: 30, 
+                          mr: 1.5, 
+                          fontSize: '0.75rem',
+                          bgcolor: `${theme.palette.primary.main}30`,
+                          color: theme.palette.primary.main
+                        }}
+                      >
+                        {(order.user_name?.[0] || order.user?.name?.[0] || 'U')}
+                      </Avatar>
+                      <Typography variant="body2">
+                        {order.user_name || order.user?.name || 'Unknown'}
+                      </Typography>
+                    </Box>
+                  </TableCell>
                   <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>${order.total?.toFixed(2)}</TableCell>
                   <TableCell>
@@ -218,31 +392,37 @@ const OrderManagement = () => {
                           '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
                             borderColor: `${getStatusColor(order.status)}.main`,
                           },
+                          borderRadius: 1,
+                          fontSize: '0.875rem'
                         }}
                       >
                         <MenuItem value="pending">Pending</MenuItem>
                         <MenuItem value="processing">Processing</MenuItem>
-                        <MenuItem value="completed">Completed</MenuItem>
+                        <MenuItem value="shipped">Shipped</MenuItem>
+                        <MenuItem value="delivered">Delivered</MenuItem>
                         <MenuItem value="cancelled">Cancelled</MenuItem>
                       </Select>
                     </FormControl>
                   </TableCell>
                   <TableCell>
-                    <IconButton 
-                      color="primary"
-                      onClick={() => handleViewOrder(order)}
-                    >
-                      <VisibilityIcon />
-                    </IconButton>
+                    <Tooltip title="View Details">
+                      <IconButton 
+                        color="primary"
+                        onClick={() => handleViewOrder(order)}
+                        size="small"
+                      >
+                        <VisibilityIcon fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
                   </TableCell>
                 </TableRow>
               ))}
           </TableBody>
         </Table>
         <TablePagination
-          rowsPerPageOptions={[5, 10, 25]}
+          rowsPerPageOptions={[5, 10, 25, 50]}
           component="div"
-          count={orders.length}
+          count={filteredOrders.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
@@ -269,13 +449,19 @@ const OrderManagement = () => {
                     Customer Information
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Name:</strong> {currentOrder.user?.name}
+                    <strong>Name:</strong> {currentOrder.user_name || currentOrder.user?.name || 'Unknown'}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Email:</strong> {currentOrder.user?.email}
+                    <strong>Email:</strong> {currentOrder.user_email || currentOrder.user?.email || 'Not provided'}
                   </Typography>
                   <Typography variant="body2">
-                    <strong>Shipping Address:</strong> {currentOrder.shipping_address}
+                    <strong>Shipping Address:</strong> {
+                      typeof currentOrder.shipping_address === 'string' 
+                        ? currentOrder.shipping_address 
+                        : typeof currentOrder.shipping_address === 'object' && currentOrder.shipping_address 
+                          ? Object.values(currentOrder.shipping_address).filter(Boolean).join(', ')
+                          : 'Not provided'
+                    }
                   </Typography>
                 </Grid>
                 <Grid item xs={12} md={6}>
@@ -380,7 +566,8 @@ const OrderManagement = () => {
                   >
                     <MenuItem value="pending">Pending</MenuItem>
                     <MenuItem value="processing">Processing</MenuItem>
-                    <MenuItem value="completed">Completed</MenuItem>
+                    <MenuItem value="shipped">Shipped</MenuItem>
+                    <MenuItem value="delivered">Delivered</MenuItem>
                     <MenuItem value="cancelled">Cancelled</MenuItem>
                   </Select>
                 </FormControl>

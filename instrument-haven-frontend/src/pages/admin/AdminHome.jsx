@@ -4,19 +4,17 @@ import api from '../../services/api';
 import {
   Typography,
   Grid,
-  Paper,
   Box,
   Card,
   CardContent,
   CircularProgress,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
+  Paper,
+  useTheme,
+  Avatar,
   Button,
+  Chip,
+  IconButton,
+  Tooltip,
 } from '@mui/material';
 import {
   PeopleAlt as PeopleIcon,
@@ -24,7 +22,14 @@ import {
   Inventory as InventoryIcon,
   Category as CategoryIcon,
   AttachMoney as MoneyIcon,
+  TrendingUp as ArrowUpIcon,
+  Autorenew as AutorenewIcon,
+  TrendingUp as TrendingUpIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
+
+// Mock chart data 
+const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -33,10 +38,9 @@ const AdminHome = () => {
     orders: 0,
     users: 0,
     totalSales: 0,
-    recentOrders: [],
-    topProducts: [],
   });
   const [loading, setLoading] = useState(true);
+  const theme = useTheme();
   
   // Helper function to get color based on order status
   const getStatusColor = (status) => {
@@ -66,35 +70,6 @@ const AdminHome = () => {
 
         // Extract data from the response, handling both potential formats
         const dashboardData = dashboardResponse.data?.data?.statistics || dashboardResponse.data?.statistics || {};
-        console.log('Dashboard data:', dashboardData);
-        
-        // Try to fetch recent orders
-        let recentOrders = dashboardData.recent_orders || [];
-        if (!recentOrders.length && !dashboardData.recent_orders) {
-          try {
-            const ordersResponse = await api.admin.getOrders({ limit: 5 });
-            console.log('Recent orders response:', ordersResponse);
-            recentOrders = ordersResponse.data?.data?.orders || 
-                          ordersResponse.data?.orders || 
-                          [];
-          } catch (orderError) {
-            console.warn('Could not fetch recent orders:', orderError);
-          }
-        }
-        
-        // Try to fetch top products
-        let topProducts = dashboardData.top_selling_products || [];
-        if (!topProducts.length && !dashboardData.top_selling_products) {
-          try {
-            const productsResponse = await api.products.getAll({ limit: 5, sort: 'popular' });
-            console.log('Top products response:', productsResponse);
-            topProducts = productsResponse.data?.data?.products || 
-                         productsResponse.data?.products || 
-                         [];
-          } catch (productError) {
-            console.warn('Could not fetch top products:', productError);
-          }
-        }
         
         // Set the statistics with proper fallbacks
         setStats({
@@ -103,8 +78,6 @@ const AdminHome = () => {
           orders: dashboardData.total_orders || 0,
           users: dashboardData.total_users || 0,
           totalSales: dashboardData.total_sales || 0,
-          recentOrders: recentOrders,
-          topProducts: topProducts
         });
       } catch (error) {
         console.error('Error fetching admin stats:', error);
@@ -152,8 +125,8 @@ const AdminHome = () => {
 
   return (
     <Box>
-      <Box sx={{ mb: 4, pb: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold', color: 'text.primary' }}>
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
           Dashboard
         </Typography>
         <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
@@ -163,314 +136,249 @@ const AdminHome = () => {
       
       {/* Statistic Cards */}
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6} md={4} lg={2.4}>
-          <Card 
-            component={Link} 
-            to="/admin/products"
-            sx={{ 
-              textDecoration: 'none',
-              transition: 'all 0.3s ease',
-              borderRadius: 3,
-              boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-              overflow: 'hidden',
-              height: '100%',
-              position: 'relative',
-              background: 'linear-gradient(45deg, #ffffff 50%, #fff7f8 100%)',
-              '&:hover': { 
-                transform: 'translateY(-5px)', 
-                boxShadow: '0 10px 20px rgba(0,0,0,0.10)'
-              },
-              '&:before': {
-                content: '""',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '3px',
-                backgroundColor: 'primary.main'
-              }
-            }}
-          >
-            <CardContent sx={{ display: 'flex', alignItems: 'center', height: '100%', p: 3 }}>
-              <Box 
-                sx={{ 
-                  mr: 3, 
-                  bgcolor: 'primary.main', 
-                  p: 2, 
-                  borderRadius: 2,
-                  color: 'white',
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  boxShadow: '0 4px 10px rgba(255, 43, 82, 0.3)'
-                }}
-              >
-                <InventoryIcon fontSize="large" />
+        {/* Products Card */}
+        <Grid item xs={12} sm={6} lg={3}>
+          <Card sx={{ 
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'transform 0.3s',
+            '&:hover': { 
+              transform: 'translateY(-5px)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
+            }
+          }}>
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              bgcolor: 'primary.main' 
+            }} />
+            
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Total Products
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+                    {stats.products}
+                  </Typography>
+                </Box>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: 'primary.main', 
+                    boxShadow: '0 4px 12px rgba(255, 43, 82, 0.3)',
+                    p: 1.5
+                  }}
+                >
+                  <InventoryIcon />
+                </Avatar>
               </Box>
-              <Box>
-                <Typography variant="h4" component="div" sx={{ fontWeight: 'bold' }}>
-                  {stats.products}
-                </Typography>
-                <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 'medium' }}>
-                  Products
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card 
-            component={Link} 
-            to="/admin/categories"
-            sx={{ 
-              textDecoration: 'none', 
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-5px)' }
-            }}
-          >
-            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ mr: 2, bgcolor: 'success.light', p: 1, borderRadius: 1 }}>
-                <CategoryIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography variant="h5" component="div">
-                  {stats.categories}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Categories
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card 
-            component={Link} 
-            to="/admin/orders"
-            sx={{ 
-              textDecoration: 'none',
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-5px)' }
-            }}
-          >
-            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ mr: 2, bgcolor: 'warning.light', p: 1, borderRadius: 1 }}>
-                <CartIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography variant="h5" component="div">
-                  {stats.orders}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Orders
-                </Typography>
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card 
-            component={Link} 
-            to="/admin/users"
-            sx={{ 
-              textDecoration: 'none',
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-5px)' }
-            }}
-          >
-            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ mr: 2, bgcolor: 'info.light', p: 1, borderRadius: 1 }}>
-                <PeopleIcon fontSize="large" />
-              </Box>
-              <Box>
-                <Typography variant="h5" component="div">
-                  {stats.users}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Users
-                </Typography>
-              </Box>
+              
+
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} sm={6} md={3} lg={2}>
-          <Card 
-            sx={{ 
-              textDecoration: 'none',
-              transition: 'transform 0.2s',
-              '&:hover': { transform: 'translateY(-5px)' }
-            }}
-          >
-            <CardContent sx={{ display: 'flex', alignItems: 'center' }}>
-              <Box sx={{ mr: 2, bgcolor: 'error.light', p: 1, borderRadius: 1 }}>
-                <MoneyIcon fontSize="large" />
+        {/* Categories Card */}
+        <Grid item xs={12} sm={6} lg={3}>
+          <Card sx={{ 
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'transform 0.3s',
+            '&:hover': { 
+              transform: 'translateY(-5px)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
+            }
+          }}>
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              bgcolor: '#6B46C1' 
+            }} />
+            
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Total Categories
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+                    {stats.categories}
+                  </Typography>
+                </Box>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: '#6B46C1', 
+                    boxShadow: '0 4px 12px rgba(107, 70, 193, 0.3)',
+                    p: 1.5
+                  }}
+                >
+                  <CategoryIcon />
+                </Avatar>
               </Box>
-              <Box>
-                <Typography variant="h5" component="div">
-                  ${parseFloat(stats.totalSales || 0).toFixed(2)}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  Total Sales
-                </Typography>
-              </Box>
+              
+
             </CardContent>
           </Card>
         </Grid>
-      </Grid>
-      
-      {/* Orders and Products Tables */}
-      <Grid container spacing={3} sx={{ mt: 3 }}>
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ 
-            p: 3, 
-            borderRadius: 3, 
+        
+        {/* Orders Card */}
+        <Grid item xs={12} sm={6} lg={3}>
+          <Card sx={{ 
+            borderRadius: 3,
             boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
             height: '100%',
-            display: 'flex',
-            flexDirection: 'column'
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'transform 0.3s',
+            '&:hover': { 
+              transform: 'translateY(-5px)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
+            }
           }}>
-            <Typography variant="h6" gutterBottom sx={{ 
-              fontWeight: 'bold', 
-              pb: 1, 
-              mb: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider'
-            }}>
-              Recent Orders
-            </Typography>
-            {stats.recentOrders && stats.recentOrders.length > 0 ? (
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <TableContainer sx={{ flexGrow: 1 }}>
-                  <Table size="small" sx={{ '& .MuiTableCell-head': { fontWeight: 'bold' } }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Order ID</TableCell>
-                        <TableCell>Date</TableCell>
-                        <TableCell>Status</TableCell>
-                        <TableCell align="right">Total</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {stats.recentOrders.map((order) => (
-                        <TableRow key={order.id}>
-                          <TableCell>#{order.id}</TableCell>
-                          <TableCell>{new Date(order.created_at).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            <Chip 
-                              label={order.status} 
-                              size="small"
-                              color={getStatusColor(order.status)}
-                            />
-                          </TableCell>
-                          <TableCell align="right">${parseFloat(order.total || 0).toFixed(2)}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Box sx={{ textAlign: 'center', mt: 3 }}>
-                  <Button 
-                    component={Link} 
-                    to="/admin/orders" 
-                    variant="outlined"
-                    color="primary"
-                    sx={{ 
-                      borderRadius: '20px',
-                      px: 3,
-                      py: 0.8,
-                      fontWeight: 'medium',
-                      '&:hover': {
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                      }
-                    }}
-                  >
-                    View All Orders
-                  </Button>
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              bgcolor: theme.palette.warning.main
+            }} />
+            
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Total Orders
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+                    {stats.orders}
+                  </Typography>
                 </Box>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: theme.palette.warning.main, 
+                    boxShadow: `0 4px 12px ${theme.palette.warning.light}`,
+                    p: 1.5
+                  }}
+                >
+                  <CartIcon />
+                </Avatar>
               </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No recent orders to display.
-              </Typography>
-            )}
-          </Paper>
+              
+
+            </CardContent>
+          </Card>
         </Grid>
         
-        <Grid item xs={12} md={6}>
-          <Paper sx={{ 
-            p: 3, 
-            borderRadius: 3, 
+        {/* Users Card */}
+        <Grid item xs={12} sm={6} lg={3}>
+          <Card sx={{ 
+            borderRadius: 3,
             boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
             height: '100%',
-            display: 'flex',
-            flexDirection: 'column'
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'transform 0.3s',
+            '&:hover': { 
+              transform: 'translateY(-5px)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
+            }
           }}>
-            <Typography variant="h6" gutterBottom sx={{ 
-              fontWeight: 'bold', 
-              pb: 1, 
-              mb: 2,
-              borderBottom: '1px solid',
-              borderColor: 'divider'
-            }}>
-              Top Products
-            </Typography>
-            {stats.topProducts && stats.topProducts.length > 0 ? (
-              <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
-                <TableContainer sx={{ flexGrow: 1 }}>
-                  <Table size="small" sx={{ '& .MuiTableCell-head': { fontWeight: 'bold' } }}>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Product</TableCell>
-                        <TableCell align="right">Price</TableCell>
-                        <TableCell align="right">Sales</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {stats.topProducts.map((product) => (
-                        <TableRow key={product.id || product.product_id}>
-                          <TableCell>{product.name || product.product_name}</TableCell>
-                          <TableCell align="right">
-                            ${typeof product.price === 'number' ? product.price.toFixed(2) : 
-                               (typeof product.revenue === 'number' ? (product.revenue / (product.total_sold || 1)).toFixed(2) : '0.00')}
-                          </TableCell>
-                          <TableCell align="right">{product.sales_count || product.total_sold || 0}</TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
-                <Box sx={{ textAlign: 'center', mt: 3 }}>
-                  <Button 
-                    component={Link} 
-                    to="/admin/products" 
-                    variant="outlined"
-                    color="primary"
-                    sx={{ 
-                      borderRadius: '20px',
-                      px: 3,
-                      py: 0.8,
-                      fontWeight: 'medium',
-                      '&:hover': {
-                        backgroundColor: 'primary.main',
-                        color: 'white',
-                      }
-                    }}
-                  >
-                    View All Products
-                  </Button>
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              bgcolor: theme.palette.info.main
+            }} />
+            
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Total Users
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+                    {stats.users}
+                  </Typography>
                 </Box>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: theme.palette.info.main, 
+                    boxShadow: `0 4px 12px ${theme.palette.info.light}`,
+                    p: 1.5
+                  }}
+                >
+                  <PeopleIcon />
+                </Avatar>
               </Box>
-            ) : (
-              <Typography variant="body2" color="text.secondary">
-                No product data to display.
-              </Typography>
-            )}
-          </Paper>
+              
+
+            </CardContent>
+          </Card>
+        </Grid>
+        
+        {/* Revenue Card */}
+        <Grid item xs={12} sm={6} lg={3}>
+          <Card sx={{ 
+            borderRadius: 3,
+            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
+            height: '100%',
+            position: 'relative',
+            overflow: 'hidden',
+            transition: 'transform 0.3s',
+            '&:hover': { 
+              transform: 'translateY(-5px)',
+              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
+            }
+          }}>
+            <Box sx={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: 0, 
+              right: 0, 
+              height: '4px', 
+              bgcolor: theme.palette.success.main 
+            }} />
+            
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                <Box>
+                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
+                    Total Revenue
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
+                    ${parseFloat(stats.totalSales || 0).toFixed(2)}
+                  </Typography>
+                </Box>
+                <Avatar 
+                  sx={{ 
+                    bgcolor: theme.palette.success.main, 
+                    boxShadow: `0 4px 12px ${theme.palette.success.light}`,
+                    p: 1.5
+                  }}
+                >
+                  <MoneyIcon />
+                </Avatar>
+              </Box>
+              
+
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
     </Box>

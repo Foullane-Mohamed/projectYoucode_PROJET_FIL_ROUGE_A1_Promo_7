@@ -212,8 +212,37 @@ const adminAPI = {
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   
   // Orders management
-  getOrders: (params) => api.get('/admin/orders', { params }),
-  updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
+  getOrders: (params) => {
+    console.log('Fetching admin orders with params:', params);
+    return api.get('/admin/orders', { params })
+      .then(response => {
+        console.log('Admin orders response:', response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error('Error fetching admin orders:', error.response?.data || error);
+        throw error;
+      });
+  },
+  updateOrder: (id, data) => {
+    console.log(`Updating order ${id} with data:`, data);
+    // Ensure status is a string and matches expected values
+    if (data.status) {
+      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
+      if (!validStatuses.includes(data.status)) {
+        console.error(`Invalid status value: ${data.status}. Expected one of: ${validStatuses.join(', ')}`);
+      }
+    }
+    return api.put(`/admin/orders/${id}`, data)
+      .then(response => {
+        console.log(`Order ${id} updated successfully:`, response.data);
+        return response;
+      })
+      .catch(error => {
+        console.error(`Error updating order ${id}:`, error.response?.data || error);
+        throw error;
+      });
+  },
   getOrderStatistics: () => api.get('/admin/orders/statistics'),
   
   // Coupons management

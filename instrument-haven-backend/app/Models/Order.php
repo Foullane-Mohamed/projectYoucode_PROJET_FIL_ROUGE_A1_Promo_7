@@ -8,6 +8,13 @@ use Illuminate\Database\Eloquent\Model;
 class Order extends Model
 {
     use HasFactory;
+    
+    /**
+     * The relationships that should be eager loaded.
+     *
+     * @var array
+     */
+    protected $with = ['user'];
 
     /**
      * The attributes that are mass assignable.
