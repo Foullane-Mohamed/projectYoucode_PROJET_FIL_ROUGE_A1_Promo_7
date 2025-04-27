@@ -90,11 +90,11 @@ const EnhancedListProductCard = ({ product }) => {
   const getProductImage = () => {
     // Try to use actual product image first
     if (product.thumbnail) {
-      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`;
+      return `/images/products/${product.thumbnail}`;
     }
     
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`;
+      return `/images/products/${product.images[0]}`;
     }
     
     // Use placeholder image as fallback - ensuring we use product images, not category images

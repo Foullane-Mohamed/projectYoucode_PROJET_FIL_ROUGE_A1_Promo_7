@@ -5,7 +5,6 @@ import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 import AdminHome from './AdminHome';
 import ProductManagement from './ProductManagement';
 import CategoryManagement from './CategoryManagement';
-import TagManagement from './TagManagement';
 import OrderManagement from './OrderManagement';
 import CouponManagement from './CouponManagement';
 import UserManagement from './UserManagement';
@@ -455,7 +454,6 @@ const Dashboard = () => {
             <Route index element={<AdminHome />} />
             <Route path="products" element={<ProductManagement />} />
             <Route path="categories" element={<CategoryManagement />} />
-            <Route path="tags" element={<TagManagement />} />
             <Route path="orders" element={<OrderManagement />} />
             <Route path="coupons" element={<CouponManagement />} />
             <Route path="users" element={<UserManagement />} />

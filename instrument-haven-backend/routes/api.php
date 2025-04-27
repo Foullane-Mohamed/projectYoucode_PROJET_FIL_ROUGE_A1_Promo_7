@@ -75,6 +75,7 @@ Route::prefix('v1')->middleware(['cors'])->group(function () {
 
         // Orders
         Route::get('/orders', [OrderController::class, 'index']);
+        Route::get('/orders/my', [OrderController::class, 'index']);
         Route::get('/orders/{id}', [OrderController::class, 'show']);
         Route::post('/orders', [OrderController::class, 'store']);
         Route::put('/orders/{id}/cancel', [OrderController::class, 'cancel']);

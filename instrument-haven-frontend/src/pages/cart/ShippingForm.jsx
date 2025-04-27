@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
@@ -12,9 +12,21 @@ import {
   Select,
   FormControl,
   InputLabel,
+  Divider,
+  Paper,
+  CircularProgress,
 } from '@mui/material';
 
-const ShippingForm = ({ initialValues, onSubmit, onCancel }) => {
+const ShippingForm = ({ 
+  initialValues, 
+  onSubmit, 
+  onCancel,
+  couponCode,
+  couponData,
+  onCouponCodeChange,
+  onApplyCoupon,
+  onRemoveCoupon
+}) => {
   const [countries] = useState([
     { code: 'MA', name: 'Morocco' },
     { code: 'US', name: 'United States' },
@@ -25,6 +37,9 @@ const ShippingForm = ({ initialValues, onSubmit, onCancel }) => {
     { code: 'ES', name: 'Spain' },
     { code: 'IT', name: 'Italy' },
   ]);
+  
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   const validationSchema = Yup.object({
     firstName: Yup.string().required('First name is required'),
@@ -48,12 +63,41 @@ const ShippingForm = ({ initialValues, onSubmit, onCancel }) => {
     validationSchema,
     onSubmit,
   });
+  
+  // Handle coupon application through props
+  const handleApplyCoupon = async () => {
+    if (!couponCode || couponCode.trim() === '') {
+      setCouponError('Please enter a coupon code');
+      return;
+    }
+    
+    setCouponError('');
+    setApplyingCoupon(true);
+    
+    try {
+      await onApplyCoupon(couponCode);
+    } catch (error) {
+      console.error('Error applying coupon:', error);
+      setCouponError(error?.response?.data?.message || 'Invalid coupon code');
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+  
+  // Clear coupon error when coupon code changes
+  useEffect(() => {
+    if (couponError) {
+      setCouponError('');
+    }
+  }, [couponCode, couponError]);
 
   return (
     <Box>
       <Typography variant="h6" gutterBottom>
         Shipping Information
       </Typography>
+      
+      {/* Coupon section has been removed from checkout page */}
       
       <form onSubmit={formik.handleSubmit}>
         <Grid container spacing={3}>

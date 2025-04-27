@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import {
-  Box,
   Button,
   Dialog,
   DialogActions,
@@ -20,36 +19,19 @@ import {
   IconButton,
   InputAdornment,
 } from '@mui/material';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import {
   Close as CloseIcon,
   Refresh as RefreshIcon,
 } from '@mui/icons-material';
 
+// Simple validation schema
 const couponValidationSchema = Yup.object({
-  code: Yup.string()
-    .required('Coupon code is required')
-    .matches(/^[A-Z0-9_-]{3,15}$/, 'Code must be uppercase, 3-15 characters, only letters, numbers, _ and -'),
-  type: Yup.string().required('Type is required').oneOf(['percentage', 'fixed'], 'Invalid type'),
-  discount: Yup.number()
-    .required('Discount amount is required')
-    .when('type', {
-      is: 'percentage',
-      then: schema => schema.min(1, 'Minimum 1%').max(100, 'Maximum 100%'),
-      otherwise: schema => schema.min(1, 'Minimum $1')
-    }),
-  min_purchase: Yup.number().nullable().min(0, 'Minimum purchase cannot be negative'),
-  max_discount: Yup.number().nullable().min(0, 'Maximum discount cannot be negative'),
-  starts_at: Yup.date().nullable(),
-  expires_at: Yup.date().nullable()
-    .when('starts_at', {
-      is: val => val instanceof Date && !isNaN(val),
-      then: schema => schema.min(Yup.ref('starts_at'), 'Expiry date cannot be before start date')
-    }),
-  max_uses: Yup.number().nullable().integer('Must be a whole number').min(1, 'At least 1 use required'),
-  is_active: Yup.boolean(),
+  code: Yup.string().required('Code is required'),
+  discount_type: Yup.string().required('Type is required'),
+  discount_value: Yup.number().required('Value is required'),
 });
 
+// Function to generate random coupon code
 const generateCouponCode = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -60,61 +42,125 @@ const generateCouponCode = () => {
 };
 
 const CouponForm = ({ open, onClose, onSubmit, initialValues, isEdit }) => {
+  // Direct state management instead of relying on formik for immediate changes
+  const [code, setCode] = useState('');
+  const [discountType, setDiscountType] = useState('percentage');
+  const [discountValue, setDiscountValue] = useState('');
+  const [minPurchase, setMinPurchase] = useState('');
+  const [maxDiscount, setMaxDiscount] = useState('');
+  const [maxUses, setMaxUses] = useState('');
+  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [endDate, setEndDate] = useState(new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10));
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
 
-  const formik = useFormik({
-    initialValues: initialValues || {
-      code: '',
-      type: 'percentage',
-      discount: '',
-      min_purchase: '',
-      max_discount: '',
-      starts_at: null,
-      expires_at: null,
-      max_uses: '',
-      is_active: true,
-    },
-    validationSchema: couponValidationSchema,
-    onSubmit: async (values) => {
-      setLoading(true);
-      try {
-        await onSubmit(values);
-        onClose();
-      } catch (error) {
-        console.error('Error submitting coupon:', error);
-      } finally {
-        setLoading(false);
-      }
-    },
-    enableReinitialize: true,
-  });
+  // Refs for direct DOM access if needed
+  const codeInputRef = useRef(null);
+  const discountValueInputRef = useRef(null);
 
+  // Initialize form values when component mounts or initialValues change
+  useEffect(() => {
+    if (initialValues) {
+      setCode(initialValues.code || '');
+      setDiscountType(initialValues.discount_type || 'percentage');
+      setDiscountValue(initialValues.discount_value?.toString() || '');
+      setMinPurchase(initialValues.min_order_amount?.toString() || '');
+      setMaxDiscount(initialValues.max_discount_amount?.toString() || '');
+      setMaxUses(initialValues.usage_limit?.toString() || '');
+      
+      // Format dates
+      if (initialValues.starts_at) {
+        const startDateValue = new Date(initialValues.starts_at);
+        if (!isNaN(startDateValue.getTime())) {
+          setStartDate(startDateValue.toISOString().slice(0, 10));
+        }
+      }
+      
+      if (initialValues.expires_at) {
+        const endDateValue = new Date(initialValues.expires_at);
+        if (!isNaN(endDateValue.getTime())) {
+          setEndDate(endDateValue.toISOString().slice(0, 10));
+        }
+      }
+      
+      setIsActive(!!initialValues.is_active);
+    } else {
+      // Reset to defaults for new coupon
+      setCode('');
+      setDiscountType('percentage');
+      setDiscountValue('');
+      setMinPurchase('');
+      setMaxDiscount('');
+      setMaxUses('');
+      setStartDate(new Date().toISOString().slice(0, 10));
+      setEndDate(new Date(Date.now() + 30*24*60*60*1000).toISOString().slice(0, 10));
+      setIsActive(true);
+    }
+  }, [initialValues, open]);
+
+  // Generate random code
   const handleGenerateCode = () => {
-    formik.setFieldValue('code', generateCouponCode());
+    const newCode = generateCouponCode();
+    setCode(newCode);
+  };
+
+  // Submit handler
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    // Prepare values for submission
+    const values = {
+      code,
+      discount_type: discountType,
+      discount_value: discountValue !== '' ? parseFloat(discountValue) : 0,
+      min_order_amount: minPurchase !== '' ? parseFloat(minPurchase) : null,
+      max_discount_amount: maxDiscount !== '' ? parseFloat(maxDiscount) : null,
+      usage_limit: maxUses !== '' ? parseInt(maxUses, 10) : null,
+      starts_at: startDate ? new Date(startDate) : new Date(),
+      expires_at: endDate ? new Date(endDate) : new Date(Date.now() + 30*24*60*60*1000),
+      is_active: isActive
+    };
+    
+    // If editing, include the ID
+    if (initialValues?.id) {
+      values.id = initialValues.id;
+    }
+    
+    // Submit to parent component
+    try {
+      onSubmit(values);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <DialogTitle>
         {isEdit ? 'Edit Coupon' : 'Create New Coupon'}
-        <IconButton edge="end" onClick={onClose} aria-label="close">
+        <IconButton 
+          aria-label="close" 
+          onClick={onClose}
+          sx={{ position: 'absolute', right: 8, top: 8 }}
+        >
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       
-      <form onSubmit={formik.handleSubmit}>
-        <DialogContent>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+      <DialogContent>
+        <form id="coupon-form" onSubmit={handleSubmit}>
+          <Grid container spacing={3} sx={{ mt: 1 }}>
+            {/* Coupon Code */}
+            <Grid item md={6}>
               <TextField
                 fullWidth
                 label="Coupon Code"
-                name="code"
-                value={formik.values.code}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.code && Boolean(formik.errors.code)}
-                helperText={formik.touched.code && formik.errors.code}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                inputRef={codeInputRef}
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -127,60 +173,50 @@ const CouponForm = ({ open, onClose, onSubmit, initialValues, isEdit }) => {
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
-              <FormControl 
-                fullWidth 
-                error={formik.touched.type && Boolean(formik.errors.type)}
-              >
-                <InputLabel>Discount Type</InputLabel>
+            {/* Discount Type */}
+            <Grid item md={6}>
+              <FormControl fullWidth>
+                <InputLabel id="discount-type-label">Discount Type</InputLabel>
                 <Select
-                  name="type"
-                  value={formik.values.type}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
+                  labelId="discount-type-label"
+                  id="discount-type"
+                  value={discountType}
                   label="Discount Type"
+                  onChange={(e) => setDiscountType(e.target.value)}
                 >
                   <MenuItem value="percentage">Percentage</MenuItem>
                   <MenuItem value="fixed">Fixed Amount</MenuItem>
                 </Select>
-                {formik.touched.type && formik.errors.type && (
-                  <FormHelperText>{formik.errors.type}</FormHelperText>
-                )}
               </FormControl>
             </Grid>
             
-            <Grid item xs={12} sm={6}>
+            {/* Discount Value */}
+            <Grid item md={6}>
               <TextField
                 fullWidth
-                label={formik.values.type === 'percentage' ? 'Discount (%)' : 'Discount Amount ($)'}
-                name="discount"
+                label={discountType === 'percentage' ? 'Discount (%)' : 'Discount Amount ($)'}
                 type="number"
-                value={formik.values.discount}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.discount && Boolean(formik.errors.discount)}
-                helperText={formik.touched.discount && formik.errors.discount}
+                value={discountValue}
+                onChange={(e) => setDiscountValue(e.target.value)}
+                inputRef={discountValueInputRef}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      {formik.values.type === 'percentage' ? '%' : '$'}
+                      {discountType === 'percentage' ? '%' : '$'}
                     </InputAdornment>
                   ),
                 }}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
+            {/* Minimum Purchase */}
+            <Grid item md={6}>
               <TextField
                 fullWidth
                 label="Minimum Purchase"
-                name="min_purchase"
                 type="number"
-                value={formik.values.min_purchase}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.min_purchase && Boolean(formik.errors.min_purchase)}
-                helperText={formik.touched.min_purchase && formik.errors.min_purchase}
+                value={minPurchase}
+                onChange={(e) => setMinPurchase(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">$</InputAdornment>
@@ -189,18 +225,15 @@ const CouponForm = ({ open, onClose, onSubmit, initialValues, isEdit }) => {
               />
             </Grid>
             
-            {formik.values.type === 'percentage' && (
-              <Grid item xs={12} sm={6}>
+            {/* Maximum Discount */}
+            {discountType === 'percentage' && (
+              <Grid item md={6}>
                 <TextField
                   fullWidth
                   label="Maximum Discount"
-                  name="max_discount"
                   type="number"
-                  value={formik.values.max_discount}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                  error={formik.touched.max_discount && Boolean(formik.errors.max_discount)}
-                  helperText={formik.touched.max_discount && formik.errors.max_discount}
+                  value={maxDiscount}
+                  onChange={(e) => setMaxDiscount(e.target.value)}
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position="start">$</InputAdornment>
@@ -210,59 +243,52 @@ const CouponForm = ({ open, onClose, onSubmit, initialValues, isEdit }) => {
               </Grid>
             )}
             
-            <Grid item xs={12} sm={6}>
+            {/* Maximum Uses */}
+            <Grid item md={6}>
               <TextField
                 fullWidth
                 label="Maximum Uses"
-                name="max_uses"
                 type="number"
-                value={formik.values.max_uses}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                error={formik.touched.max_uses && Boolean(formik.errors.max_uses)}
-                helperText={formik.touched.max_uses && formik.errors.max_uses}
+                value={maxUses}
+                onChange={(e) => setMaxUses(e.target.value)}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
-              <DatePicker
+            {/* Start Date */}
+            <Grid item md={6}>
+              <TextField
+                fullWidth
                 label="Start Date"
-                value={formik.values.starts_at}
-                onChange={(date) => formik.setFieldValue('starts_at', date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: formik.touched.starts_at && Boolean(formik.errors.starts_at),
-                    helperText: formik.touched.starts_at && formik.errors.starts_at,
-                    onBlur: () => formik.setFieldTouched('starts_at', true),
-                  },
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
                 }}
               />
             </Grid>
             
-            <Grid item xs={12} sm={6}>
-              <DatePicker
+            {/* Expiry Date */}
+            <Grid item md={6}>
+              <TextField
+                fullWidth
                 label="Expiry Date"
-                value={formik.values.expires_at}
-                onChange={(date) => formik.setFieldValue('expires_at', date)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    error: formik.touched.expires_at && Boolean(formik.errors.expires_at),
-                    helperText: formik.touched.expires_at && formik.errors.expires_at,
-                    onBlur: () => formik.setFieldTouched('expires_at', true),
-                  },
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                InputLabelProps={{
+                  shrink: true,
                 }}
               />
             </Grid>
             
-            <Grid item xs={12}>
+            {/* Active Switch */}
+            <Grid item md={12}>
               <FormControlLabel
                 control={
                   <Switch
-                    checked={formik.values.is_active}
-                    onChange={(e) => formik.setFieldValue('is_active', e.target.checked)}
-                    name="is_active"
+                    checked={isActive}
+                    onChange={(e) => setIsActive(e.target.checked)}
                     color="primary"
                   />
                 }
@@ -270,22 +296,23 @@ const CouponForm = ({ open, onClose, onSubmit, initialValues, isEdit }) => {
               />
             </Grid>
           </Grid>
-        </DialogContent>
-        
-        <DialogActions sx={{ px: 3, pb: 3 }}>
-          <Button onClick={onClose} variant="outlined">
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            variant="contained" 
-            color="primary" 
-            disabled={loading || !formik.isValid}
-          >
-            {isEdit ? 'Update Coupon' : 'Create Coupon'}
-          </Button>
-        </DialogActions>
-      </form>
+        </form>
+      </DialogContent>
+      
+      <DialogActions sx={{ px: 3, pb: 3 }}>
+        <Button onClick={onClose} variant="outlined">
+          Cancel
+        </Button>
+        <Button 
+          form="coupon-form"
+          type="submit" 
+          variant="contained" 
+          color="primary" 
+          disabled={loading || !code || !discountValue}
+        >
+          {isEdit ? 'Update Coupon' : 'Create Coupon'}
+        </Button>
+      </DialogActions>
     </Dialog>
   );
 };

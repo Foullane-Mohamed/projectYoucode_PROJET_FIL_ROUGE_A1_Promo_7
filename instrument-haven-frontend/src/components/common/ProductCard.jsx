@@ -1,4 +1,4 @@
-import { useContext } from 'react';
+import { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { WishlistContext } from '../../context/WishlistContext';
@@ -129,9 +129,9 @@ const ProductCard = ({ product }) => {
             height="160"
             image={
               product.thumbnail
-                ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
+                ? `/images/products/${product.thumbnail}`
                 : (product.images && Array.isArray(product.images) && product.images.length > 0
-                  ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
+                  ? `/images/products/${product.images[0]}`
                   : '/images/categories/placeholder.jpg')
             }
             alt={product.name || 'Product'}

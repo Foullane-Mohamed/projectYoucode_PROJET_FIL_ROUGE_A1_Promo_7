@@ -17,17 +17,40 @@ export const WishlistProvider = ({ children }) => {
     }
   }, [user]);
 
+
+
   const fetchWishlist = async () => {
-    if (!user) return;
+    if (!user) {
+      setWishlist([]);
+      return [];
+    }
     
     setLoading(true);
     try {
       const response = await api.wishlist.getAll();
+      
+      // Check if response contains data
+      if (!response || !response.data) {
+        throw new Error('Invalid response from server');
+      }
+      
       // Per API documentation, the wishlist is in response.data.data.wishlist
       const wishlistData = response.data?.data?.wishlist || [];
-      setWishlist(wishlistData);
+      
+      // Validate each wishlist item has necessary product data
+      const validItems = wishlistData.filter(item => {
+        const hasProduct = item.product || item.product_id;
+        if (!hasProduct) {
+          console.warn('Invalid wishlist item (missing product):', item);
+        }
+        return hasProduct;
+      });
+      
+      setWishlist(validItems);
+      return validItems;
     } catch (error) {
       console.error('Error fetching wishlist:', error);
+      throw error; // Re-throw to allow component to handle the error
     } finally {
       setLoading(false);
     }
@@ -37,13 +60,17 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return { success: false, message: 'Please log in to add to wishlist' };
     
     try {
+      setLoading(true);
       const response = await api.wishlist.add(productId);
+      
       // Handle the case where product is already in wishlist (returns 200 with info status)
       if (response.data?.status === 'info' && response.data?.message === 'Product is already in wishlist') {
         return { success: true, message: 'Product is already in wishlist' };
       }
       
+      // Fetch the updated wishlist immediately
       await fetchWishlist();
+      
       return { 
         success: true, 
         message: response.data?.message || 'Product added to wishlist' 
@@ -53,6 +80,8 @@ export const WishlistProvider = ({ children }) => {
         success: false, 
         message: error.response?.data?.message || 'Error adding to wishlist' 
       };
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,8 +89,20 @@ export const WishlistProvider = ({ children }) => {
     if (!user) return { success: false, message: 'Please log in to manage wishlist' };
     
     try {
+      setLoading(true);
       const response = await api.wishlist.remove(productId);
+      
+      // Immediately remove the item from the local state for faster UI response
+      setWishlist(prevWishlist => 
+        prevWishlist.filter(item => {
+          const itemProductId = item.product_id || (item.product && item.product.id);
+          return itemProductId !== productId;
+        })
+      );
+      
+      // Fetch the updated wishlist to ensure sync with server
       await fetchWishlist();
+      
       return { 
         success: true, 
         message: response.data?.message || 'Product removed from wishlist' 
@@ -79,6 +120,8 @@ export const WishlistProvider = ({ children }) => {
         success: false, 
         message: error.response?.data?.message || 'Error removing from wishlist' 
       };
+    } finally {
+      setLoading(false);
     }
   };
 

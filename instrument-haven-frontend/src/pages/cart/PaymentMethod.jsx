@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import {
   Box,
   Typography,
@@ -13,26 +14,27 @@ import {
 } from '@mui/icons-material';
 
 const PaymentMethod = ({ selectedMethod, setSelectedMethod, onNext, onBack }) => {
-
   const handleNext = () => {
     // Create payment details object based on selected method
     const paymentDetails = { method: selectedMethod };
     onNext(paymentDetails);
   };
 
-
-
   return (
     <Box sx={{ mt: 3 }}>
       <Typography variant="h6" gutterBottom>
         Payment Method
       </Typography>
+      
       <Paper sx={{ p: 3, mb: 3 }}>
+        <Typography variant="subtitle1" gutterBottom>
+          Select Payment Method
+        </Typography>
+        
         <RadioGroup
           value={selectedMethod}
           onChange={(e) => setSelectedMethod(e.target.value)}
         >
-          
           <FormControlLabel
             value="cash_on_delivery"
             control={<Radio />}

@@ -49,13 +49,12 @@ class CategoriesTableSeeder extends Seeder
             'image' => 'https://example.com/images/accessories.jpg',
         ]);
 
-        // Subcategories for guitars
+        // Additional categories (no more subcategories)
         Category::create([
             'name' => 'Electric Guitars',
             'slug' => 'electric-guitars',
             'description' => 'Electric guitars for all styles',
             'image' => 'https://example.com/images/electric-guitars.jpg',
-            'parent_id' => $guitars->id,
         ]);
 
         Category::create([
@@ -63,7 +62,6 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'acoustic-guitars',
             'description' => 'Classical and acoustic guitars',
             'image' => 'https://example.com/images/acoustic-guitars.jpg',
-            'parent_id' => $guitars->id,
         ]);
 
         Category::create([
@@ -71,16 +69,13 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'bass-guitars',
             'description' => 'Electric and acoustic bass guitars',
             'image' => 'https://example.com/images/bass-guitars.jpg',
-            'parent_id' => $guitars->id,
         ]);
 
-        // Subcategories for drums
         Category::create([
             'name' => 'Acoustic Drums',
             'slug' => 'acoustic-drums',
             'description' => 'Traditional acoustic drum sets',
             'image' => 'https://example.com/images/acoustic-drums.jpg',
-            'parent_id' => $drums->id,
         ]);
 
         Category::create([
@@ -88,16 +83,13 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'electronic-drums',
             'description' => 'Digital and electronic drum kits',
             'image' => 'https://example.com/images/electronic-drums.jpg',
-            'parent_id' => $drums->id,
         ]);
 
-        // Subcategories for keyboards
         Category::create([
             'name' => 'Digital Pianos',
             'slug' => 'digital-pianos',
             'description' => 'Digital pianos with weighted keys',
             'image' => 'https://example.com/images/digital-pianos.jpg',
-            'parent_id' => $keyboards->id,
         ]);
 
         Category::create([
@@ -105,16 +97,13 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'synthesizers',
             'description' => 'Analog and digital synthesizers',
             'image' => 'https://example.com/images/synthesizers.jpg',
-            'parent_id' => $keyboards->id,
         ]);
 
-        // Subcategories for wind instruments
         Category::create([
             'name' => 'Saxophones',
             'slug' => 'saxophones',
             'description' => 'All types of saxophones',
             'image' => 'https://example.com/images/saxophones.jpg',
-            'parent_id' => $windInstruments->id,
         ]);
 
         Category::create([
@@ -122,16 +111,13 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'flutes',
             'description' => 'Concert and folk flutes',
             'image' => 'https://example.com/images/flutes.jpg',
-            'parent_id' => $windInstruments->id,
         ]);
 
-        // Subcategories for accessories
         Category::create([
             'name' => 'Guitar Accessories',
             'slug' => 'guitar-accessories',
             'description' => 'Picks, strings, capos, and more',
             'image' => 'https://example.com/images/guitar-accessories.jpg',
-            'parent_id' => $accessories->id,
         ]);
 
         Category::create([
@@ -139,7 +125,6 @@ class CategoriesTableSeeder extends Seeder
             'slug' => 'drum-accessories',
             'description' => 'Drumsticks, heads, cymbals, and more',
             'image' => 'https://example.com/images/drum-accessories.jpg',
-            'parent_id' => $accessories->id,
         ]);
     }
 }

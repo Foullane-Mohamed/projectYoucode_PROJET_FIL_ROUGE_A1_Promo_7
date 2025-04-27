@@ -38,7 +38,6 @@ import AdminDashboard from './pages/admin/Dashboard';
 import AdminHome from './pages/admin/AdminHome';
 import ProductManagement from './pages/admin/ProductManagement';
 import CategoryManagement from './pages/admin/CategoryManagement';
-import TagManagement from './pages/admin/TagManagement';
 import OrderManagement from './pages/admin/OrderManagement';
 import CouponManagement from './pages/admin/CouponManagement';
 import UserManagement from './pages/admin/UserManagement';

@@ -91,11 +91,11 @@ const EnhancedProductCard = ({ product }) => {
   const getProductImage = () => {
     // Try to use actual product image first
     if (product.thumbnail) {
-      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`;
+      return `/images/products/${product.thumbnail}`;
     }
     
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      return `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`;
+      return `/images/products/${product.images[0]}`;
     }
     
     // Use placeholder image as fallback - ensuring we use product images, not category images
@@ -119,7 +119,6 @@ const EnhancedProductCard = ({ product }) => {
         overflow: 'hidden',
         backgroundColor: 'white',
         maxWidth: '100%',
-        m: 0,
         transition: 'transform 0.3s, box-shadow 0.3s',
         '&:hover': {
           transform: 'translateY(-4px)',
@@ -158,13 +157,14 @@ const EnhancedProductCard = ({ product }) => {
         <Box sx={{ 
           position: 'relative', 
           bgcolor: '#f5f7fa', 
-          pt: 2, 
-          px: 2, 
-          pb: 2, 
-          height: '240px', 
+          pt: 0,
+          px: 0,
+          pb: 0,
+          height: '220px',
           display: 'flex', 
           alignItems: 'center', 
-          justifyContent: 'center' 
+          justifyContent: 'center',
+          overflow: 'hidden'
         }}>
           <Box
             sx={{
@@ -181,10 +181,11 @@ const EnhancedProductCard = ({ product }) => {
               image={getProductImage()}
               alt={product.name || 'Product'}
               sx={{ 
-                maxWidth: '85%',
-                maxHeight: '85%',
+                width: '85%',
+                height: '85%',
                 objectFit: 'contain',
                 transition: 'transform 0.4s ease',
+                p: 1,
                 '&:hover': {
                   transform: 'scale(1.05)'
                 }
@@ -238,7 +239,7 @@ const EnhancedProductCard = ({ product }) => {
           )}
         </Box>
         
-        <CardContent sx={{ flexGrow: 1, p: 2, pt: 1.5, height: '120px', overflow: 'hidden' }}>
+        <CardContent sx={{ flexGrow: 1, p: 2, pt: 1.5, height: '100px', overflow: 'hidden' }}>
           <Typography 
             gutterBottom 
             variant="subtitle1" 
@@ -279,7 +280,7 @@ const EnhancedProductCard = ({ product }) => {
             color="text.secondary"
             sx={{
               mb: 1,
-              maxHeight: '36px',
+              maxHeight: '32px',
               fontSize: '0.8rem',
               color: '#666',
               lineHeight: 1.3,
@@ -304,13 +305,11 @@ const EnhancedProductCard = ({ product }) => {
           justifyContent: 'space-between',
           alignItems: 'center',
           p: 2,
-          pt: 1.5,
-          pb: 2,
+          py: 1.5,
           mt: 'auto',
           backgroundColor: 'white',
           borderTop: '1px solid rgba(0,0,0,0.06)',
           height: '60px',
-          position: 'relative',
           width: '100%'
         }}
       >
@@ -320,7 +319,7 @@ const EnhancedProductCard = ({ product }) => {
               <Typography 
                 variant="h6" 
                 sx={{ 
-                  fontSize: '1.4rem',
+                  fontSize: '1.2rem',
                   fontWeight: 700, 
                   color: '#FF2B52',
                   letterSpacing: '-0.03em',
@@ -355,7 +354,7 @@ const EnhancedProductCard = ({ product }) => {
           <Typography variant="h6" sx={{ 
             fontWeight: 700, 
             color: '#FF2B52', 
-            fontSize: '1.4rem',
+            fontSize: '1.2rem',
             letterSpacing: '-0.03em',
             display: 'flex',
             alignItems: 'center',
@@ -378,14 +377,14 @@ const EnhancedProductCard = ({ product }) => {
           onClick={handleAddToCart}
           disabled={product.stock <= 0}
           sx={{
-            px: 2.5,
-            py: 1,
-            minWidth: '120px',
+            px: 2,
+            py: 0.7,
+            minWidth: '110px',
             fontWeight: '600',
-            fontSize: '0.85rem',
+            fontSize: '0.8rem',
             boxShadow: '0 4px 10px rgba(255, 43, 82, 0.25)',
             backgroundColor: '#FF2B52',
-            borderRadius: '10px',
+            borderRadius: '8px',
             '&:hover': {
               backgroundColor: '#e01e41',
               boxShadow: '0 6px 12px rgba(255, 43, 82, 0.35)'
@@ -400,38 +399,34 @@ const EnhancedProductCard = ({ product }) => {
         </Button>
       </Box>
       
-      {product.stock > 0 && (
-        <Box sx={{ 
-          position: 'absolute', 
-          bottom: 70, 
-          left: 0,
-          width: '100%',
-          display: 'flex',
-          justifyContent: 'center'
-        }}>
-          <Button
-            variant="outlined"
-            startIcon={<Visibility fontSize="small" />}
-            component={Link}
-            to={`/products/${product.id}`}
-            size="small"
-            sx={{
-              borderColor: '#ccc',
-              color: '#666',
-              '&:hover': {
-                borderColor: '#FF2B52',
-                color: '#FF2B52',
-                backgroundColor: 'rgba(255, 43, 82, 0.04)'
-              },
-              fontSize: '0.75rem',
-              py: 0.5,
-              display: isHovered ? 'flex' : 'none',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            View Details
-          </Button>
-        </Box>
+      {product.stock > 0 && isHovered && (
+        <Button
+          variant="outlined"
+          startIcon={<Visibility fontSize="small" />}
+          component={Link}
+          to={`/products/${product.id}`}
+          size="small"
+          sx={{
+            position: 'absolute',
+            bottom: 64, 
+            left: '50%',
+            transform: 'translateX(-50%)',
+            borderColor: '#ccc',
+            color: '#666',
+            bgcolor: 'rgba(255,255,255,0.9)',
+            '&:hover': {
+              borderColor: '#FF2B52',
+              color: '#FF2B52',
+              backgroundColor: 'rgba(255, 43, 82, 0.04)'
+            },
+            fontSize: '0.75rem',
+            py: 0.5,
+            transition: 'all 0.3s ease',
+            zIndex: 5
+          }}
+        >
+          View Details
+        </Button>
       )}
     </Card>
   );

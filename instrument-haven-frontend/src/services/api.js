@@ -3,6 +3,8 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
+console.log('API URL configured as:', API_URL);
+
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -53,6 +55,7 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => {
+    console.log('API Response:', response.config.url, response.status, response.data);
     if (response.data === null || response.data === undefined) {
       return {
         ...response,
@@ -62,6 +65,8 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
+    console.error('API Error:', error.config?.url, error.response?.status, error.message);
+    
     if (!error.response) {
       toast.error('Network error. This could be due to CORS issues or server unavailability. Please check your connection and try again.');
       return Promise.reject(error);
@@ -140,7 +145,16 @@ const categoriesAPI = {
 
 
 const wishlistAPI = {
-  getAll: () => api.get('/wishlist'),
+  getAll: () => {
+    console.log('Fetching wishlist data from:', `${API_URL}/wishlist`);
+    return api.get('/wishlist').then(response => {
+      console.log('Wishlist API response:', response);
+      return response;
+    }).catch(error => {
+      console.error('Wishlist API error:', error.response || error.message);
+      throw error;
+    });
+  },
   add: (productId) => api.post('/wishlist', { product_id: productId }),
   remove: (productId) => api.delete(`/wishlist/${productId}`),
 };
@@ -149,6 +163,7 @@ const wishlistAPI = {
 const ordersAPI = {
   getAll: () => api.get('/orders'),
   getById: (id) => api.get(`/orders/${id}`),
+  getMyOrders: () => api.get('/orders/my'),
   create: (orderData) => api.post('/orders', orderData),
   cancel: (id, reason) => api.put(`/orders/${id}/cancel`, { cancel_reason: reason }),
 };
@@ -217,12 +232,28 @@ const adminAPI = {
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
   
   getProducts: (params) => api.get('/products', { params }), // Fallback to public endpoint
-  createProduct: (formData) => api.post('/admin/products', formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
-  updateProduct: (id, formData) => api.put(`/admin/products/${id}`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  }),
+  createProduct: (formData) => {
+    // Log the FormData contents for debugging
+    console.log('FormData contents for createProduct:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
+    }
+    
+    return api.post('/admin/products', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
+  updateProduct: (id, formData) => {
+    // Log the FormData contents for debugging
+    console.log('FormData contents for updateProduct:');
+    for (let pair of formData.entries()) {
+      console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
+    }
+    
+    return api.put(`/admin/products/${id}`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  },
   deleteProduct: (id) => api.delete(`/admin/products/${id}`),
   
   getCategories: (params) => {

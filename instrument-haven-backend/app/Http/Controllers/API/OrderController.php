@@ -26,11 +26,14 @@ class OrderController extends Controller
     {
         $orders = $this->orderRepository->getByUserId($request->user()->id);
         
+        // Make sure we load the relationship data
+        $orders->each(function ($order) {
+            $order->load('items.product');
+        });
+        
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'orders' => $orders
-            ]
+            'data' => $orders
         ]);
     }
 

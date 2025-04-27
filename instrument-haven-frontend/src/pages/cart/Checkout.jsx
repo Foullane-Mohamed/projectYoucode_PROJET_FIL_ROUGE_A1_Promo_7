@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { AuthContext } from '../../context/AuthContext';
 import api from '../../services/api';
+import { toast } from 'react-toastify';
 import {
   Container,
   Typography,
@@ -94,49 +95,7 @@ const Checkout = () => {
     handleNext();
   };
   
-  const handleApplyCoupon = async (code) => {
-    if (!code.trim()) return;
-    
-    setLoading(true);
-    setError('');
-    
-    try {
-      const response = await api.cart.applyCoupon({ code });
-      setCouponData(response.data.data);
-      
-      // Calculate discount
-      let discount = 0;
-      if (response.data.data.type === 'percentage') {
-        discount = (totalPrice * response.data.data.discount) / 100;
-      } else {
-        discount = response.data.data.discount;
-      }
-      
-      setDiscountAmount(discount);
-    } catch (err) {
-      console.error('Error applying coupon:', err);
-      setError(err.response?.data?.message || 'Invalid coupon code.');
-      setCouponData(null);
-      setDiscountAmount(0);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const handleRemoveCoupon = async () => {
-    setLoading(true);
-    
-    try {
-      await api.cart.removeCoupon();
-      setCouponData(null);
-      setCouponCode('');
-      setDiscountAmount(0);
-    } catch (err) {
-      console.error('Error removing coupon:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Coupon functionality has been moved to the cart page
   
   const prepareOrderData = () => {
     // Format addresses according to backend requirements
@@ -272,11 +231,7 @@ const Checkout = () => {
                 subtotal={totalPrice || 0}
                 discount={discountAmount}
                 total={finalPrice || 0}
-                couponCode={couponCode}
                 couponData={couponData}
-                onApplyCoupon={handleApplyCoupon}
-                onRemoveCoupon={handleRemoveCoupon}
-                onCouponCodeChange={(e) => setCouponCode(e.target.value)}
                 onBack={handleBack}
                 onPlaceOrder={handleShowOrderConfirmation}
                 loading={loading}
@@ -292,6 +247,7 @@ const Checkout = () => {
                 totalPrice={totalPrice || 0}
                 discountAmount={discountAmount}
                 finalPrice={finalPrice || 0}
+                couponData={couponData || (cart && cart.coupon ? cart.coupon : null)}
                 onBack={handleBack}
                 onConfirm={handlePlaceOrder}
                 loading={loading}

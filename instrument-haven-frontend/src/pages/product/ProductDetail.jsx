@@ -60,14 +60,55 @@ const ProductDetail = () => {
       setError(null);
       
       try {
+        console.log(`Fetching product details for ID: ${id}, API URL: ${import.meta.env.VITE_API_URL}`);
+        
+        // Direct API call to see the raw response
+        try {
+          const directResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/products/${id}`);
+          const responseData = await directResponse.json();
+          console.log('Direct API call response:', responseData);
+        } catch (directError) {
+          console.error('Direct API call failed:', directError);
+        }
+        
         const response = await apiService.products.getById(id);
+        console.log('Product API response:', response);
+        
         // Ensure we use the correct data structure according to API documentation
-        const productData = response.data?.data?.product || response.data?.product;
+        let productData = null;
+        
+        if (response?.data?.data?.product) {
+          productData = response.data.data.product;
+        } else if (response?.data?.product) {
+          productData = response.data.product;
+        } else if (response?.data?.data) {
+          productData = response.data.data;
+        }
+        
+        console.log('Extracted product data:', productData);
         
         if (!productData) {
-          setError('Product not found.');
+          setError('Product not found or data format is unexpected.');
           return;
         }
+        
+        // Ensure images array is valid and has proper URLs
+        if (productData.images && !Array.isArray(productData.images)) {
+          try {
+            productData.images = JSON.parse(productData.images);
+          } catch (e) {
+            console.error('Error parsing images JSON:', e);
+            productData.images = [];
+          }
+        }
+        
+        // Make sure images are always an array
+        if (!Array.isArray(productData.images)) {
+          productData.images = [];
+        }
+        
+        console.log('Processed product data:', productData);
+        console.log('Storage URL being used:', storageUrl);
         
         setProduct(productData);
         
@@ -75,8 +116,20 @@ const ProductDetail = () => {
         if (productData.category_id) {
           try {
             const relatedResponse = await apiService.products.getByCategory(productData.category_id);
-            // Extract products from the category response according to API documentation
-            const categoryProducts = relatedResponse.data?.data?.category?.products || [];
+            console.log('Related products response:', relatedResponse);
+            
+            // Extract products from the category response
+            let categoryProducts = [];
+            
+            if (relatedResponse?.data?.data?.category?.products) {
+              categoryProducts = relatedResponse.data.data.category.products;
+            } else if (relatedResponse?.data?.category?.products) {
+              categoryProducts = relatedResponse.data.category.products;
+            } else if (relatedResponse?.data?.data?.products) {
+              categoryProducts = relatedResponse.data.data.products;
+            } else if (Array.isArray(relatedResponse?.data?.products)) {
+              categoryProducts = relatedResponse.data.products;
+            }
             
             setRelatedProducts(
               categoryProducts
@@ -89,7 +142,20 @@ const ProductDetail = () => {
         }
       } catch (err) {
         console.error('Error fetching product details:', err);
-        setError('Failed to load product details. Please try again later.');
+        
+        // More detailed error message for debugging
+        let errorMessage = 'Failed to load product details.';
+        
+        if (err.response) {
+          console.error('Error response data:', err.response.data);
+          errorMessage += ` Server responded with ${err.response.status}: ${err.response.data?.message || 'Unknown error'}`;
+        } else if (err.request) {
+          errorMessage += ' No response received from server. Check your network connection and server status.';
+        } else {
+          errorMessage += ` ${err.message}`;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -98,20 +164,39 @@ const ProductDetail = () => {
     fetchProductDetails();
   }, [id]);
 
-  // Get a consistent product image
-  const getProductImage = (imageIndex = 0) => {
-    if (!product) return '';
-    
-    if (product.images && product.images.length > imageIndex) {
-      return `${storageUrl}/${product.images[imageIndex]}`;
+// Utility function to safely get image URL with fallback
+const getSafeImageUrl = (imagePath) => {
+  if (!imagePath) return '/images/categories/placeholder.jpg';
+  
+  // If it's already a full URL, return it
+  if (imagePath.startsWith('http')) return imagePath;
+  
+  // If it's just a filename, use local path
+  return `/images/products/${imagePath}`;
+};
+
+// Get a consistent product image - using local paths
+const getProductImage = (imageIndex = 0) => {
+  if (!product) return '';
+  
+  // Use the storage URL from environment variables
+  const storageBaseUrl = storageUrl;
+  
+  try {
+    if (product.images && Array.isArray(product.images) && product.images.length > imageIndex) {
+      // Use the public storage URL or fallback to local path
+      return getSafeImageUrl(product.images[imageIndex]);
     } else if (product.thumbnail) {
-      return `${storageUrl}/${product.thumbnail}`;
+      return getSafeImageUrl(product.thumbnail);
     }
-    
-    // Use placeholder image as fallback - ensuring we use product images, not category images
-    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
-    return PRODUCT_IMAGES[index];
-  };
+  } catch (e) {
+    console.error('Error getting product image:', e);
+  }
+  
+  // Use placeholder image as fallback
+  const index = Math.abs((product?.id % PRODUCT_IMAGES.length)) || 0;
+  return PRODUCT_IMAGES[index];
+};
 
   const handleQuantityChange = (newQuantity) => {
     if (product && newQuantity >= 1 && newQuantity <= product.stock) {
@@ -174,7 +259,16 @@ const ProductDetail = () => {
   if (error) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="error">{error}</Alert>
+        <Alert 
+          severity="error"
+          action={
+            <Button color="inherit" size="small" onClick={() => window.history.back()}>
+              Go Back
+            </Button>
+          }
+        >
+          {error}
+        </Alert>
       </Container>
     );
   }
@@ -182,7 +276,16 @@ const ProductDetail = () => {
   if (!product) {
     return (
       <Container maxWidth="lg" sx={{ py: 4 }}>
-        <Alert severity="warning">Product not found</Alert>
+        <Alert 
+          severity="warning"
+          action={
+            <Button color="inherit" size="small" onClick={() => window.history.back()}>
+              Go Back
+            </Button>
+          }
+        >
+          Failed to load product details. Please try again later.
+        </Alert>
       </Container>
     );
   }
@@ -293,7 +396,7 @@ const ProductDetail = () => {
                     }}
                   >
                     <img
-                      src={`${storageUrl}/${image}`}
+                      src={getSafeImageUrl(image)}
                       alt={`${product.name} thumbnail ${index + 1}`}
                       style={{
                         width: '100%',
@@ -384,7 +487,6 @@ const ProductDetail = () => {
                 </Link>
               </Typography>
             )}
-            
 
           </Box>
           

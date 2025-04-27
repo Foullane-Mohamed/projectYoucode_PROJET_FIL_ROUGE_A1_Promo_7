@@ -16,15 +16,7 @@ class CategoryRepository extends BaseRepository implements CategoryRepositoryInt
         $this->model = new Category();
     }
 
-    /**
-     * Get root categories
-     * 
-     * @return mixed
-     */
-    public function getRootCategories()
-    {
-        return $this->model->whereNull('parent_id')->get();
-    }
+
     
     /**
      * Get category with its products

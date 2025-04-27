@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -18,6 +18,7 @@ import {
   DialogContent,
   DialogActions,
   Slide,
+  Avatar,
 } from '@mui/material';
 import {
   LocalShipping as ShippingIcon,
@@ -26,6 +27,57 @@ import {
   ArrowForward as ArrowForwardIcon,
   Done as DoneIcon,
 } from '@mui/icons-material';
+
+// Product image component with error handling
+const ProductImage = ({ product }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState('/images/categories/placeholder.jpg');
+  
+  useEffect(() => {
+    if (product?.thumbnail) {
+      setImageSrc(`/images/products/${product.thumbnail}`);
+      setImageError(false);
+    } else if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
+      setImageSrc(`/images/products/${product.images[0]}`);
+      setImageError(false);
+    } else {
+      setImageSrc('/images/categories/placeholder.jpg');
+    }
+  }, [product]);
+  
+  const handleError = () => {
+    setImageError(true);
+    setImageSrc('/images/categories/placeholder.jpg');
+  };
+  
+  return (
+    <Box sx={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      mr: 2,
+      border: '1px solid #e0e0e0',
+      borderRadius: 1.5,
+      p: 0.75,
+      bgcolor: '#f5f7fa',
+      width: 40,
+      height: 40,
+      justifyContent: 'center',
+    }}>
+      <img
+        src={imageError ? '/images/categories/placeholder.jpg' : imageSrc}
+        alt={product ? product.name : 'Product'}
+        style={{
+          objectFit: 'contain',
+          maxWidth: '100%',
+          maxHeight: '100%',
+        }}
+        onError={handleError}
+      />
+    </Box>
+  );
+};
+
+
 
 // Transition effect for the dialog
 const Transition = React.forwardRef(function Transition(props, ref) {
@@ -40,6 +92,7 @@ const OrderConfirmation = ({
   totalPrice, 
   discountAmount, 
   finalPrice,
+  couponData,
   onBack,
   onConfirm,
   loading
@@ -126,14 +179,26 @@ const OrderConfirmation = ({
         
         <Typography variant="h6" sx={{ mt: 3, mb: 2 }}>Order Summary</Typography>
         
-        <List>
-          {cart.items.map((item) => (
-            <ListItem key={item.id} sx={{ py: 1, px: 0 }}>
+        <List sx={{ width: '100%' }}>
+          {cart.items.map((item, index) => (
+            <ListItem 
+              key={item.id} 
+              sx={{ 
+                py: 1.5, 
+                px: 0,
+                borderBottom: index < cart.items.length - 1 ? '1px solid rgba(0,0,0,0.08)' : 'none'
+              }}
+            >
+              <ProductImage product={item.product} />
               <ListItemText 
-                primary={item.product ? item.product.name : 'Product'}
+                primary={
+                  <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
+                    {item.product ? item.product.name : 'Product'}
+                  </Typography>
+                }
                 secondary={`Quantity: ${item.quantity}`}
               />
-              <Typography variant="body2">
+              <Typography variant="body2" sx={{ fontWeight: 600, color: '#FF2B52' }}>
                 ${((item.price || (item.product ? item.product.price : 0)) * item.quantity).toFixed(2)}
               </Typography>
             </ListItem>
@@ -147,10 +212,15 @@ const OrderConfirmation = ({
           <Typography variant="body1">${totalPrice.toFixed(2)}</Typography>
         </Box>
         
-        {discountAmount > 0 && (
+        {/* Display discount if discountAmount is passed or if cart has discount */}
+        {(discountAmount > 0 || (cart && cart.discount > 0)) && (
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-            <Typography variant="body1">Discount:</Typography>
-            <Typography variant="body1" color="error">-${discountAmount.toFixed(2)}</Typography>
+            <Typography variant="body1">
+              Discount {couponData ? `(Coupon: ${couponData.code})` : cart.coupon ? `(Coupon: ${cart.coupon.code})` : ''}:
+            </Typography>
+            <Typography variant="body1" color="error">
+              -${(discountAmount > 0 ? discountAmount : (cart.discount || 0)).toFixed(2)}
+            </Typography>
           </Box>
         )}
         
@@ -163,7 +233,9 @@ const OrderConfirmation = ({
         
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography variant="h6">Total:</Typography>
-          <Typography variant="h6" color="primary">${finalPrice.toFixed(2)}</Typography>
+          <Typography variant="h6" color="primary">
+            ${(finalPrice > 0 ? finalPrice : (cart && cart.total ? cart.total : totalPrice - (cart && cart.discount ? cart.discount : 0))).toFixed(2)}
+          </Typography>
         </Box>
         
         <Box sx={{ mt: 4, display: 'flex', justifyContent: 'space-between' }}>

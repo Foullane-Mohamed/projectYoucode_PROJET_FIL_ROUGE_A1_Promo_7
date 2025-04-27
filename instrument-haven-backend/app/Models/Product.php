@@ -4,65 +4,41 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Str;
 
 class Product extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
     protected $fillable = [
         'name',
         'slug',
         'description',
         'price',
         'sale_price',
+        'on_sale',
         'stock',
-        'thumbnail',
         'category_id',
         'brand',
+        'thumbnail',
+        'images',
         'is_active',
-        'on_sale',
+        'specifications',
+        'attributes'
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'price' => 'float',
         'sale_price' => 'float',
+        'on_sale' => 'boolean',
         'stock' => 'integer',
         'is_active' => 'boolean',
-        'on_sale' => 'boolean',
         'images' => 'array',
         'specifications' => 'array',
-        'attributes' => 'array',
+        'attributes' => 'array'
     ];
 
     /**
-     * Boot function to set the slug
-     */
-    protected static function boot()
-    {
-        parent::boot();
-
-        static::creating(function ($product) {
-            $product->slug = $product->slug ?? Str::slug($product->name);
-        });
-
-        static::updating(function ($product) {
-            $product->slug = $product->slug ?? Str::slug($product->name);
-        });
-    }
-
-    /**
-     * Get the category that owns the product
+     * Get the category that owns the product.
      */
     public function category()
     {
@@ -70,7 +46,7 @@ class Product extends Model
     }
 
     /**
-     * Get the reviews for the product
+     * Get the reviews for the product.
      */
     public function reviews()
     {
@@ -78,42 +54,61 @@ class Product extends Model
     }
 
     /**
-     * Get the average rating for the product
+     * Return the product image URL
+     * 
+     * @return string
      */
-    public function getAverageRatingAttribute()
+    public function getImageUrlAttribute()
     {
-        return $this->reviews()->avg('rating') ?? 0;
-    }
-
-    /**
-     * Get the wishlist entries for the product
-     */
-    public function wishlistItems()
-    {
-        return $this->hasMany(Wishlist::class);
-    }
-
-    /**
-     * Get the cart items for the product
-     */
-    public function cartItems()
-    {
-        return $this->hasMany(CartItem::class);
-    }
-
-    /**
-     * Get the order items for the product
-     */
-    public function orderItems()
-    {
-        return $this->hasMany(OrderItem::class);
+        if ($this->thumbnail) {
+            // Return just the filename without the path prefix
+            // This will allow the frontend to construct the full path
+            $filename = basename($this->thumbnail);
+            return $filename;
+        }
+        
+        return null;
     }
     
     /**
-     * Get the tags for the product
+     * Return all product image URLs
+     * 
+     * @return array
      */
-    public function tags()
+    public function getImageUrlsAttribute()
     {
-        return $this->belongsToMany(Tag::class);
+        if ($this->images && is_array($this->images)) {
+            return array_map(function($image) {
+                // Return just the filename without the path prefix
+                return basename($image);
+            }, $this->images);
+        }
+        
+        return [];
+    }
+    
+    /**
+     * Calculate the average rating for the product
+     * 
+     * @return float
+     */
+    public function getAverageRatingAttribute()
+    {
+        try {
+            if (!$this->relationLoaded('reviews')) {
+                $this->load('reviews');
+            }
+            
+            $reviewsCount = $this->reviews->count();
+            if ($reviewsCount === 0) {
+                return 0;
+            }
+            
+            $sum = $this->reviews->sum('rating');
+            return round($sum / $reviewsCount, 1);
+        } catch (\Exception $e) {
+            \Log::error('Error calculating average rating: ' . $e->getMessage());
+            return 0;
+        }
     }
 }

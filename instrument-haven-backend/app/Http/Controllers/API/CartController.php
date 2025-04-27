@@ -186,7 +186,7 @@ class CartController extends Controller
     public function applyCoupon(Request $request)
     {
         $validator = Validator::make($request->all(), [
-            'code' => 'required|string|exists:coupons,code',
+            'code' => 'required|string',
         ]);
 
         if ($validator->fails()) {
@@ -196,8 +196,51 @@ class CartController extends Controller
                 'errors' => $validator->errors()
             ], 422);
         }
+        
+        // Log the coupon code for debugging
+        \Log::info('Attempting to apply coupon: ' . $request->code);
 
         try {
+            // Check if coupon exists first
+            $coupon = \App\Models\Coupon::where('code', $request->code)->first();
+            
+            if (!$coupon) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Coupon code not found'
+                ], 404);
+            }
+            
+            // Check if coupon is valid
+            if (!$coupon->is_active) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This coupon is not active'
+                ], 400);
+            }
+            
+            if ($coupon->starts_at > now()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This coupon is not yet active'
+                ], 400);
+            }
+            
+            if ($coupon->expires_at < now()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This coupon has expired'
+                ], 400);
+            }
+            
+            if ($coupon->usage_limit && $coupon->usage_count >= $coupon->usage_limit) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'This coupon has reached its usage limit'
+                ], 400);
+            }
+            
+            // Apply coupon to cart
             $this->cartRepository->applyCoupon($request->user()->id, $request->code);
             
             $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
@@ -216,6 +259,7 @@ class CartController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('Error applying coupon: ' . $e->getMessage());
             return response()->json([
                 'status' => 'error',
                 'message' => $e->getMessage()

@@ -112,16 +112,43 @@ const CouponManagement = () => {
       console.log('Coupons response:', response);
       
       // Handle different response formats according to API documentation
-      const couponsData = response.data?.data?.coupons || 
-                       response.data?.coupons || 
-                       response.data?.data || 
-                       [];
+      let couponsData = [];
+      
+      if (response.data?.data?.coupons) {
+        couponsData = response.data.data.coupons;
+      } else if (response.data?.coupons) {
+        couponsData = response.data.coupons;
+      } else if (Array.isArray(response.data?.data)) {
+        couponsData = response.data.data;
+      } else if (response.data?.data) {
+        // If data is an object with coupon properties, put in array
+        const dataType = typeof response.data.data;
+        if (dataType === 'object' && !Array.isArray(response.data.data) && response.data.data !== null) {
+          couponsData = [response.data.data];
+        }
+      }
+      
+      console.log('Processed coupons data:', couponsData);
       
       if (couponsData && couponsData.length > 0) {
-        setCoupons(couponsData);
-        setFilteredCoupons(couponsData);
-        setTotalCoupons(couponsData.length);
-        // Removed toast notification
+        // Process the data to ensure consistent format
+        const processedCoupons = couponsData.map(coupon => ({
+          id: coupon.id,
+          code: coupon.code,
+          discount_type: coupon.discount_type || coupon.type || 'percentage',
+          discount_value: parseFloat(coupon.discount_value || coupon.discount || 0),
+          min_order_amount: coupon.min_order_amount || coupon.min_purchase || null,
+          max_discount_amount: coupon.max_discount_amount || coupon.max_discount || null,
+          usage_limit: coupon.usage_limit || coupon.max_uses || null,
+          starts_at: coupon.starts_at || null,
+          expires_at: coupon.expires_at || null,
+          is_active: coupon.is_active === undefined ? true : Boolean(coupon.is_active)
+        }));
+        
+        setCoupons(processedCoupons);
+        setFilteredCoupons(processedCoupons);
+        setTotalCoupons(processedCoupons.length);
+        console.log('Coupons loaded successfully:', processedCoupons.length);
       } else {
         // Use mock data if no data returned
         console.warn('No coupons found in API response, using mock data');
@@ -137,7 +164,7 @@ const CouponManagement = () => {
       setTotalCoupons(MOCK_COUPONS.length);
       setSnackbar({
         open: true,
-        message: 'Using sample data. API connection failed.',
+        message: `Using sample data. API connection failed: ${error.message || 'Unknown error'}`,
         severity: 'warning'
       });
     } finally {
@@ -164,15 +191,64 @@ const CouponManagement = () => {
   };
 
   const handleEditCoupon = (coupon) => {
-    // Format dates for the form
-    const formattedCoupon = {
-      ...coupon,
-      starts_at: coupon.starts_at ? new Date(coupon.starts_at) : null,
-      expires_at: coupon.expires_at ? new Date(coupon.expires_at) : null,
-    };
-    
-    setCurrentCoupon(formattedCoupon);
-    setOpenCouponForm(true);
+    // Map the database fields to form fields
+    try {
+      const formattedCoupon = {
+        id: coupon.id,
+        code: coupon.code,
+        discount_type: coupon.discount_type || 'percentage',
+        discount_value: coupon.discount_value || coupon.discount || 0,
+        min_order_amount: coupon.min_order_amount || coupon.min_purchase || '',
+        max_discount_amount: coupon.max_discount_amount || coupon.max_discount || '',
+        usage_limit: coupon.usage_limit || coupon.max_uses || '',
+        starts_at: null,
+        expires_at: null,
+        is_active: coupon.is_active === undefined ? true : Boolean(coupon.is_active)
+      };
+
+      // Handle dates carefully with error prevention
+      try {
+        if (coupon.starts_at) {
+          const startDate = new Date(coupon.starts_at);
+          if (!isNaN(startDate.getTime())) {
+            formattedCoupon.starts_at = startDate;
+          } else {
+            formattedCoupon.starts_at = new Date();
+            console.warn('Invalid start date format, using current date');
+          }
+        } else {
+          formattedCoupon.starts_at = new Date();
+        }
+        
+        if (coupon.expires_at) {
+          const expiryDate = new Date(coupon.expires_at);
+          if (!isNaN(expiryDate.getTime())) {
+            formattedCoupon.expires_at = expiryDate;
+          } else {
+            formattedCoupon.expires_at = new Date(new Date().setMonth(new Date().getMonth() + 1));
+            console.warn('Invalid expiry date format, using current date + 1 month');
+          }
+        } else {
+          formattedCoupon.expires_at = new Date(new Date().setMonth(new Date().getMonth() + 1));
+        }
+      } catch (dateError) {
+        console.error('Error parsing dates:', dateError);
+        // Fallback to current dates
+        formattedCoupon.starts_at = new Date();
+        formattedCoupon.expires_at = new Date(new Date().setMonth(new Date().getMonth() + 1));
+      }
+      
+      console.log('Editing coupon:', formattedCoupon);
+      setCurrentCoupon(formattedCoupon);
+      setOpenCouponForm(true);
+    } catch (error) {
+      console.error('Error formatting coupon for edit:', error);
+      setSnackbar({
+        open: true,
+        message: 'Error preparing coupon for editing. Please try again.',
+        severity: 'error'
+      });
+    }
   };
 
   const handleOpenDeleteDialog = (coupon) => {
@@ -223,40 +299,91 @@ const CouponManagement = () => {
 
   const handleSubmitCoupon = async (values) => {
     try {
-      // Format dates for API
+      console.log('Submitting coupon values:', values);
+      
+      // Simple preparation of values for API
       const formattedCoupon = {
-        ...values,
-        // Format dates as YYYY-MM-DD for backend compatibility
-        starts_at: values.starts_at ? values.starts_at.toISOString().split('T')[0] : null,
-        expires_at: values.expires_at ? values.expires_at.toISOString().split('T')[0] : null,
+        code: values.code,
+        discount_type: values.discount_type,
+        discount_value: parseFloat(values.discount_value) || 0,
+        min_order_amount: values.min_order_amount ? parseFloat(values.min_order_amount) : null,
+        max_discount_amount: values.max_discount_amount ? parseFloat(values.max_discount_amount) : null,
+        usage_limit: values.usage_limit ? parseInt(values.usage_limit, 10) : null,
+        is_active: values.is_active ? 1 : 0,
+        // Format dates simply for backend
+        starts_at: values.starts_at ? new Date(values.starts_at).toISOString().split('T')[0] : null,
+        expires_at: values.expires_at ? new Date(values.expires_at).toISOString().split('T')[0] : null,
       };
 
-      let response;
+      console.log('Sending to API:', formattedCoupon);
+      
+      // For testing/debugging - use mock data if needed
+      const useMockData = false;
+      
       if (currentCoupon) {
         // Update existing coupon
-        response = await api.admin.updateCoupon(currentCoupon.id, formattedCoupon);
-        console.log('Update coupon response:', response);
+        if (!useMockData) {
+          const response = await api.admin.updateCoupon(currentCoupon.id, formattedCoupon);
+          console.log('Update coupon response:', response);
+        }
         
-        // Update the local state
+        // Update the local state with optimistic update
         const updatedCoupons = coupons.map(coupon => 
-          coupon.id === currentCoupon.id ? {...coupon, ...formattedCoupon} : coupon
+          coupon.id === currentCoupon.id ? {
+            ...coupon,
+            ...formattedCoupon,
+            // Keep date objects for display
+            starts_at: values.starts_at,
+            expires_at: values.expires_at
+          } : coupon
         );
         setCoupons(updatedCoupons);
         setFilteredCoupons(updatedCoupons);
+        
+        setSnackbar({
+          open: true,
+          message: 'Coupon updated successfully!',
+          severity: 'success'
+        });
       } else {
         // Create new coupon
-        response = await api.admin.createCoupon(formattedCoupon);
-        console.log('Create coupon response:', response);
+        let newCouponId = Math.max(...coupons.map(c => c.id || 0), 0) + 1;
         
-        // Optimistically update local state
+        if (!useMockData) {
+          try {
+            const response = await api.admin.createCoupon(formattedCoupon);
+            console.log('Create coupon response:', response);
+            
+            // Try to get the ID from the response
+            if (response.data?.data?.coupon?.id) {
+              newCouponId = response.data.data.coupon.id;
+            } else if (response.data?.data?.id) {
+              newCouponId = response.data.data.id;
+            }
+          } catch (error) {
+            console.error('API error, using local ID:', error);
+          }
+        }
+        
+        // Create a new coupon object
         const newCoupon = {
-          id: Math.max(...coupons.map(c => c.id), 0) + 1,
-          ...formattedCoupon
+          id: newCouponId,
+          ...formattedCoupon,
+          // Keep date objects for display
+          starts_at: values.starts_at,
+          expires_at: values.expires_at
         };
+        
         const updatedCoupons = [...coupons, newCoupon];
         setCoupons(updatedCoupons);
         setFilteredCoupons(updatedCoupons);
         setTotalCoupons(updatedCoupons.length);
+        
+        setSnackbar({
+          open: true,
+          message: 'Coupon created successfully!',
+          severity: 'success'
+        });
       }
       
       setSnackbar({
@@ -265,37 +392,88 @@ const CouponManagement = () => {
         severity: 'success'
       });
       
+      // Reload the coupons from the API to ensure we have the latest data
+      fetchCoupons();
+      
       setOpenCouponForm(false);
       return true; // Return success
     } catch (error) {
       console.error('Error saving coupon:', error);
+      console.error('Error details:', error.response?.data);
       
-      // Optimistically update the UI even if API fails
-      if (currentCoupon) {
-        const updatedCoupons = coupons.map(coupon => 
-          coupon.id === currentCoupon.id ? {...coupon, ...values} : coupon
-        );
-        setCoupons(updatedCoupons);
-        setFilteredCoupons(updatedCoupons);
-      } else {
-        const newCoupon = {
-          id: Math.max(...coupons.map(c => c.id), 0) + 1,
-          ...values
-        };
-        const updatedCoupons = [...coupons, newCoupon];
-        setCoupons(updatedCoupons);
-        setFilteredCoupons(updatedCoupons);
-        setTotalCoupons(updatedCoupons.length);
+      // Extract error message for user feedback
+      let errorMessage = 'An unknown error occurred';
+      
+      // Check for validation errors (Laravel format)
+      if (error.response?.data?.errors) {
+        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        errorMessage = `Validation error: ${errorMessages}`;
+        
+        setSnackbar({
+          open: true,
+          message: errorMessage,
+          severity: 'error'
+        });
+        return false; // Don't close the form on validation errors
       }
       
+      // Handle other API error messages
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // For local testing/development, update the UI optimistically
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Development mode: Optimistically updating UI despite API failure');
+        
+        if (currentCoupon) {
+          const updatedCoupons = coupons.map(coupon => 
+            coupon.id === currentCoupon.id ? {
+              ...coupon,
+              ...values,
+              // Format for display
+              discount_type: values.discount_type,
+              discount_value: values.discount_value,
+              is_active: values.is_active
+            } : coupon
+          );
+          setCoupons(updatedCoupons);
+          setFilteredCoupons(updatedCoupons);
+        } else {
+          const newCoupon = {
+            id: Math.max(...coupons.map(c => c.id || 0), 0) + 1,
+            ...values,
+            // Format for display
+            discount_type: values.discount_type,
+            discount_value: values.discount_value,
+            is_active: values.is_active
+          };
+          const updatedCoupons = [...coupons, newCoupon];
+          setCoupons(updatedCoupons);
+          setFilteredCoupons(updatedCoupons);
+          setTotalCoupons(updatedCoupons.length);
+        }
+        
+        setSnackbar({
+          open: true,
+          message: `Coupon saved locally (API update failed: ${errorMessage})`,
+          severity: 'warning'
+        });
+        
+        setOpenCouponForm(false);
+        return true; // Return success for development mode
+      }
+      
+      // In production, show error and don't close form
       setSnackbar({
         open: true,
-        message: `Coupon saved locally (API update failed)`,
-        severity: 'warning'
+        message: `Error: ${errorMessage}`,
+        severity: 'error'
       });
       
-      setOpenCouponForm(false);
-      return true; // Return success even if API fails
+      return false; // Don't close the form on API errors in production
     }
   };
 
@@ -389,16 +567,16 @@ const CouponManagement = () => {
                     <Chip label={coupon.code} variant="outlined" />
                   </TableCell>
                   <TableCell>
-                    {coupon.type === 'percentage' ? 'Percentage' : 'Fixed Amount'}
+                    {coupon.discount_type === 'percentage' ? 'Percentage' : 'Fixed Amount'}
                   </TableCell>
                   <TableCell>
-                    {coupon.type === 'percentage'
-                      ? `${coupon.discount}%`
-                      : `$${parseFloat(coupon.discount).toFixed(2)}`}
+                    {coupon.discount_type === 'percentage'
+                      ? `${coupon.discount_value}%`
+                      : `${parseFloat(coupon.discount_value).toFixed(2)}`}
                   </TableCell>
                   <TableCell>
-                    {coupon.min_purchase
-                      ? `$${parseFloat(coupon.min_purchase).toFixed(2)}`
+                    {coupon.min_order_amount
+                      ? `${parseFloat(coupon.min_order_amount).toFixed(2)}`
                       : 'None'}
                   </TableCell>
                   <TableCell>{formatDate(coupon.starts_at)}</TableCell>

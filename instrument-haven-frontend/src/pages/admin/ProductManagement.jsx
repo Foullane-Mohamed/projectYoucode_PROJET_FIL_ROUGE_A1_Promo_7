@@ -57,15 +57,15 @@ const ProductManagement = () => {
   const [filePreview, setFilePreview] = useState([]);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
 
-  // Get product image with fallback - using only product images
+  // Get product image with fallback - using local images
   const getProductImage = (product) => {
     if (product.thumbnail) {
-      return `${storageUrl}/${product.thumbnail}`;
+      return `/images/products/${product.thumbnail}`;
     } else if (product.images && product.images.length > 0) {
-      return `${storageUrl}/${product.images[0]}`;
+      return `/images/products/${product.images[0]}`;
     }
     
-    // Use placeholder image as fallback - ensuring we use product images, not category images
+    // Use placeholder image as fallback
     const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
@@ -137,12 +137,16 @@ const ProductManagement = () => {
 
   const handleOpenEditDialog = (product) => {
     setDialogMode('edit');
+    // Convert all category_id to string to match with <Select> value format
+    const categoryId = product.category_id ? product.category_id.toString() : '';
     setCurrentProduct({ 
-      ...product
+      ...product,
+      category_id: categoryId
     });
     setSelectedFiles([]);
     setFilePreview([]);
     setOpenDialog(true);
+    console.log('Opening edit dialog with category_id:', categoryId);
   };
 
   const handleOpenDeleteDialog = (product) => {
@@ -166,6 +170,11 @@ const ProductManagement = () => {
     // Create preview URLs
     const previews = files.map(file => URL.createObjectURL(file));
     setFilePreview(previews);
+    
+    // Log file information for debugging
+    files.forEach(file => {
+      console.log('Selected file:', file.name, 'Size:', file.size, 'Type:', file.type);
+    });
   };
 
   const handleInputChange = (e) => {
@@ -180,6 +189,30 @@ const ProductManagement = () => {
 
   const handleSaveProduct = async () => {
     try {
+      console.log('Current product data:', currentProduct); // Debug log
+
+      // Validate required fields
+      if (!currentProduct.name) {
+        toast.error('Product name is required');
+        return;
+      }
+      if (!currentProduct.description) {
+        toast.error('Product description is required');
+        return;
+      }
+      if (!currentProduct.price) {
+        toast.error('Product price is required');
+        return;
+      }
+      if (!currentProduct.stock) {
+        toast.error('Product stock is required');
+        return;
+      }
+      if (!currentProduct.category_id) {
+        toast.error('Product category is required');
+        return;
+      }
+
       // Create a FormData object to handle file uploads
       const formData = new FormData();
       
@@ -190,6 +223,9 @@ const ProductManagement = () => {
       formData.append('stock', currentProduct.stock);
       formData.append('category_id', currentProduct.category_id);
       
+      // Debug log - check what's being added to formData
+      console.log('Category ID being sent:', currentProduct.category_id);
+      
       if (currentProduct.brand) {
         formData.append('brand', currentProduct.brand);
       }
@@ -199,9 +235,7 @@ const ProductManagement = () => {
         formData.append('sale_price', currentProduct.sale_price);
         formData.append('on_sale', currentProduct.on_sale ? '1' : '0');
       }
-      
 
-      
       // Append specifications if available
       if (currentProduct.specifications) {
         formData.append('specifications', JSON.stringify(currentProduct.specifications));
@@ -214,14 +248,33 @@ const ProductManagement = () => {
       
       // Append images if there are any
       if (selectedFiles.length > 0) {
+        // Log the files being appended
+        console.log('Appending files to FormData:');
+        
         selectedFiles.forEach((file, index) => {
-          formData.append(`images[${index}]`, file);
+          // Use a consistent naming convention for files
+          const fileName = file.name.toLowerCase().replace(/\s+/g, '-');
+          console.log(`Appending file[${index}]:`, fileName);
+          
+          // Append with explicit file name to preserve the original file name
+          formData.append(`images[${index}]`, file, fileName);
+          
+          // Also save the original filename for reference
+          formData.append(`image_names[${index}]`, fileName);
         });
+        
+        // Add a flag to copy files to the public directory
+        formData.append('use_local_storage', 'true');
       }
       
       let response;
       // Use the admin API for product operations
       if (dialogMode === 'add') {
+        // Output the FormData content for debugging
+        for (let pair of formData.entries()) {
+          console.log(pair[0] + ': ' + pair[1]);
+        }
+
         response = await api.admin.createProduct(formData);
         toast.success('Product created successfully!');
         setSnackbar({
@@ -234,6 +287,18 @@ const ProductManagement = () => {
         if (selectedFiles.length > 0) {
           // Option to replace all existing images
           formData.append('replace_images', 'true');
+          // Add a flag for local storage in edit mode as well
+          formData.append('use_local_storage', 'true');
+        } else {
+          // If no new images, we want to keep existing filenames
+          formData.append('keep_existing_images', 'true');
+          
+          // Include existing image names if available
+          if (currentProduct.images && currentProduct.images.length > 0) {
+            currentProduct.images.forEach((image, index) => {
+              formData.append(`existing_images[${index}]`, image);
+            });
+          }
         }
         
         // Use the admin API for product update
@@ -476,8 +541,9 @@ const ProductManagement = () => {
                     onChange={handleInputChange}
                     label="Category"
                   >
+                    <MenuItem value="">Select a category</MenuItem>
                     {categories.map((category) => (
-                      <MenuItem key={category.id} value={category.id}>
+                      <MenuItem key={category.id} value={category.id.toString()}>
                         {category.name}
                       </MenuItem>
                     ))}
@@ -534,7 +600,7 @@ const ProductManagement = () => {
                           }}
                         >
                         <img
-                            src={`${storageUrl}/${image}`}
+                            src={`/images/products/${image}`}
                             alt={`Current ${index + 1}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {

@@ -14,7 +14,6 @@ use App\Repositories\Interfaces\OrderRepositoryInterface;
 use App\Repositories\Interfaces\WishlistRepositoryInterface;
 use App\Repositories\Interfaces\ReviewRepositoryInterface;
 use App\Repositories\Interfaces\CouponRepositoryInterface;
-use App\Repositories\Interfaces\TagRepositoryInterface;
 
 // Repositories
 use App\Repositories\BaseRepository;
@@ -26,7 +25,6 @@ use App\Repositories\OrderRepository;
 use App\Repositories\WishlistRepository;
 use App\Repositories\ReviewRepository;
 use App\Repositories\CouponRepository;
-use App\Repositories\TagRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
@@ -44,7 +42,6 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(WishlistRepositoryInterface::class, WishlistRepository::class);
         $this->app->bind(ReviewRepositoryInterface::class, ReviewRepository::class);
         $this->app->bind(CouponRepositoryInterface::class, CouponRepository::class);
-        $this->app->bind(TagRepositoryInterface::class, TagRepository::class);
     }
 
     /**

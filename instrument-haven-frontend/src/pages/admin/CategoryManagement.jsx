@@ -38,7 +38,6 @@ import {
 
 const CategoryManagement = () => {
   const [categories, setCategories] = useState([]);
-  const [parentCategories, setParentCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
@@ -147,30 +146,7 @@ const CategoryManagement = () => {
         setTotalItems(categoriesData.length);
       }
       
-      // Get all categories for parent dropdown (not paginated)
-      try {
-        const allCatsResponse = await api.categories.getAll();
-        let allCats = [];
-        
-        if (allCatsResponse.data?.data?.categories) {
-          allCats = Array.isArray(allCatsResponse.data.data.categories) 
-            ? allCatsResponse.data.data.categories 
-            : (allCatsResponse.data.data.categories.data || []);
-        } else if (allCatsResponse.data?.categories) {
-          allCats = Array.isArray(allCatsResponse.data.categories)
-            ? allCatsResponse.data.categories
-            : (allCatsResponse.data.categories.data || []);
-        } else if (Array.isArray(allCatsResponse.data)) {
-          allCats = allCatsResponse.data;
-        }
-        
-        // Filter parent categories (those with null parent_id)
-        const parentCats = allCats.filter(cat => !cat.parent_id);
-        setParentCategories(parentCats);
-      } catch (error) {
-        console.warn('Could not fetch parent categories:', error);
-        // Don't fail the whole operation if we can't get parent categories
-      }
+
       
       // Show a toast message only if it's the first successful load (not on pagination/search)
       if (!categoriesLoaded) {
@@ -199,8 +175,7 @@ const CategoryManagement = () => {
     setDialogMode('add');
     setCurrentCategory({
       name: '',
-      description: '',
-      parent_id: null
+      description: ''
     });
     setOpenDialog(true);
   };
@@ -229,7 +204,7 @@ const CategoryManagement = () => {
     const { name, value } = e.target;
     setCurrentCategory({
       ...currentCategory,
-      [name]: value === "" ? null : value
+      [name]: value
     });
   };
 
@@ -247,13 +222,7 @@ const CategoryManagement = () => {
       formData.append('name', currentCategory.name);
       formData.append('description', currentCategory.description || '');
       
-      // Handle parent_id (null or empty string means no parent)
-      if (currentCategory.parent_id) {
-        formData.append('parent_id', currentCategory.parent_id);
-      } else {
-        // Some APIs require explicit null for parent_id
-        formData.append('parent_id', '');
-      }
+
       
       // Check if we're uploading an image
       if (currentCategory.image && currentCategory.image instanceof File) {
@@ -443,7 +412,7 @@ const CategoryManagement = () => {
               <TableCell>Image</TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
-              <TableCell>Parent Category</TableCell>
+
               <TableCell>Actions</TableCell>
             </TableRow>
           </TableHead>
@@ -476,7 +445,7 @@ const CategoryManagement = () => {
                   </TableCell>
                   <TableCell>{category.name}</TableCell>
                   <TableCell>{category.description}</TableCell>
-                  <TableCell>{category.parent_id ? getCategoryName(category.parent_id) : 'None'}</TableCell>
+
                   <TableCell>
                     <IconButton
                       color="primary"
@@ -546,24 +515,7 @@ const CategoryManagement = () => {
               onChange={handleInputChange}
               sx={{ mb: 2 }}
             />
-            <FormControl fullWidth sx={{ mb: 2 }}>
-              <InputLabel>Parent Category</InputLabel>
-              <Select
-                name="parent_id"
-                value={currentCategory?.parent_id || ''}
-                onChange={handleInputChange}
-                label="Parent Category"
-              >
-                <MenuItem value="">None</MenuItem>
-                {parentCategories
-                  .filter(cat => cat.id !== currentCategory?.id) // Prevent selecting self as parent
-                  .map((category) => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
+
             
             {/* Image upload field */}
             <Box sx={{ mb: 2 }}>
@@ -622,7 +574,7 @@ const CategoryManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the category "{categoryToDelete?.name}"? This will also delete all subcategories and may affect products.
+            Are you sure you want to delete the category "{categoryToDelete?.name}"? This may affect products associated with this category.
           </Typography>
         </DialogContent>
         <DialogActions>

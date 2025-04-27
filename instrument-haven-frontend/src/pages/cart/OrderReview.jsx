@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Box,
@@ -7,25 +7,67 @@ import {
   Divider,
   Paper,
   Button,
-  TextField,
   CircularProgress,
-  Chip,
-  Alert,
   List,
   ListItem,
   ListItemText,
   ListItemAvatar,
   Avatar,
-  InputAdornment,
-  IconButton,
+  Chip,
 } from '@mui/material';
 import {
   LocalShipping as ShippingIcon,
   Payment as PaymentIcon,
-  LocalOffer as CouponIcon,
   Check as CheckIcon,
-  Close as CloseIcon,
 } from '@mui/icons-material';
+
+const ProductImage = ({ product }) => {
+  const [imageError, setImageError] = useState(false);
+  const [imageSrc, setImageSrc] = useState('/images/categories/placeholder.jpg');
+  
+  useEffect(() => {
+    if (product?.thumbnail) {
+      setImageSrc(`/images/products/${product.thumbnail}`);
+      setImageError(false);
+    } else if (product?.images && Array.isArray(product.images) && product.images.length > 0) {
+      setImageSrc(`/images/products/${product.images[0]}`);
+      setImageError(false);
+    } else {
+      setImageSrc('/images/categories/placeholder.jpg');
+    }
+  }, [product]);
+  
+  const handleError = () => {
+    setImageError(true);
+    setImageSrc('/images/categories/placeholder.jpg');
+  };
+  
+  return (
+    <Avatar
+      variant="rounded"
+      alt={product ? product.name : 'Product'}
+      src={imageError ? '/images/categories/placeholder.jpg' : imageSrc}
+      sx={{ 
+        width: 60, 
+        height: 60, 
+        mr: 2,
+        border: '1px solid #e0e0e0',
+        borderRadius: 2,
+        p: 1,
+        bgcolor: '#f5f7fa',
+      }}
+      imgProps={{
+        style: {
+          objectFit: 'contain',
+          width: '100%',
+          height: '100%',
+          padding: '4px',
+        },
+        onError: handleError
+      }}
+    />
+  );
+};
 
 const OrderReview = ({
   cart,
@@ -35,23 +77,11 @@ const OrderReview = ({
   subtotal = 0,
   discount = 0,
   total = 0,
-  couponCode,
   couponData,
-  onApplyCoupon,
-  onRemoveCoupon,
-  onCouponCodeChange,
   onBack,
   onPlaceOrder,
   loading,
 }) => {
-  const [applyingCoupon, setApplyingCoupon] = useState(false);
-  
-  const handleApplyCoupon = async () => {
-    setApplyingCoupon(true);
-    await onApplyCoupon(couponCode);
-    setApplyingCoupon(false);
-  };
-  
   const formatPaymentMethod = (method) => {
     switch (method) {
       case 'cash_on_delivery':
@@ -103,46 +133,49 @@ const OrderReview = ({
                 const itemPrice = item.price || (item.product ? item.product.price : 0) || 0;
                 return (
                   <ListItem
-                    key={item.id}
-                    alignItems="flex-start"
-                    sx={{ 
-                      px: 0,
-                      borderBottom: '1px solid',
-                      borderColor: 'divider',
-                      '&:last-child': { 
-                        borderBottom: 'none' 
-                      } 
-                    }}
-                  >
+                  key={item.id}
+                  alignItems="flex-start"
+                  sx={{ 
+                  px: 2,
+                  py: 1.5,
+                  borderBottom: '1px solid',
+                  borderColor: 'divider',
+                  '&:last-child': { 
+                    borderBottom: 'none' 
+                    },
+                      '&:hover': {
+                      bgcolor: 'rgba(0, 0, 0, 0.01)'
+                    }
+                  }}
+                >
                     <ListItemAvatar>
-                      <Avatar
-                        variant="rounded"
-                        alt={item.product ? item.product.name : 'Product'}
-                        src={item.product && item.product.thumbnail ? `${import.meta.env.VITE_STORAGE_URL}/${item.product.thumbnail}` : '/placeholder.png'}
-                        sx={{ width: 60, height: 60, mr: 1 }}
-                      />
+                      <ProductImage product={item.product} />
                     </ListItemAvatar>
                     <ListItemText
                       primary={
                         <Link 
                           to={`/products/${item.product_id}`} 
-                          style={{ textDecoration: 'none', color: 'inherit' }}
+                          style={{ textDecoration: 'none' }}
                         >
-                          <Typography variant="subtitle1" component="span">
+                          <Typography variant="subtitle1" component="span" sx={{ 
+                            fontWeight: 500,
+                            color: 'text.primary',
+                            '&:hover': { color: 'primary.main' }
+                          }}>
                             {item.product ? item.product.name : 'Product'}
                           </Typography>
                         </Link>
                       }
                       secondary={
                         <>
-                          <Typography component="span" variant="body2" color="text.secondary">
-                            Qty: {item.quantity || 1} × ${parseFloat(itemPrice).toFixed(2)}
+                          <Typography component="div" variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            Qty: {item.quantity || 1} × <span style={{ fontWeight: 500 }}>${parseFloat(itemPrice).toFixed(2)}</span>
                           </Typography>
                         </>
                       }
                       sx={{ mr: 2 }}
                     />
-                    <Typography variant="subtitle1" component="span">
+                    <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#FF2B52' }}>
                       ${((item.quantity || 1) * itemPrice).toFixed(2)}
                     </Typography>
                   </ListItem>
@@ -228,9 +261,27 @@ const OrderReview = ({
                   justifyContent: 'space-between', 
                   mb: 1 
                 }}>
-                  <Typography variant="body1">Discount:</Typography>
+                  <Typography variant="body1">
+                    Discount{couponData ? ` (${couponData.code})` : ''}:
+                  </Typography>
                   <Typography variant="body1" color="error">
                     -${safeDiscount.toFixed(2)}
+                  </Typography>
+                </Box>
+              )}
+              
+              {/* Show cart coupon discount if present */}
+              {!safeDiscount && cart && cart.discount > 0 && cart.coupon && (
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  mb: 1 
+                }}>
+                  <Typography variant="body1">
+                    Discount ({cart.coupon.code}):
+                  </Typography>
+                  <Typography variant="body1" color="error">
+                    -${Number(cart.discount).toFixed(2)}
                   </Typography>
                 </Box>
               )}
@@ -253,82 +304,10 @@ const OrderReview = ({
               }}>
                 <Typography variant="h6">Total:</Typography>
                 <Typography variant="h6" color="primary">
-                  ${safeTotal.toFixed(2)}
+                  ${(safeTotal > 0 ? safeTotal : (cart && cart.total ? cart.total : (safeSubtotal - (safeDiscount || (cart && cart.discount ? cart.discount : 0))))).toFixed(2)}
                 </Typography>
               </Box>
             </Box>
-            
-            {/* Apply Coupon */}
-            {!couponData ? (
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" gutterBottom>
-                  Apply Coupon Code
-                </Typography>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-                  <TextField
-                    size="small"
-                    placeholder="Enter coupon code"
-                    value={couponCode || ''}
-                    onChange={onCouponCodeChange}
-                    sx={{ flexGrow: 1, mr: 1 }}
-                    InputProps={{
-                      startAdornment: (
-                        <InputAdornment position="start">
-                          <CouponIcon fontSize="small" />
-                        </InputAdornment>
-                      ),
-                    }}
-                  />
-                  <Button
-                    variant="outlined"
-                    onClick={handleApplyCoupon}
-                    disabled={!(couponCode || '').trim() || applyingCoupon}
-                  >
-                    {applyingCoupon ? (
-                      <CircularProgress size={24} />
-                    ) : (
-                      'Apply'
-                    )}
-                  </Button>
-                </Box>
-              </Box>
-            ) : (
-              <Box sx={{ mt: 3 }}>
-                <Box sx={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'space-between',
-                  bgcolor: 'success.light',
-                  color: 'success.contrastText',
-                  borderRadius: 1,
-                  px: 2,
-                  py: 1
-                }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                    <CheckIcon sx={{ mr: 1 }} />
-                    <Typography variant="body2" component="div">
-                      Coupon applied: 
-                      <Box component="span" fontWeight="bold" sx={{ ml: 1 }}>
-                        {couponData.code}
-                      </Box>
-                      <Box component="div" fontSize="0.75rem">
-                        {couponData.type === 'percentage' 
-                          ? `${couponData.discount}% off`
-                          : `$${couponData.discount} off`
-                        }
-                      </Box>
-                    </Typography>
-                  </Box>
-                  <IconButton 
-                    size="small" 
-                    onClick={onRemoveCoupon}
-                    sx={{ color: 'inherit' }}
-                  >
-                    <CloseIcon fontSize="small" />
-                  </IconButton>
-                </Box>
-              </Box>
-            )}
             
             <Box sx={{ mt: 3 }}>
               <Button

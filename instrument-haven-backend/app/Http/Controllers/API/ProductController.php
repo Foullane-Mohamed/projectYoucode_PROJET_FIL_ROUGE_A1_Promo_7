@@ -62,11 +62,54 @@ class ProductController extends Controller
         try {
             $product = $this->productRepository->find($id);
             
-            // Load relationships
-            $product->load(['category', 'reviews.user', 'tags']);
+            if (!$product) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Product not found'
+                ], 404);
+            }
             
-            // Add average rating
-            $product->average_rating = $product->getAverageRatingAttribute();
+            // Load relationships
+            $product->load(['category', 'reviews.user']);
+            
+            // Add average rating - making sure method exists
+            $product->average_rating = 0;
+            if (method_exists($product, 'getAverageRatingAttribute')) {
+                $product->average_rating = $product->getAverageRatingAttribute();
+            }
+            
+            // Ensure images have correct paths for local storage
+            if ($product->images) {
+                // Handle string JSON if necessary
+                if (is_string($product->images)) {
+                    try {
+                        $product->images = json_decode($product->images, true);
+                    } catch (\Exception $e) {
+                        \Log::warning("Failed to decode product {$id} images JSON: " . $e->getMessage());
+                        $product->images = [];
+                    }
+                }
+                
+                if (is_array($product->images)) {
+                    $fixedImages = [];
+                    foreach ($product->images as $image) {
+                        if (is_string($image)) {
+                            // Keep only the filename part, removing any path information
+                            $fixedImages[] = basename($image);
+                        }
+                    }
+                    $product->images = $fixedImages;
+                } else {
+                    $product->images = [];
+                }
+            } else {
+                $product->images = [];
+            }
+            
+            if ($product->thumbnail) {
+                // Keep only the filename part, removing any path information
+                $product->thumbnail = basename($product->thumbnail);
+            }
             
             return response()->json([
                 'status' => 'success',
@@ -75,9 +118,10 @@ class ProductController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            report($e); // Log the error
             return response()->json([
                 'status' => 'error',
-                'message' => 'Product not found'
+                'message' => 'Product not found: ' . $e->getMessage()
             ], 404);
         }
     }

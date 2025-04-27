@@ -130,9 +130,9 @@ const ListProductCard = ({ product }) => {
           <img
             src={
               product.thumbnail
-                ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.thumbnail}`
+                ? `/images/products/${product.thumbnail}`
                 : (product.images && Array.isArray(product.images) && product.images.length > 0
-                  ? `${import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage'}/${product.images[0]}`
+                  ? `/images/products/${product.images[0]}`
                   : '/images/categories/placeholder.jpg')
             }
             alt={product.name || 'Product'}

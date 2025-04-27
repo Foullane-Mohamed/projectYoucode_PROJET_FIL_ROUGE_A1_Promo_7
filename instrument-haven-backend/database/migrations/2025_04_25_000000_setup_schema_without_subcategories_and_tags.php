@@ -11,19 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('tags', function (Blueprint $table) {
-            $table->id();
-            $table->string('name');
-            $table->string('slug')->unique();
-            $table->timestamps();
-        });
+        // No need to do anything in 'up' method
+        // The original migrations now create the correct schema without subcategories and tags
     }
 
     /**
      * Reverse the migrations.
+     * We don't need to do anything here, as this is just a marker migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('tags');
+        // No need to do anything in 'down' method
     }
 };

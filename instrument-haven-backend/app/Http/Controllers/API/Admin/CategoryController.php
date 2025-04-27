@@ -68,8 +68,7 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:categories',
             'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'parent_id' => 'nullable|integer|exists:categories,id'
+            'image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -80,8 +79,16 @@ class CategoryController extends Controller
             ], 422);
         }
 
-        $categoryData = $request->all();
+        $categoryData = $request->except('image');
         $categoryData['slug'] = Str::slug($request->name);
+        
+        // Handle image upload
+        if ($request->hasFile('image')) {
+            $image = $request->file('image');
+            $filename = time() . '_' . $image->getClientOriginalName();
+            $image->storeAs('public/categories', $filename);
+            $categoryData['image_url'] = 'categories/' . $filename;
+        }
         
         $category = $this->categoryRepository->create($categoryData);
         
@@ -106,8 +113,7 @@ class CategoryController extends Controller
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255|unique:categories,name,' . $id,
             'description' => 'nullable|string',
-            'image' => 'nullable|string',
-            'parent_id' => 'nullable|integer|exists:categories,id'
+            'image' => 'nullable|file|image|max:2048'
         ]);
 
         if ($validator->fails()) {
@@ -119,11 +125,19 @@ class CategoryController extends Controller
         }
 
         try {
-            $categoryData = $request->all();
+            $categoryData = $request->except('image');
             
             // Update slug if name is provided
             if (isset($categoryData['name'])) {
                 $categoryData['slug'] = Str::slug($categoryData['name']);
+            }
+            
+            // Handle image upload
+            if ($request->hasFile('image')) {
+                $image = $request->file('image');
+                $filename = time() . '_' . $image->getClientOriginalName();
+                $image->storeAs('public/categories', $filename);
+                $categoryData['image_url'] = 'categories/' . $filename;
             }
             
             $this->categoryRepository->update($categoryData, $id);
@@ -164,13 +178,7 @@ class CategoryController extends Controller
                 ], 400);
             }
             
-            // Check if category has subcategories
-            if ($category->subcategories()->count() > 0) {
-                return response()->json([
-                    'status' => 'error',
-                    'message' => 'Cannot delete category with subcategories'
-                ], 400);
-            }
+
             
             $this->categoryRepository->delete($id);
             

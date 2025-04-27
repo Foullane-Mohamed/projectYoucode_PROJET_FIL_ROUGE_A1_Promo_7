@@ -207,21 +207,21 @@ const HeroCarousel = () => {
   
   const heroSlides = [
     {
-      image: 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1600&h=900&fit=crop&q=80',
+      image: '/images/hero/hero-slide1.jpg',
       title: 'Find Your Perfect Sound',
       subtitle: 'Discover premium quality instruments for musicians of all levels',
       primaryAction: 'Shop Now',
       secondaryAction: 'Learn More'
     },
     {
-      image: 'https://images.unsplash.com/photo-1514119412350-e174d90d280e?w=1600&h=900&fit=crop&q=80',
+      image: '/images/hero/hero-slide2.jpg',
       title: 'Special Discounts',
       subtitle: 'Amazing deals on selected guitars, pianos, and other instruments',
       primaryAction: 'View Deals',
       secondaryAction: 'See All'
     },
     {
-      image: 'https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=1600&h=900&fit=crop&q=80',
+      image: '/images/hero/hero-slide3.jpg',
       title: 'Professional Quality',
       subtitle: 'Expert-curated collection of instruments for the discerning musician',
       primaryAction: 'Browse Collection',
@@ -473,11 +473,11 @@ const Home = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={4}>
           {loading ? (
             // Skeleton loading for categories
             Array(6).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={4} key={`category-skeleton-${index}`}>
+              <Grid item xs={12} sm={6} md={4} key={`category-skeleton-${index}`}>
                 <Skeleton variant="rectangular" height={180} sx={{ borderRadius: '16px', mb: 1 }} />
                 <Skeleton width="60%" height={24} />
               </Grid>
@@ -485,7 +485,7 @@ const Home = () => {
           ) : (
             // Actual categories
             categories.map((category) => (
-              <Grid item xs={12} sm={6} md={4} lg={4} key={category.id}>
+              <Grid item xs={12} sm={6} md={4} key={category.id}>
                 <Card 
                   sx={styles.categoryCard}
                   onClick={() => navigate(`/categories/${category.id}`)}
@@ -556,11 +556,11 @@ const Home = () => {
           </Typography>
         </Box>
 
-        <Grid container spacing={3}>
+        <Grid container spacing={4}>
           {loading ? (
             // Skeleton loading for products
             Array(8).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={3} key={`featured-skeleton-${index}`}>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={`featured-skeleton-${index}`}>
                 <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px', mb: 1 }} />
                 <Skeleton width="60%" height={24} sx={{ mb: 1 }} />
                 <Skeleton width="40%" height={20} sx={{ mb: 1 }} />
@@ -570,7 +570,7 @@ const Home = () => {
           ) : featuredProducts.length > 0 ? (
             // Actual featured products
             featuredProducts.map((product) => (
-              <Grid item xs={12} sm={6} md={3} key={product.id}>
+              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
                 <EnhancedProductCard product={product} />
               </Grid>
             ))
