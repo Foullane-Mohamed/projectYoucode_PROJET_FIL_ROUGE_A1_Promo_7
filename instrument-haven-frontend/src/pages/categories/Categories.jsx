@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import api from "../../services/api";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
+import { CATEGORY_IMAGES } from "../../components/common/constants";
 import {
   Container,
   Typography,
@@ -25,27 +26,35 @@ const Categories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
-  // Sample images for categories (in a real app, these would come from the API)
-  const categoryImages = {
-    "string": "https://images.unsplash.com/photo-1558098329-a11cff621064",
-    "percussion": "https://images.unsplash.com/photo-1543443258-92b04ad5ec4b",
-    "wind": "https://images.unsplash.com/photo-1573871669414-010dbf73ca84",
-    "keyboard": "https://images.unsplash.com/photo-1545293527-e26058c5b48b",
-    "electronic": "https://images.unsplash.com/photo-1598653222000-6b7b7a552625",
-    "default": "https://images.unsplash.com/photo-1511379938547-c1f69419868d"
-  };
-
   // Get an image URL based on category name or ID
   const getCategoryImage = (category) => {
-    const lowerName = category.name?.toLowerCase() || "";
+    if (!category || !category.name) return CATEGORY_IMAGES.default;
     
-    for (const [key, url] of Object.entries(categoryImages)) {
+    const lowerName = category.name.toLowerCase();
+    
+    // Specific instrument category mappings with direct paths
+    const specificCategoryMapping = {
+      "guitare": "/images/categories/guitar.jpg",
+      "violon": "/images/categories/string-instruments.jpg",
+      "violin": "/images/categories/string-instruments.jpg",
+      "piano": "/images/categories/piano.jpg",
+      "accordion": "/images/categories/keyboard.jpg",
+      "banjo": "/images/categories/banjo.jpg",
+    };
+    
+    // If we have a direct mapping for this category, use it
+    if (specificCategoryMapping[lowerName]) {
+      return specificCategoryMapping[lowerName];
+    }
+    
+    // Otherwise, check for partial matches in CATEGORY_IMAGES
+    for (const [key, url] of Object.entries(CATEGORY_IMAGES)) {
       if (lowerName.includes(key)) {
         return url;
       }
     }
     
-    return categoryImages.default;
+    return CATEGORY_IMAGES.default;
   };
 
   useEffect(() => {

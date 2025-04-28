@@ -92,8 +92,10 @@ Route::prefix('v1')->middleware(['cors'])->group(function () {
 
             // Users management
             Route::get('/users', [AdminUserController::class, 'index']);
+            Route::post('/users', [AdminUserController::class, 'store']);
             Route::get('/users/{id}', [AdminUserController::class, 'show']);
             Route::put('/users/{id}', [AdminUserController::class, 'update']);
+            Route::delete('/users/{id}', [AdminUserController::class, 'destroy']);
 
             // Orders management
             Route::get('/orders', [AdminOrderController::class, 'index']);

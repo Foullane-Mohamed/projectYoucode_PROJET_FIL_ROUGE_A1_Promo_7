@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\Rules\Password;
 
 class UserController extends Controller
 {
@@ -24,34 +25,33 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 15);
-        $page = $request->input('page', 1);
-        $search = $request->input('search');
+        $perPage = $request->input('per_page', 10);
+        $search = $request->input('search', '');
+        $role = $request->input('role', '');
+        $orderBy = $request->input('order_by', 'id');
+        $direction = $request->input('direction', 'asc');
         
-        $query = $this->userRepository->model->query();
-        
-        // Apply search if provided
-        if ($search) {
-            $query->where(function ($q) use ($search) {
-                $q->where('name', 'like', "%{$search}%")
-                  ->orWhere('email', 'like', "%{$search}%");
-            });
+        // Build filters array
+        $filters = [];
+        if (!empty($search)) {
+            $filters['search'] = $search;
+        }
+        if (!empty($role)) {
+            $filters['role'] = $role;
         }
         
-        $users = $query->paginate($perPage, ['id', 'name', 'email', 'role', 'created_at']);
+        // Get paginated users with filters
+        $users = $this->userRepository->paginateWithFilters(
+            $perPage,
+            $filters,
+            $orderBy,
+            $direction
+        );
         
         return response()->json([
             'status' => 'success',
             'data' => [
-                'users' => $users->items(),
-                'pagination' => [
-                    'total' => $users->total(),
-                    'per_page' => $users->perPage(),
-                    'current_page' => $users->currentPage(),
-                    'last_page' => $users->lastPage(),
-                    'from' => $users->firstItem(),
-                    'to' => $users->lastItem()
-                ]
+                'users' => $users
             ]
         ]);
     }
@@ -66,7 +66,6 @@ class UserController extends Controller
     {
         try {
             $user = $this->userRepository->find($id);
-            $user->load('orders');
             
             return response()->json([
                 'status' => 'success',
@@ -83,6 +82,42 @@ class UserController extends Controller
     }
 
     /**
+     * Store a newly created user.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\Response
+     */
+    public function store(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users',
+            'password' => ['required', Password::defaults()],
+            'role' => 'required|in:admin,customer',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Validation error',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        $userData = $request->only(['name', 'email', 'password', 'role']);
+        
+        $user = $this->userRepository->createUser($userData);
+        
+        return response()->json([
+            'status' => 'success',
+            'message' => 'User created successfully',
+            'data' => [
+                'user' => $user
+            ]
+        ], 201);
+    }
+
+    /**
      * Update the specified user.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -92,9 +127,10 @@ class UserController extends Controller
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
-            'name' => 'string|max:255',
-            'role' => 'string|in:customer,admin',
-            'is_active' => 'boolean'
+            'name' => 'sometimes|string|max:255',
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $id,
+            'password' => ['sometimes', 'nullable', Password::defaults()],
+            'role' => 'sometimes|in:admin,customer',
         ]);
 
         if ($validator->fails()) {
@@ -106,7 +142,9 @@ class UserController extends Controller
         }
 
         try {
-            $this->userRepository->update($request->all(), $id);
+            $userData = $request->only(['name', 'email', 'password', 'role']);
+            
+            $this->userRepository->updateUser($userData, $id);
             
             $user = $this->userRepository->find($id);
             
@@ -116,6 +154,29 @@ class UserController extends Controller
                 'data' => [
                     'user' => $user
                 ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'User not found'
+            ], 404);
+        }
+    }
+
+    /**
+     * Remove the specified user.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function destroy($id)
+    {
+        try {
+            $this->userRepository->delete($id);
+            
+            return response()->json([
+                'status' => 'success',
+                'message' => 'User deleted successfully'
             ]);
         } catch (\Exception $e) {
             return response()->json([

@@ -234,7 +234,7 @@ const OrderConfirmation = ({
         <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography variant="h6">Total:</Typography>
           <Typography variant="h6" color="primary">
-            ${(finalPrice > 0 ? finalPrice : (cart && cart.total ? cart.total : totalPrice - (cart && cart.discount ? cart.discount : 0))).toFixed(2)}
+            ${(totalPrice - (discountAmount > 0 ? discountAmount : (cart && cart.discount ? cart.discount : 0))).toFixed(2)}
           </Typography>
         </Box>
         

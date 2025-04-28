@@ -14,12 +14,17 @@ export const PRODUCT_IMAGES = [
 export const CATEGORY_IMAGES = {
   "string": "/images/categories/string-instruments.jpg",
   "guitar": "/images/categories/guitar.jpg",
+  "guitare": "/images/categories/guitar.jpg",
   "percussion": "/images/categories/percussion.jpg",
   "drums": "/images/categories/drums.jpg",
   "wind": "/images/categories/wind-instruments.jpg",
   "brass": "/images/categories/brass.jpg",
   "keyboard": "/images/categories/keyboard.jpg",
   "piano": "/images/categories/piano.jpg",
+  "violon": "/images/categories/violon.jpg",
+  "violin": "/images/categories/violon.jpg",
+  "accordion": "/images/categories/accordion.jpg",
+  "banjo": "/images/categories/banjo.jpg",
   "electronic": "/images/categories/electronic.jpg",
   "default": "/images/categories/music-instruments.jpg"
 };
@@ -36,6 +41,12 @@ export const getCategoryImage = (category) => {
   
   const lowerName = category.name.toLowerCase();
   
+  // Direct match by exact name (more specific)
+  if (CATEGORY_IMAGES[lowerName]) {
+    return CATEGORY_IMAGES[lowerName];
+  }
+  
+  // Partial match (less specific, fallback)
   for (const [key, url] of Object.entries(CATEGORY_IMAGES)) {
     if (lowerName.includes(key)) {
       return url;

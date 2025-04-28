@@ -65,13 +65,26 @@ class ProductController extends Controller
                 // Use original filename if requested, otherwise generate a timestamp-based name
                 $filename = $useLocalStorage 
                     ? $originalFilename 
-                    : time() . '_' . $image->getClientOriginalName();
+                    : time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
                 
                 // Remove spaces and special characters in filename
                 $filename = preg_replace('/[^a-zA-Z0-9_.-]/', '-', $filename);
                 
-                // Store the file in public/storage
-                $image->storeAs('public/products', $filename);
+                // Store the file properly using public disk
+                $path = $image->storeAs('products', $filename, 'public');
+                
+                // Set image_url for direct access - this is the primary image source path
+                if (!isset($productData['image_url']) && $index === 0) {
+                    $productData['image_url'] = $path;
+                }
+                
+                // Log image upload details
+                \Log::info('Product image uploaded:', [
+                    'product' => $request->name,
+                    'filename' => $filename,
+                    'path' => $path,
+                    'image_url' => $productData['image_url'] ?? 'not set'
+                ]);
                 
                 // If using local storage, also copy to public/images/products
                 if ($useLocalStorage) {
@@ -164,13 +177,26 @@ class ProductController extends Controller
                     // Use original filename if requested, otherwise generate a timestamp-based name
                     $filename = $useLocalStorage 
                         ? $originalFilename 
-                        : time() . '_' . $image->getClientOriginalName();
+                        : time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
                     
                     // Remove spaces and special characters in filename
                     $filename = preg_replace('/[^a-zA-Z0-9_.-]/', '-', $filename);
                     
-                    // Store the file in public/storage
-                    $image->storeAs('public/products', $filename);
+                    // Store the file properly using public disk
+                    $path = $image->storeAs('products', $filename, 'public');
+                    
+                    // Set image_url for direct access - this is the primary image source path
+                    if (!isset($productData['image_url']) && $index === 0) {
+                        $productData['image_url'] = $path;
+                    }
+                    
+                    // Log image upload details
+                    \Log::info('Product image uploaded:', [
+                        'product_id' => $id,
+                        'filename' => $filename,
+                        'path' => $path,
+                        'image_url' => $productData['image_url'] ?? 'not set'
+                    ]);
                     
                     // If using local storage, also copy to public/images/products
                     if ($useLocalStorage) {

@@ -200,7 +200,9 @@ const adminAPI = {
   
   getUsers: (params) => api.get('/admin/users', { params }),
   getUser: (id) => api.get(`/admin/users/${id}`),
+  createUser: (data) => api.post('/admin/users', data),
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
+  deleteUser: (id) => api.delete(`/admin/users/${id}`),
   
   getOrders: (params) => {
     return api.get('/admin/orders', { params })
@@ -250,7 +252,8 @@ const adminAPI = {
       console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
     }
     
-    return api.put(`/admin/products/${id}`, formData, {
+    // Use POST with _method=PUT to ensure proper handling of multipart form data
+    return api.post(`/admin/products/${id}?_method=PUT`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
@@ -278,7 +281,13 @@ const adminAPI = {
   },
   updateCategory: (id, data) => {
     if (data instanceof FormData) {
-      return api.put(`/admin/categories/${id}`, data, {
+      // Log FormData contents for debugging
+      console.log('FormData contents for updateCategory:');
+      for (let pair of data.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
+      }
+      
+      return api.post(`/admin/categories/${id}?_method=PUT`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
     }

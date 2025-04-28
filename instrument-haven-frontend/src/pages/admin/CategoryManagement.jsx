@@ -46,12 +46,19 @@ const CategoryManagement = () => {
   const [categoryToDelete, setCategoryToDelete] = useState(null);
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
   
+  // Function to construct correct image URL
+  const getCategoryImageUrl = (imageUrl) => {
+    if (!imageUrl) return null;
+    if (imageUrl.startsWith('http')) return imageUrl;
+    return `${storageUrl}/${imageUrl}`;
+  };
+  
   // Pagination and filtering state
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
   const [searchTerm, setSearchTerm] = useState('');
-  // Simplified state without additional filters
+  // Category management state
   const [orderBy] = useState('id');
   const [direction] = useState('asc');
   // Track if categories have been loaded
@@ -70,6 +77,7 @@ const CategoryManagement = () => {
   }, []); // Only fetch on initial component mount
 
   const fetchCategories = async (currentPage = page, currentRowsPerPage = rowsPerPage, currentSearchTerm = searchTerm) => {
+    console.log('Fetching categories...');
     setLoading(true);
     try {
       // Build params for API request
@@ -89,12 +97,7 @@ const CategoryManagement = () => {
       let response;
       try {
         response = await api.admin.getCategories(params);
-        
-        // Log the successful response for debugging
-        console.log('Categories API response:', response);
-        
       } catch (adminApiError) {
-        console.warn('Admin API getCategories failed, trying regular API:', adminApiError);
         // Fall back to regular categories API if admin API fails
         response = await api.categories.getAll(params);
       }
@@ -132,7 +135,6 @@ const CategoryManagement = () => {
       
       // Safety check - ensure we have an array
       if (!Array.isArray(categoriesData)) {
-        console.warn('Categories data is not an array, defaulting to empty array');
         categoriesData = [];
       }
       
@@ -219,12 +221,16 @@ const CategoryManagement = () => {
       let formData;
       // Always use FormData for consistency with API
       formData = new FormData();
-      formData.append('name', currentCategory.name);
-      formData.append('description', currentCategory.description || '');
       
-
+      // Add all fields from current category
+      Object.keys(currentCategory).forEach(key => {
+        // Skip the image field as we'll handle it separately
+        if (key !== 'image' && key !== 'image_url' && typeof currentCategory[key] !== 'object') {
+          formData.append(key, currentCategory[key] || '');
+        }
+      });
       
-      // Check if we're uploading an image
+      // Check if we're uploading a new image
       if (currentCategory.image && currentCategory.image instanceof File) {
         formData.append('image', currentCategory.image);
       }
@@ -233,7 +239,6 @@ const CategoryManagement = () => {
       if (dialogMode === 'add') {
         // Use the admin API for creating a new category
         response = await api.admin.createCategory(formData);
-        console.log('Create category response:', response);
         
         toast.success('Category created successfully!');
         setSnackbar({
@@ -280,7 +285,6 @@ const CategoryManagement = () => {
     try {
       // Use the admin API for deleting a category
       const response = await api.admin.deleteCategory(categoryToDelete.id);
-      console.log('Category deleted, response:', response);
       
       // Filter out the deleted category from the current list
       setCategories(categories.filter(category => category.id !== categoryToDelete.id));
@@ -432,7 +436,7 @@ const CategoryManagement = () => {
                     >
                       <img
                         src={category.image_url 
-                          ? `${storageUrl}/${category.image_url}` 
+                          ? getCategoryImageUrl(category.image_url) 
                           : getCategoryImage({name: category.name})}
                         alt={category.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
@@ -534,7 +538,7 @@ const CategoryManagement = () => {
                   }
                 }}
               />
-              {dialogMode === 'edit' && currentCategory?.image_url && (
+              {dialogMode === 'edit' && (
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="subtitle2" gutterBottom>
                     Current Image:
@@ -542,7 +546,7 @@ const CategoryManagement = () => {
                   <Box
                     component="img"
                     src={currentCategory?.image_url
-                      ? `${storageUrl}/${currentCategory.image_url}`
+                      ? getCategoryImageUrl(currentCategory.image_url)
                       : getCategoryImage({name: currentCategory?.name || ''})}
                     alt="Category image"
                     sx={{ 
@@ -556,6 +560,11 @@ const CategoryManagement = () => {
                       e.target.src = getCategoryImage({name: currentCategory?.name || ''});
                     }}
                   />
+                  {currentCategory?.image_url && (
+                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                      Image path: {currentCategory.image_url}
+                    </Typography>
+                  )}
                 </Box>
               )}
             </Box>

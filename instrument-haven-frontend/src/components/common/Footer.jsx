@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Box, Container, Grid, Typography, Link, Divider, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, InputAdornment, Chip } from '@mui/material';
+import { Box, Container, Grid, Typography, Link, Divider, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, InputAdornment } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
 import { 
   Facebook, 
@@ -56,10 +56,6 @@ const Footer = () => {
     { name: 'Shipping Policy', path: '/shipping' },
     { name: 'Return Policy', path: '/returns' },
     { name: 'FAQs', path: '/faq' }
-  ];
-
-  const paymentMethods = [
-    'Visa', 'MasterCard', 'PayPal', 'Apple Pay', 'Google Pay'
   ];
 
   return (
@@ -198,19 +194,19 @@ const Footer = () => {
                 <Box sx={{ display: 'flex', mb: 2 }}>
                   <LocationOn sx={{ color: theme.palette.primary.main, mr: 2 }} />
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    123 Music Street, Harmony City, HC 12345
+                    Agadir International Airport, Morocco
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', mb: 2 }}>
                   <Phone sx={{ color: theme.palette.primary.main, mr: 2 }} />
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    +1 (123) 456-7890
+                    +212 647932975
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex' }}>
                   <Email sx={{ color: theme.palette.primary.main, mr: 2 }} />
                   <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-                    info@instrumenthaven.com
+                    mohamedfoullane4@gmail.com
                   </Typography>
                 </Box>
               </Box>
@@ -398,7 +394,7 @@ const Footer = () => {
                     Monday - Friday:
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
-                    9:00 AM - 8:00 PM
+                    9:00 AM - 6:00 PM
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
@@ -406,7 +402,7 @@ const Footer = () => {
                     Saturday:
                   </Typography>
                   <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
-                    10:00 AM - 6:00 PM
+                    10:00 AM - 4:00 PM
                   </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -417,45 +413,6 @@ const Footer = () => {
                     Closed
                   </Typography>
                 </Box>
-              </Box>
-              
-              <Typography 
-                variant="h6" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 600, 
-                  mb: 3,
-                  mt: 4,
-                  position: 'relative',
-                  '&:after': {
-                    content: '""',
-                    position: 'absolute',
-                    left: 0,
-                    bottom: -8,
-                    width: 40,
-                    height: 2,
-                    backgroundColor: theme.palette.primary.main,
-                  }
-                }}
-              >
-                Payment Methods
-              </Typography>
-              
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                {paymentMethods.map((method) => (
-                  <Chip 
-                    key={method}
-                    label={method}
-                    sx={{ 
-                      bgcolor: 'rgba(255,255,255,0.1)',
-                      color: 'white',
-                      fontWeight: 500,
-                      '&:hover': { 
-                        bgcolor: 'rgba(255,255,255,0.15)' 
-                      } 
-                    }}
-                  />
-                ))}
               </Box>
             </Grid>
           </Grid>
@@ -475,48 +432,13 @@ const Footer = () => {
           <Grid 
             container 
             alignItems="center" 
-            justifyContent="space-between"
+            justifyContent="center"
             spacing={2}
           >
-            <Grid item xs={12} md={6}>
-              <Typography variant="body2" textAlign={{ xs: 'center', md: 'left' }}>
+            <Grid item xs={12}>
+              <Typography variant="body2" textAlign="center">
                 © {new Date().getFullYear()} Instrument Haven. All rights reserved.
               </Typography>
-            </Grid>
-            <Grid 
-              item 
-              xs={12} 
-              md={6} 
-              sx={{ 
-                display: 'flex', 
-                justifyContent: { xs: 'center', md: 'flex-end' },
-                gap: 2
-              }}
-            >
-              <Link 
-                underline="hover"
-                component={RouterLink}
-                to="/privacy"
-                sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}
-              >
-                Privacy Policy
-              </Link>
-              <Link 
-                underline="hover"
-                component={RouterLink}
-                to="/terms"
-                sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}
-              >
-                Terms of Service
-              </Link>
-              <Link 
-                underline="hover"
-                component={RouterLink}
-                to="/sitemap"
-                sx={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.875rem' }}
-              >
-                Sitemap
-              </Link>
             </Grid>
           </Grid>
         </Container>

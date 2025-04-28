@@ -207,14 +207,14 @@ const HeroCarousel = () => {
   
   const heroSlides = [
     {
-      image: '/images/hero/hero-slide1.jpg',
+      image: '/images/hero/AHWACH.jpg',
       title: 'Find Your Perfect Sound',
       subtitle: 'Discover premium quality instruments for musicians of all levels',
       primaryAction: 'Shop Now',
       secondaryAction: 'Learn More'
     },
     {
-      image: '/images/hero/hero-slide2.jpg',
+      image: '/images/hero/gnawa.jpg',
       title: 'Special Discounts',
       subtitle: 'Amazing deals on selected guitars, pianos, and other instruments',
       primaryAction: 'View Deals',

@@ -69,9 +69,41 @@ const ProductManagement = () => {
     const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
+  
+  // Function to get product image URL with enhanced path handling
+  const getProductImageUrl = (product) => {
+    // Debug the image properties for this product
+    console.log(`Product ID: ${product.id}, Image URL: ${product.image_url}, Images: ${JSON.stringify(product.images)}, Thumbnail: ${product.thumbnail}`);
+    
+    // Check for direct image_url first (new format)
+    if (product.image_url) {
+      // Normalize path - ensure it doesn't have double slashes
+      const normalizedPath = product.image_url.replace(/^\/+/, '');
+      // Add cache-busting parameter to ensure fresh image
+      return `${storageUrl}/${normalizedPath}?t=${Date.now()}`;
+    }
+    
+    // Next check for the thumbnail or first image in the images array (old format)
+    if (product.thumbnail) {
+      return `/images/products/${product.thumbnail}`;
+    } else if (product.images && product.images.length > 0) {
+      return `/images/products/${product.images[0]}`;
+    }
+    
+    // Use fallback placeholder image based on product ID
+    const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
+    return PRODUCT_IMAGES[index];
+  };
 
   useEffect(() => {
     fetchProducts();
+    
+    // Clean console logs after a few seconds
+    const timer = setTimeout(() => {
+      console.clear();
+    }, 5000);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   const fetchProducts = async () => {
@@ -216,26 +248,24 @@ const ProductManagement = () => {
       // Create a FormData object to handle file uploads
       const formData = new FormData();
       
-      // Append text fields
-      formData.append('name', currentProduct.name);
-      formData.append('description', currentProduct.description);
-      formData.append('price', currentProduct.price);
-      formData.append('stock', currentProduct.stock);
-      formData.append('category_id', currentProduct.category_id);
+      // Add all fields from current product
+      Object.keys(currentProduct).forEach(key => {
+        // Skip complex objects and image-related fields as we'll handle them separately
+        if (!['image', 'image_url', 'images', 'thumbnail', 'specifications', 'attributes'].includes(key) && 
+            typeof currentProduct[key] !== 'object') {
+          // For boolean values, convert to 1 or 0
+          if (typeof currentProduct[key] === 'boolean') {
+            formData.append(key, currentProduct[key] ? '1' : '0');
+          } else if (currentProduct[key] !== null && currentProduct[key] !== undefined) {
+            formData.append(key, currentProduct[key]);
+          }
+        }
+      });
       
       // Debug log - check what's being added to formData
       console.log('Category ID being sent:', currentProduct.category_id);
       
-      if (currentProduct.brand) {
-        formData.append('brand', currentProduct.brand);
-      }
-      
-      // Handle sale price and on_sale status
-      if (currentProduct.sale_price) {
-        formData.append('sale_price', currentProduct.sale_price);
-        formData.append('on_sale', currentProduct.on_sale ? '1' : '0');
-      }
-
+      // Handle special fields and objects separately
       // Append specifications if available
       if (currentProduct.specifications) {
         formData.append('specifications', JSON.stringify(currentProduct.specifications));
@@ -428,7 +458,7 @@ const ProductManagement = () => {
                       }}
                     >
                       <img
-                        src={getProductImage(product)}
+                        src={getProductImageUrl(product)}
                         alt={product.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
@@ -600,7 +630,7 @@ const ProductManagement = () => {
                           }}
                         >
                         <img
-                            src={`/images/products/${image}`}
+                            src={product.image_url ? `${storageUrl}/${product.image_url}?t=${Date.now()}` : `/images/products/${image}`}
                             alt={`Current ${index + 1}`}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                             onError={(e) => {

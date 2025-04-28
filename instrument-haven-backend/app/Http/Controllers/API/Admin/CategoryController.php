@@ -85,9 +85,11 @@ class CategoryController extends Controller
         // Handle image upload
         if ($request->hasFile('image')) {
             $image = $request->file('image');
-            $filename = time() . '_' . $image->getClientOriginalName();
-            $image->storeAs('public/categories', $filename);
-            $categoryData['image_url'] = 'categories/' . $filename;
+            $filename = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
+            
+            // Store the image properly
+            $path = $image->storeAs('categories', $filename, 'public');
+            $categoryData['image_url'] = $path;
         }
         
         $category = $this->categoryRepository->create($categoryData);
@@ -110,6 +112,9 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Log incoming request data for debugging
+        \Log::info('Category update request data:', $request->all());
+        
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255|unique:categories,name,' . $id,
             'description' => 'nullable|string',
@@ -117,6 +122,7 @@ class CategoryController extends Controller
         ]);
 
         if ($validator->fails()) {
+            \Log::error('Category validation failed:', $validator->errors()->toArray());
             return response()->json([
                 'status' => 'error',
                 'message' => 'Validation error',
@@ -125,6 +131,10 @@ class CategoryController extends Controller
         }
 
         try {
+            // Find current category for reference
+            $existingCategory = $this->categoryRepository->find($id);
+            
+            // Get data except image
             $categoryData = $request->except('image');
             
             // Update slug if name is provided
@@ -132,12 +142,17 @@ class CategoryController extends Controller
                 $categoryData['slug'] = Str::slug($categoryData['name']);
             }
             
+            // Log update data
+            \Log::info('Category update data prepared:', $categoryData);
+            
             // Handle image upload
             if ($request->hasFile('image')) {
                 $image = $request->file('image');
-                $filename = time() . '_' . $image->getClientOriginalName();
-                $image->storeAs('public/categories', $filename);
-                $categoryData['image_url'] = 'categories/' . $filename;
+                $filename = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
+                
+                // Store the image properly
+                $path = $image->storeAs('categories', $filename, 'public');
+                $categoryData['image_url'] = $path;
             }
             
             $this->categoryRepository->update($categoryData, $id);
