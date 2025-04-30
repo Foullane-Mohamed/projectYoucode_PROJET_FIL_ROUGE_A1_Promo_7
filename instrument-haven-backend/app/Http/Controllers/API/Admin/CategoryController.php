@@ -65,6 +65,10 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
+        // Log the complete request for debugging
+        \Log::info('Category create request:', $request->all());
+        \Log::info('Files in request:', $request->allFiles());
+        
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255|unique:categories',
             'description' => 'nullable|string',
@@ -84,12 +88,26 @@ class CategoryController extends Controller
         
         // Handle image upload
         if ($request->hasFile('image')) {
-            $image = $request->file('image');
-            $filename = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
-            
-            // Store the image properly
-            $path = $image->storeAs('categories', $filename, 'public');
-            $categoryData['image_url'] = $path;
+            try {
+                $image = $request->file('image');
+                
+                // Create a simple, unique filename with timestamp
+                $timestamp = time();
+                $extension = $image->getClientOriginalExtension();
+                $filename = "category_{$timestamp}_{$request->name}.{$extension}";
+                
+                // Store in the public disk
+                $path = $image->storeAs('categories', $filename, 'public');
+                
+                // Log successful upload
+                \Log::info("Image stored successfully at: {$path}");
+                
+                // Set the image_url - set only the path part without 'public/'
+                $categoryData['image_url'] = $path;
+            } catch (\Exception $e) {
+                \Log::error("Failed to store image: " . $e->getMessage());
+                \Log::error($e->getTraceAsString());
+            }
         }
         
         $category = $this->categoryRepository->create($categoryData);
@@ -112,8 +130,9 @@ class CategoryController extends Controller
      */
     public function update(Request $request, $id)
     {
-        // Log incoming request data for debugging
-        \Log::info('Category update request data:', $request->all());
+        // Log the complete request for debugging
+        \Log::info("Category update request for ID {$id}:", $request->all());
+        \Log::info('Files in update request:', $request->allFiles());
         
         $validator = Validator::make($request->all(), [
             'name' => 'string|max:255|unique:categories,name,' . $id,
@@ -142,17 +161,29 @@ class CategoryController extends Controller
                 $categoryData['slug'] = Str::slug($categoryData['name']);
             }
             
-            // Log update data
-            \Log::info('Category update data prepared:', $categoryData);
-            
             // Handle image upload
             if ($request->hasFile('image')) {
-                $image = $request->file('image');
-                $filename = time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
-                
-                // Store the image properly
-                $path = $image->storeAs('categories', $filename, 'public');
-                $categoryData['image_url'] = $path;
+                try {
+                    $image = $request->file('image');
+                    
+                    // Create a simple, unique filename with timestamp and ID
+                    $timestamp = time();
+                    $categoryName = isset($categoryData['name']) ? $categoryData['name'] : $existingCategory->name;
+                    $extension = $image->getClientOriginalExtension();
+                    $filename = "category_{$timestamp}_{$id}_{$categoryName}.{$extension}";
+                    
+                    // Store in the public disk
+                    $path = $image->storeAs('categories', $filename, 'public');
+                    
+                    // Log successful upload
+                    \Log::info("Update image stored successfully at: {$path}");
+                    
+                    // Set the image_url - set only the path part without 'public/'
+                    $categoryData['image_url'] = $path;
+                } catch (\Exception $e) {
+                    \Log::error("Failed to store update image: " . $e->getMessage());
+                    \Log::error($e->getTraceAsString());
+                }
             }
             
             $this->categoryRepository->update($categoryData, $id);
@@ -167,9 +198,12 @@ class CategoryController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
+            \Log::error("Error updating category: " . $e->getMessage());
+            \Log::error($e->getTraceAsString());
+            
             return response()->json([
                 'status' => 'error',
-                'message' => 'Category not found'
+                'message' => 'Category not found or update failed'
             ], 404);
         }
     }

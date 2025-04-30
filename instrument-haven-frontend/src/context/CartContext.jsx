@@ -124,7 +124,7 @@ export const CartProvider = ({ children }) => {
           }
           
           // Calculate subtotal
-          const subtotal = newItems.reduce((sum, item) => sum + item.total, 0);
+          const subtotal = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
           
           toast.success('Product added to cart');
           return {
@@ -161,7 +161,7 @@ export const CartProvider = ({ children }) => {
         // If user is not logged in, handle cart locally
         setCart(prevCart => {
           const newItems = (prevCart.items || []).filter(item => item.id !== itemId);
-          const subtotal = newItems.reduce((sum, item) => sum + item.total, 0);
+          const subtotal = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
           
           toast.success('Item removed from cart');
           return {
@@ -204,13 +204,13 @@ export const CartProvider = ({ children }) => {
         setCart(prevCart => {
           const newItems = (prevCart.items || []).map(item => {
             if (item.id === itemId) {
-              const newTotal = item.price * quantity;
+              const newTotal = (item.price || 0) * quantity;
               return { ...item, quantity, total: newTotal };
             }
             return item;
           });
           
-          const subtotal = newItems.reduce((sum, item) => sum + item.total, 0);
+          const subtotal = newItems.reduce((sum, item) => sum + ((item.price || 0) * (item.quantity || 0)), 0);
           
           return {
             ...prevCart,

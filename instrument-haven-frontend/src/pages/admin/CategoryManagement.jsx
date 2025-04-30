@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../services/api';
 import { toast } from 'react-toastify';
 import { getCategoryImage } from '../../components/common/constants';
+import { buildStorageUrl, addCacheBuster, isImagePath } from '../../utils/imageUtils';
 import {
   Typography,
   Box,
@@ -49,8 +50,18 @@ const CategoryManagement = () => {
   // Function to construct correct image URL
   const getCategoryImageUrl = (imageUrl) => {
     if (!imageUrl) return null;
-    if (imageUrl.startsWith('http')) return imageUrl;
-    return `${storageUrl}/${imageUrl}`;
+    
+    // If it's not a valid image path, use the default image
+    if (!isImagePath(imageUrl)) {
+      console.warn('Invalid image path:', imageUrl);
+      return null;
+    }
+    
+    // Build the storage URL with proper formatting
+    const url = buildStorageUrl(imageUrl, storageUrl);
+    
+    // Add cache buster to prevent browser caching
+    return addCacheBuster(url);
   };
   
   // Pagination and filtering state
@@ -73,6 +84,7 @@ const CategoryManagement = () => {
 
   useEffect(() => {
     fetchCategories();
+    console.log('Storage URL for images:', storageUrl);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // Only fetch on initial component mount
 
@@ -137,6 +149,14 @@ const CategoryManagement = () => {
       if (!Array.isArray(categoriesData)) {
         categoriesData = [];
       }
+      
+      // Log all image URLs to debug
+      categoriesData.forEach(category => {
+        if (category.image_url) {
+          console.log('Category image URL:', category.name, category.image_url);
+          console.log('Full image URL:', getCategoryImageUrl(category.image_url));
+        }
+      });
       
       // Set state with fetched data
       setCategories(categoriesData);
@@ -218,46 +238,45 @@ const CategoryManagement = () => {
         return;
       }
 
-      let formData;
-      // Always use FormData for consistency with API
-      formData = new FormData();
+      // Always use FormData for file uploads
+      const formData = new FormData();
       
-      // Add all fields from current category
-      Object.keys(currentCategory).forEach(key => {
-        // Skip the image field as we'll handle it separately
-        if (key !== 'image' && key !== 'image_url' && typeof currentCategory[key] !== 'object') {
-          formData.append(key, currentCategory[key] || '');
-        }
-      });
+      // Add basic fields
+      formData.append('name', currentCategory.name || '');
+      formData.append('description', currentCategory.description || '');
+      
+      // Add ID for edit mode
+      if (dialogMode === 'edit' && currentCategory.id) {
+        formData.append('id', currentCategory.id);
+      }
       
       // Check if we're uploading a new image
       if (currentCategory.image && currentCategory.image instanceof File) {
+        console.log('Uploading image:', currentCategory.image.name, 'size:', currentCategory.image.size, 'bytes');
         formData.append('image', currentCategory.image);
+      } else {
+        console.log('No new image selected');
+      }
+
+      // Log all FormData entries for debugging
+      console.log('FormData contents:');
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ': ' + (pair[1] instanceof File ? 
+          `File: ${pair[1].name} (${pair[1].size} bytes)` : pair[1]));
       }
 
       let response;
       if (dialogMode === 'add') {
-        // Use the admin API for creating a new category
+        console.log('Creating new category...');
         response = await api.admin.createCategory(formData);
-        
         toast.success('Category created successfully!');
-        setSnackbar({
-          open: true,
-          message: 'Category created successfully!',
-          severity: 'success'
-        });
       } else {
-        // Use the admin API for updating a category
+        console.log('Updating category ID:', currentCategory.id);
         response = await api.admin.updateCategory(currentCategory.id, formData);
-        console.log('Update category response:', response);
-        
         toast.success('Category updated successfully!');
-        setSnackbar({
-          open: true,
-          message: 'Category updated successfully!',
-          severity: 'success'
-        });
       }
+      
+      console.log('API response:', response);
       
       // Refresh the category list
       fetchCategories();
@@ -432,17 +451,23 @@ const CategoryManagement = () => {
                         height: 60,
                         overflow: 'hidden',
                         borderRadius: 1,
+                        border: '1px solid #ddd',
+                        backgroundColor: '#f5f5f5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                     >
                       <img
                         src={category.image_url 
-                          ? getCategoryImageUrl(category.image_url) 
-                          : getCategoryImage({name: category.name})}
+                          ? `${storageUrl}/${category.image_url}` 
+                          : '/images/categories/music-instruments.jpg'}
                         alt={category.name}
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                         onError={(e) => {
+                          console.error('Image failed to load:', e.target.src);
                           e.target.onerror = null; // Prevent infinite error loop
-                          e.target.src = getCategoryImage({name: category.name});
+                          e.target.src = '/images/categories/music-instruments.jpg';
                         }}
                       />
                     </Box>
@@ -546,18 +571,20 @@ const CategoryManagement = () => {
                   <Box
                     component="img"
                     src={currentCategory?.image_url
-                      ? getCategoryImageUrl(currentCategory.image_url)
-                      : getCategoryImage({name: currentCategory?.name || ''})}
+                      ? `${storageUrl}/${currentCategory.image_url}` 
+                      : '/images/categories/music-instruments.jpg'}
                     alt="Category image"
                     sx={{ 
                       width: 100, 
                       height: 100, 
                       objectFit: 'cover',
-                      borderRadius: 1 
+                      borderRadius: 1,
+                      border: '1px solid #ddd',
                     }}
                     onError={(e) => {
+                      console.error('Dialog image failed to load:', e.target.src);
                       e.target.onerror = null; // Prevent infinite error loop
-                      e.target.src = getCategoryImage({name: currentCategory?.name || ''});
+                      e.target.src = '/images/categories/music-instruments.jpg';
                     }}
                   />
                   {currentCategory?.image_url && (

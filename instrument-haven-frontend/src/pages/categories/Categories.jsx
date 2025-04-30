@@ -28,6 +28,12 @@ const Categories = () => {
   
   // Get an image URL based on category name or ID
   const getCategoryImage = (category) => {
+    // First check if the category has an image_url from the server
+    if (category && category.image_url) {
+      const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
+      return `${storageUrl}/${category.image_url}`;
+    }
+    
     if (!category || !category.name) return CATEGORY_IMAGES.default;
     
     const lowerName = category.name.toLowerCase();
@@ -191,6 +197,11 @@ const Categories = () => {
                             height: '100%',
                             objectFit: 'cover'
                           }}
+                          onError={(e) => {
+                            console.error('Featured category image failed to load:', e.target.src);
+                            e.target.onerror = null; // Prevent infinite error loop
+                            e.target.src = CATEGORY_IMAGES.default;
+                          }}
                         />
                       </Box>
                       <CardContent sx={{ flexGrow: 1, p: 2 }}>
@@ -282,6 +293,11 @@ const Categories = () => {
                             src={getCategoryImage(category)}
                             alt={category.name}
                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                            onError={(e) => {
+                              console.error('All categories image failed to load:', e.target.src);
+                              e.target.onerror = null; // Prevent infinite error loop
+                              e.target.src = CATEGORY_IMAGES.default;
+                            }}
                           />
                         </Box>
                         <Box sx={{ flexGrow: 1 }}>

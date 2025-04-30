@@ -268,7 +268,7 @@ const Cart = () => {
                     </TableCell>
                     <TableCell align="right">
                       <Typography variant="body1" sx={{ fontWeight: 700, color: '#FF2B52' }}>
-                        ${Number(item.total).toFixed(2)}
+                        ${(item.quantity * Number(item.price || 0)).toFixed(2)}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">

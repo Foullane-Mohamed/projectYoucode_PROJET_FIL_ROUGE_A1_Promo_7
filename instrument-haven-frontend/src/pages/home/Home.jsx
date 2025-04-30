@@ -393,6 +393,11 @@ const Home = () => {
 
   // Helper function to get a valid category image
   const getCategoryImage = (category) => {
+    if (category && category.image_url) {
+      const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
+      return `${storageUrl}/${category.image_url}`;
+    }
+    
     if (!category || !category.name) return CATEGORY_IMAGES.default;
     
     const lowerName = category.name.toLowerCase();
@@ -496,6 +501,11 @@ const Home = () => {
                       image={getCategoryImage(category)}
                       alt={category.name}
                       sx={styles.categoryImage}
+                      onError={(e) => {
+                        console.error('Home category image failed to load:', e.target.src);
+                        e.target.onerror = null; // Prevent infinite error loop
+                        e.target.src = CATEGORY_IMAGES.default;
+                      }}
                     />
                     <Typography variant="h6" component="h3" sx={styles.categoryTitle}>
                       {category.name}
