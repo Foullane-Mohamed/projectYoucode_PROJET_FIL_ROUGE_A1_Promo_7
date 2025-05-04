@@ -149,10 +149,8 @@ const CouponManagement = () => {
       } else {
         setCoupons(MOCK_COUPONS);
         setFilteredCoupons(MOCK_COUPONS);
-        console.warn("No coupons found in API response, using mock data");
       }
     } catch (error) {
-      console.error("Error fetching coupons:", error);
       setCoupons(MOCK_COUPONS);
       setFilteredCoupons(MOCK_COUPONS);
       setSnackbar({
@@ -209,7 +207,6 @@ const CouponManagement = () => {
             formattedCoupon.starts_at = startDate;
           } else {
             formattedCoupon.starts_at = new Date();
-            console.warn("Invalid start date format, using current date");
           }
         } else {
           formattedCoupon.starts_at = new Date();
@@ -223,9 +220,6 @@ const CouponManagement = () => {
             formattedCoupon.expires_at = new Date(
               new Date().setMonth(new Date().getMonth() + 1)
             );
-            console.warn(
-              "Invalid expiry date format, using current date + 1 month"
-            );
           }
         } else {
           formattedCoupon.expires_at = new Date(
@@ -233,18 +227,15 @@ const CouponManagement = () => {
           );
         }
       } catch (dateError) {
-        console.error("Error parsing dates:", dateError);
         formattedCoupon.starts_at = new Date();
         formattedCoupon.expires_at = new Date(
           new Date().setMonth(new Date().getMonth() + 1)
         );
       }
 
-      console.log("Editing coupon:", formattedCoupon);
       setCurrentCoupon(formattedCoupon);
       setOpenCouponForm(true);
     } catch (error) {
-      console.error("Error formatting coupon for edit:", error);
       setSnackbar({
         open: true,
         message: "Error preparing coupon for editing. Please try again.",
@@ -301,8 +292,6 @@ const CouponManagement = () => {
 
   const handleSubmitCoupon = async (values) => {
     try {
-      console.log("Submitting coupon values:", values);
-
       const formattedCoupon = {
         code: values.code,
         discount_type: values.discount_type,
@@ -325,8 +314,6 @@ const CouponManagement = () => {
           : null,
       };
 
-      console.log("Sending to API:", formattedCoupon);
-
       const useMockData = false;
 
       if (currentCoupon) {
@@ -335,7 +322,6 @@ const CouponManagement = () => {
             currentCoupon.id,
             formattedCoupon
           );
-          console.log("Update coupon response:", response);
         }
 
         const updatedCoupons = coupons.map((coupon) =>
@@ -362,7 +348,6 @@ const CouponManagement = () => {
         if (!useMockData) {
           try {
             const response = await api.admin.createCoupon(formattedCoupon);
-            console.log("Create coupon response:", response);
 
             if (response.data?.data?.coupon?.id) {
               newCouponId = response.data.data.coupon.id;
@@ -370,7 +355,7 @@ const CouponManagement = () => {
               newCouponId = response.data.data.id;
             }
           } catch (error) {
-            console.error("API error, using local ID:", error);
+            // Fallback to local ID
           }
         }
 
@@ -405,9 +390,6 @@ const CouponManagement = () => {
       setOpenCouponForm(false);
       return true;
     } catch (error) {
-      console.error("Error saving coupon:", error);
-      console.error("Error details:", error.response?.data);
-
       let errorMessage = "An unknown error occurred";
 
       if (error.response?.data?.errors) {
@@ -431,10 +413,6 @@ const CouponManagement = () => {
       }
 
       if (process.env.NODE_ENV === "development") {
-        console.warn(
-          "Development mode: Optimistically updating UI despite API failure"
-        );
-
         if (currentCoupon) {
           const updatedCoupons = coupons.map((coupon) =>
             coupon.id === currentCoupon.id
