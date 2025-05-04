@@ -22,7 +22,7 @@ const AdminRoute = ({ children }) => {
   }
 
   if (!user || !isAdmin()) {
-    // Redirect to home if not admin
+
     return <Navigate to="/" replace />;
   }
 

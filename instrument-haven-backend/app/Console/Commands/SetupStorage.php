@@ -8,18 +8,10 @@ use Illuminate\Support\Facades\File;
 
 class SetupStorage extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+
     protected $signature = 'app:setup-storage';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+
     protected $description = 'Setup storage symbolic links and create needed directories';
 
     /**

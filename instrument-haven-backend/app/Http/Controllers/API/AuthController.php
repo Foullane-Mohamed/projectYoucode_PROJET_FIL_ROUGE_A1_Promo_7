@@ -19,12 +19,6 @@ class AuthController extends Controller
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Register a new user
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function register(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -67,12 +61,7 @@ class AuthController extends Controller
         ], 201);
     }
 
-    /**
-     * Login user
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function login(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -109,12 +98,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get authenticated user
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function user(Request $request)
     {
         return response()->json([
@@ -125,12 +109,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Update user profile
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function updateProfile(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -163,12 +142,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout user
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function logout(Request $request)
     {
         $request->user()->tokens()->delete();

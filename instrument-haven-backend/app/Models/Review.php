@@ -9,11 +9,7 @@ class Review extends Model
 {
     use HasFactory;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+
     protected $fillable = [
         'user_id',
         'product_id',
@@ -21,34 +17,23 @@ class Review extends Model
         'comment',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'rating' => 'integer',
     ];
 
-    /**
-     * Get the user that owns the review
-     */
+  
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get the product that owns the review
-     */
+
     public function product()
     {
         return $this->belongsTo(Product::class);
     }
 
-    /**
-     * Get the user name
-     */
+
     public function getUserNameAttribute()
     {
         return $this->user->name;

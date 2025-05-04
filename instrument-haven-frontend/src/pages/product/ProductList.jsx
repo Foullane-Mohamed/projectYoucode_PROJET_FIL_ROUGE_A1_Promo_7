@@ -2,8 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import ErrorBoundary from "../../components/common/ErrorBoundary";
 import { useLocation, useNavigate, useParams, Link } from "react-router-dom";
 import api from "../../services/api";
-import ProductCard from "../../components/common/ProductCard";
-import ListProductCard from "../../components/common/ListProductCard";
 import EnhancedProductCard from "../../components/common/EnhancedProductCard";
 import EnhancedListProductCard from "../../components/common/EnhancedListProductCard";
 import { getCategoryImage } from "../../components/common/constants";

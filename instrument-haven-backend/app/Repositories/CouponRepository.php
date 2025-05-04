@@ -4,22 +4,25 @@ namespace App\Repositories;
 
 use App\Models\Coupon;
 use App\Repositories\Interfaces\CouponRepositoryInterface;
+use App\Services\Interfaces\CouponServiceInterface;
 
 class CouponRepository extends BaseRepository implements CouponRepositoryInterface
 {
-    /**
-     * Set model
-     */
+    protected $couponService;
+
+    public function __construct(CouponServiceInterface $couponService)
+    {
+        parent::__construct();
+        $this->couponService = $couponService;
+    }
+
+
     public function setModel()
     {
         $this->model = new Coupon();
     }
 
-    /**
-     * Get active coupons
-     * 
-     * @return mixed
-     */
+
     public function getActive()
     {
         return $this->model
@@ -28,25 +31,12 @@ class CouponRepository extends BaseRepository implements CouponRepositoryInterfa
             ->whereDate('expires_at', '>=', now())
             ->get();
     }
-    
-    /**
-     * Find coupon by code
-     * 
-     * @param string $code
-     * @return mixed
-     */
+
     public function findByCode($code)
     {
         return $this->model->where('code', $code)->first();
     }
-    
-    /**
-     * Validate coupon
-     * 
-     * @param string $code
-     * @param float $subtotal
-     * @return mixed
-     */
+
     public function validateCoupon($code, $subtotal = null)
     {
         $coupon = $this->findByCode($code);
@@ -55,15 +45,10 @@ class CouponRepository extends BaseRepository implements CouponRepositoryInterfa
             return false;
         }
         
-        return $coupon->isValid($subtotal);
+        return $this->couponService->isValid($coupon, $subtotal);
     }
     
-    /**
-     * Increment usage count
-     * 
-     * @param int $id
-     * @return mixed
-     */
+
     public function incrementUsageCount($id)
     {
         $coupon = $this->find($id);

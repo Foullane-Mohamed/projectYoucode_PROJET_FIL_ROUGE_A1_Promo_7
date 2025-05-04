@@ -16,12 +16,6 @@ class WishlistController extends Controller
         $this->wishlistRepository = $wishlistRepository;
     }
 
-    /**
-     * Get the user's wishlist.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
     public function index(Request $request)
     {
         $wishlist = $this->wishlistRepository->getByUserId($request->user()->id);
@@ -34,12 +28,7 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Add a product to the wishlist.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+    
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -75,13 +64,7 @@ class WishlistController extends Controller
         ]);
     }
 
-    /**
-     * Remove a product from the wishlist.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $productId
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy(Request $request, $productId)
     {
         $removed = $this->wishlistRepository->removeProduct(

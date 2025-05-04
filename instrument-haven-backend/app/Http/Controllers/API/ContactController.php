@@ -10,12 +10,7 @@ use Illuminate\Support\Facades\Validator;
 
 class ContactController extends Controller
 {
-    /**
-     * Submit contact form.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function submit(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -33,7 +28,6 @@ class ContactController extends Controller
             ], 422);
         }
 
-        // Send email to specified address
         try {
             Mail::to(config('mail.admin_email'))->send(new ContactFormMail($request->all()));
             

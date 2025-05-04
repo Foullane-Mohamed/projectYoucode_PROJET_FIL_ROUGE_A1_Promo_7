@@ -20,34 +20,23 @@ class DashboardController extends Controller
         $this->orderRepository = $orderRepository;
     }
 
-    /**
-     * Get dashboard statistics
-     *
-     * @return \Illuminate\Http\Response
-     */
+  
     public function statistics()
     {
-        // Get total sales
         $totalSales = Order::sum('total');
         
-        // Get total orders
         $totalOrders = Order::count();
         
-        // Get total products
         $totalProducts = Product::count();
         
-        // Get total categories
         $totalCategories = Category::count();
         
-        // Get total users
         $totalUsers = User::count();
         
-        // Get recent orders
         $recentOrders = Order::orderBy('created_at', 'desc')
             ->take(5)
             ->get(['id', 'order_number', 'total', 'status', 'created_at']);
         
-        // Get sales by date for the last 7 days
         $salesByDate = Order::select(
                 DB::raw('DATE(created_at) as date'),
                 DB::raw('SUM(total) as total')
@@ -60,7 +49,6 @@ class DashboardController extends Controller
                 return [$item->date => $item->total];
             });
         
-        // Fill in missing dates
         $labels = [];
         $data = [];
         
@@ -70,7 +58,6 @@ class DashboardController extends Controller
             $data[] = $salesByDate[$date] ?? 0;
         }
         
-        // Get top selling products
         $topSellingProducts = DB::table('order_items')
             ->select(
                 'product_id',

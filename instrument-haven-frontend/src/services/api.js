@@ -1,95 +1,23 @@
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { getData } from '../utils/fileSystem';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
-
-console.log('API URL configured as:', API_URL);
+const API_URL = 'http://localhost:8000/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
-  },
-  withCredentials: true
-});
-
-
-
-async function getCsrfToken() {
-  try {
-    await axios.get(`${API_URL}/csrf-cookie`, {
-      withCredentials: true
-    });
-  } catch (error) {
-    toast.error('Failed to set up secure session. Please refresh the page.');
   }
-}
-
-getCsrfToken();
-
+});
 
 api.interceptors.request.use(
   async (config) => {
-    if (
-      (config.url === '/auth/login' || config.url === '/auth/register') &&
-      (config.method === 'post' || config.method === 'POST')
-    ) {
-      await getCsrfToken();
-    }
-    
-    const token = localStorage.getItem('token');
+    const token = getData('token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
-    
-  
-    
     return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
-
-
-api.interceptors.response.use(
-  (response) => {
-    console.log('API Response:', response.config.url, response.status, response.data);
-    if (response.data === null || response.data === undefined) {
-      return {
-        ...response,
-        data: { status: 'success', data: {} }
-      };
-    }
-    return response;
-  },
-  (error) => {
-    console.error('API Error:', error.config?.url, error.response?.status, error.message);
-    
-    if (!error.response) {
-      toast.error('Network error. This could be due to CORS issues or server unavailability. Please check your connection and try again.');
-      return Promise.reject(error);
-    }
-
-    if (error.response) {
-      const { status, data } = error.response;
-      
-      
-      if (status === 401) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
-      } else if (status === 403) {
-        toast.error('Access forbidden. You may not have permission to perform this action.');
-      } else if (status === 429) {
-        toast.error('Too many requests. Please try again later.');
-      }
-    }
-    return Promise.reject(error);
   }
 );
 
@@ -146,14 +74,7 @@ const categoriesAPI = {
 
 const wishlistAPI = {
   getAll: () => {
-    console.log('Fetching wishlist data from:', `${API_URL}/wishlist`);
-    return api.get('/wishlist').then(response => {
-      console.log('Wishlist API response:', response);
-      return response;
-    }).catch(error => {
-      console.error('Wishlist API error:', error.response || error.message);
-      throw error;
-    });
+    return api.get('/wishlist');
   },
   add: (productId) => api.post('/wishlist', { product_id: productId }),
   remove: (productId) => api.delete(`/wishlist/${productId}`),
@@ -204,28 +125,8 @@ const adminAPI = {
   updateUser: (id, data) => api.put(`/admin/users/${id}`, data),
   deleteUser: (id) => api.delete(`/admin/users/${id}`),
   
-  getOrders: (params) => {
-    return api.get('/admin/orders', { params })
-      .then(response => {
-        return response;
-      })
-      .catch(error => {
-        throw error;
-      });
-  },
-  updateOrder: (id, data) => {
-    if (data.status) {
-      const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'cancelled'];
-    
-    }
-    return api.put(`/admin/orders/${id}`, data)
-      .then(response => {
-        return response;
-      })
-      .catch(error => {
-        throw error;
-      });
-  },
+  getOrders: (params) => api.get('/admin/orders', { params }),
+  updateOrder: (id, data) => api.put(`/admin/orders/${id}`, data),
   getOrderStatistics: () => api.get('/admin/orders/statistics'),
   
   getCoupons: (params) => api.get('/admin/coupons', { params }),
@@ -233,26 +134,13 @@ const adminAPI = {
   updateCoupon: (id, data) => api.put(`/admin/coupons/${id}`, data),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
   
-  getProducts: (params) => api.get('/products', { params }), // Fallback to public endpoint
+  getProducts: (params) => api.get('/products', { params }),
   createProduct: (formData) => {
-    // Log the FormData contents for debugging
-    console.log('FormData contents for createProduct:');
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
-    }
-    
     return api.post('/admin/products', formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
   },
   updateProduct: (id, formData) => {
-    // Log the FormData contents for debugging
-    console.log('FormData contents for updateProduct:');
-    for (let pair of formData.entries()) {
-      console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
-    }
-    
-    // Use POST with _method=PUT to ensure proper handling of multipart form data
     return api.post(`/admin/products/${id}?_method=PUT`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     });
@@ -266,10 +154,7 @@ const adminAPI = {
     };
     const mergedParams = { ...defaultParams, ...params };
     
-    return api.get('/admin/categories', { params: mergedParams })
-      .catch(error => {
-        return api.get('/categories', { params: mergedParams });
-      });
+    return api.get('/admin/categories', { params: mergedParams });
   },
   createCategory: (data) => {
     if (data instanceof FormData) {
@@ -281,12 +166,6 @@ const adminAPI = {
   },
   updateCategory: (id, data) => {
     if (data instanceof FormData) {
-      // Log FormData contents for debugging
-      console.log('FormData contents for updateCategory:');
-      for (let pair of data.entries()) {
-        console.log(pair[0] + ': ' + (pair[1] instanceof File ? `File: ${pair[1].name}` : pair[1]));
-      }
-      
       return api.post(`/admin/categories/${id}?_method=PUT`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });

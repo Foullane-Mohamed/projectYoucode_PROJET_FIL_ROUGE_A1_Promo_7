@@ -1,16 +1,12 @@
-// Constants for product and category images
-
-// Product image constants - Using local images
 export const PRODUCT_IMAGES = [
-  "/images/products/electric-guitar.jpg", // Electric guitar
-  "/images/products/piano.jpg", // Piano
-  "/images/products/drums.jpg", // Drums 
-  "/images/products/trumpet.jpg", // Trumpet
-  "/images/products/acoustic-guitar.jpg", // Acoustic guitar
-  "/images/products/violin.jpg" // Violin
+  "/images/products/electric-guitar.jpg",
+  "/images/products/piano.jpg",
+  "/images/products/drums.jpg",
+  "/images/products/trumpet.jpg",
+  "/images/products/acoustic-guitar.jpg",
+  "/images/products/violin.jpg"
 ];
 
-// Category image constants - Using local images
 export const CATEGORY_IMAGES = {
   "string": "/images/categories/string-instruments.jpg",
   "guitar": "/images/categories/guitar.jpg",
@@ -29,24 +25,20 @@ export const CATEGORY_IMAGES = {
   "default": "/images/categories/music-instruments.jpg"
 };
 
-// Get an image URL for a product based on product ID
 export const getProductImage = (productId) => {
   const index = (productId % PRODUCT_IMAGES.length) || 0;
   return PRODUCT_IMAGES[index];
 };
 
-// Get an image URL for a category based on its name
 export const getCategoryImage = (category) => {
   if (!category || !category.name) return CATEGORY_IMAGES.default;
   
   const lowerName = category.name.toLowerCase();
   
-  // Direct match by exact name (more specific)
   if (CATEGORY_IMAGES[lowerName]) {
     return CATEGORY_IMAGES[lowerName];
   }
   
-  // Partial match (less specific, fallback)
   for (const [key, url] of Object.entries(CATEGORY_IMAGES)) {
     if (lowerName.includes(key)) {
       return url;

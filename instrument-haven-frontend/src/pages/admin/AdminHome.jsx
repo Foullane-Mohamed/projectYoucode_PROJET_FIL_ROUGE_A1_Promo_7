@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import api from '../../services/api';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import api from "../../services/api";
 import {
   Typography,
   Grid,
@@ -8,27 +8,27 @@ import {
   Card,
   CardContent,
   CircularProgress,
-  Paper,
   useTheme,
-  Avatar,
   Button,
-  Chip,
-  IconButton,
-  Tooltip,
-} from '@mui/material';
-import {
-  PeopleAlt as PeopleIcon,
-  ShoppingCart as CartIcon,
-  Inventory as InventoryIcon,
-  Category as CategoryIcon,
-  TrendingUp as ArrowUpIcon,
-  Autorenew as AutorenewIcon,
-  TrendingUp as TrendingUpIcon,
-  Visibility as VisibilityIcon,
-} from '@mui/icons-material';
+  useMediaQuery,
+  alpha,
+  linearProgressClasses,
+  LinearProgress,
+  styled
+} from "@mui/material";
+import { Box as EmojiIcon } from "@mui/material";
 
-// Mock chart data 
-const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'];
+const BorderLinearProgress = styled(LinearProgress)(({ theme, color }) => ({
+  height: 4,
+  borderRadius: 2,
+  [`&.${linearProgressClasses.colorPrimary}`]: {
+    backgroundColor: alpha(color, 0.1),
+  },
+  [`& .${linearProgressClasses.bar}`]: {
+    borderRadius: 2,
+    backgroundColor: color,
+  },
+}));
 
 const AdminHome = () => {
   const [stats, setStats] = useState({
@@ -39,37 +39,51 @@ const AdminHome = () => {
   });
   const [loading, setLoading] = useState(true);
   const theme = useTheme();
-  
-  // Helper function to get color based on order status
-  const getStatusColor = (status) => {
-    switch (status?.toLowerCase()) {
-      case 'pending':
-        return 'warning';
-      case 'processing':
-        return 'info';
-      case 'completed':
-      case 'delivered':
-        return 'success';
-      case 'cancelled':
-      case 'canceled':
-        return 'error';
-      default:
-        return 'default';
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const cardSchemes = [
+    {
+      name: "products",
+      mainColor: "#FF2B52",
+      icon: "🎹",
+      title: "Total Products",
+      progressValue: 70
+    },
+    {
+      name: "categories",
+      mainColor: "#6B46C1",
+      icon: "📁",
+      title: "Total Categories",
+      progressValue: 85
+    },
+    {
+      name: "orders",
+      mainColor: "#F59E0B", 
+      icon: "🛒",
+      title: "Total Orders",
+      progressValue: 45
+    },
+    {
+      name: "users",
+      mainColor: "#0EA5E9",
+      icon: "👥",
+      title: "Total Users",
+      progressValue: 60
     }
-  };
+  ];
 
   useEffect(() => {
     const fetchStats = async () => {
       setLoading(true);
       try {
-        // Fetch dashboard statistics from the admin API
         const dashboardResponse = await api.admin.getDashboard();
-        console.log('Dashboard response:', dashboardResponse);
+        console.log("Dashboard response:", dashboardResponse);
 
-        // Extract data from the response, handling both potential formats
-        const dashboardData = dashboardResponse.data?.data?.statistics || dashboardResponse.data?.statistics || {};
-        
-        // Set the statistics with proper fallbacks
+        const dashboardData =
+          dashboardResponse.data?.data?.statistics ||
+          dashboardResponse.data?.statistics ||
+          {};
+
         setStats({
           products: dashboardData.total_products || 0,
           categories: dashboardData.total_categories || 0,
@@ -77,21 +91,24 @@ const AdminHome = () => {
           users: dashboardData.total_users || 0,
         });
       } catch (error) {
-        console.error('Error fetching admin stats:', error);
-        // Try to fetch individual stats if dashboard endpoint fails
+        console.error("Error fetching admin stats:", error);
         try {
           const products = await api.products.getAll();
           const categories = await api.categories.getAll();
-          const productCount = products.data?.data?.total || products.data?.meta?.total || 0;
-          const categoryCount = categories.data?.data?.categories?.length || categories.data?.categories?.length || 0;
-          
-          setStats(prev => ({
+          const productCount =
+            products.data?.data?.total || products.data?.meta?.total || 0;
+          const categoryCount =
+            categories.data?.data?.categories?.length ||
+            categories.data?.categories?.length ||
+            0;
+
+          setStats((prev) => ({
             ...prev,
             products: productCount,
-            categories: categoryCount
+            categories: categoryCount,
           }));
         } catch (fallbackError) {
-          console.error('Fallback stats fetching failed:', fallbackError);
+          console.error("Fallback stats fetching failed:", fallbackError);
         }
       } finally {
         setLoading(false);
@@ -105,15 +122,15 @@ const AdminHome = () => {
     return (
       <Box
         sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          minHeight: '400px',
+          display: "flex",
+          flexDirection: "column",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "400px",
         }}
       >
-        <CircularProgress size={60} sx={{ color: 'primary.main' }} />
-        <Typography variant="h6" sx={{ mt: 2, color: 'text.secondary' }}>
+        <CircularProgress size={60} sx={{ color: "primary.main" }} />
+        <Typography variant="h6" sx={{ mt: 2, color: "text.secondary" }}>
           Loading Dashboard...
         </Typography>
       </Box>
@@ -123,289 +140,134 @@ const AdminHome = () => {
   return (
     <Box>
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h4" component="h1" sx={{ fontWeight: 700, color: '#1a1a2e' }}>
+        <Typography
+          variant={isMobile ? "h5" : "h4"}
+          component="h1"
+          sx={{
+            fontWeight: 700,
+            color: "#1a1a2e",
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
+          }}
+        >
           Dashboard
         </Typography>
-        <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 1 }}>
+        <Typography
+          variant="subtitle1"
+          color="text.secondary"
+          sx={{
+            mt: 1,
+            fontSize: { xs: "0.875rem", sm: "1rem" },
+          }}
+        >
           Welcome to your Instrument Haven Admin Dashboard
         </Typography>
       </Box>
-      
-      {/* Statistic Cards */}
+
       <Grid container spacing={3}>
-        {/* Products Card */}
-        <Grid item xs={12} sm={6} lg={3}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'transform 0.3s',
-            '&:hover': { 
-              transform: 'translateY(-5px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
-            }
-          }}>
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              height: '4px', 
-              bgcolor: 'primary.main' 
-            }} />
-            
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    Total Products
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                    {stats.products}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: 'primary.main', 
-                    boxShadow: '0 4px 12px rgba(255, 43, 82, 0.3)',
-                    p: 1.5
+        {cardSchemes.map((scheme) => (
+          <Grid item xs={12} sm={6} lg={3} key={scheme.name}>
+            <Card
+              sx={{
+                borderRadius: 2,
+                boxShadow: "rgba(149, 157, 165, 0.1) 0px 8px 24px",
+                background: "#fff",
+                height: "100%",
+                position: "relative",
+                overflow: "hidden",
+                transition: "all 0.3s ease",
+                border: "1px solid rgba(231, 231, 238, 0.8)",
+                "&:hover": {
+                  boxShadow: "rgba(0, 0, 0, 0.1) 0px 5px 15px",
+                },
+              }}
+            >
+              <CardContent sx={{ p: 3, position: "relative" }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
                   }}
                 >
-                  <InventoryIcon />
-                </Avatar>
-              </Box>
-              <Button 
-                component={Link} 
-                to="/admin/products"
-                variant="outlined" 
-                color="primary" 
-                size="small"
-                startIcon={<VisibilityIcon fontSize="small" />}
-                sx={{ 
-                  mt: 2,
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontWeight: 500
-                }}
-              >
-                See Details
-              </Button>
-              
-            </CardContent>
-          </Card>
-        </Grid>
+                  <Typography
+                    variant="body2"
+                    sx={{ 
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                      color: "text.primary"
+                    }}
+                  >
+                    {scheme.title}
+                  </Typography>
+                  
+                  <Box
+                    sx={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: "10px",
+                      background: "#fff",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      boxShadow: `0 2px 8px ${alpha(scheme.mainColor, 0.25)}`,
+                      border: `1px solid ${alpha(scheme.mainColor, 0.15)}`
+                    }}
+                  >
+                    <EmojiIcon sx={{ fontSize: "1.3rem", color: scheme.mainColor }}>
+                      {scheme.icon}
+                    </EmojiIcon>
+                  </Box>
+                </Box>
 
-        {/* Categories Card */}
-        <Grid item xs={12} sm={6} lg={3}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'transform 0.3s',
-            '&:hover': { 
-              transform: 'translateY(-5px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
-            }
-          }}>
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              height: '4px', 
-              bgcolor: '#6B46C1' 
-            }} />
-            
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    Total Categories
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                    {stats.categories}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: '#6B46C1', 
-                    boxShadow: '0 4px 12px rgba(107, 70, 193, 0.3)',
-                    p: 1.5
+                <Typography
+                  variant="h3"
+                  sx={{
+                    fontWeight: 700,
+                    color: "#111",
+                    fontSize: { xs: "2.2rem", sm: "2.5rem" },
+                    mt: 1,
+                    mb: 3
                   }}
                 >
-                  <CategoryIcon />
-                </Avatar>
-              </Box>
-              <Button 
-                component={Link} 
-                to="/admin/categories"
-                variant="outlined" 
-                color="secondary" 
-                size="small"
-                startIcon={<VisibilityIcon fontSize="small" />}
-                sx={{ 
-                  mt: 2,
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  borderColor: '#6B46C1',
-                  color: '#6B46C1',
-                  '&:hover': {
-                    borderColor: '#5a3ca4',
-                    bgcolor: 'rgba(107, 70, 193, 0.04)'
-                  }
-                }}
-              >
-                See Details
-              </Button>
-              
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* Orders Card */}
-        <Grid item xs={12} sm={6} lg={3}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'transform 0.3s',
-            '&:hover': { 
-              transform: 'translateY(-5px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
-            }
-          }}>
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              height: '4px', 
-              bgcolor: theme.palette.warning.main
-            }} />
-            
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    Total Orders
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                    {stats.orders}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: theme.palette.warning.main, 
-                    boxShadow: `0 4px 12px ${theme.palette.warning.light}`,
-                    p: 1.5
-                  }}
-                >
-                  <CartIcon />
-                </Avatar>
-              </Box>
-              <Button 
-                component={Link} 
-                to="/admin/orders"
-                variant="outlined" 
-                size="small"
-                startIcon={<VisibilityIcon fontSize="small" />}
-                sx={{ 
-                  mt: 2,
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  borderColor: theme.palette.warning.main,
-                  color: theme.palette.warning.main,
-                  '&:hover': {
-                    borderColor: theme.palette.warning.dark,
-                    bgcolor: 'rgba(255, 152, 0, 0.04)'
-                  }
-                }}
-              >
-                See Details
-              </Button>
-              
-            </CardContent>
-          </Card>
-        </Grid>
-        
-        {/* Users Card */}
-        <Grid item xs={12} sm={6} lg={3}>
-          <Card sx={{ 
-            borderRadius: 3,
-            boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
-            height: '100%',
-            position: 'relative',
-            overflow: 'hidden',
-            transition: 'transform 0.3s',
-            '&:hover': { 
-              transform: 'translateY(-5px)',
-              boxShadow: '0 8px 25px rgba(0,0,0,0.09)'
-            }
-          }}>
-            <Box sx={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: 0, 
-              right: 0, 
-              height: '4px', 
-              bgcolor: theme.palette.info.main
-            }} />
-            
-            <CardContent sx={{ p: 3 }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                <Box>
-                  <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                    Total Users
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, mt: 1 }}>
-                    {stats.users}
-                  </Typography>
-                </Box>
-                <Avatar 
-                  sx={{ 
-                    bgcolor: theme.palette.info.main, 
-                    boxShadow: `0 4px 12px ${theme.palette.info.light}`,
-                    p: 1.5
-                  }}
-                >
-                  <PeopleIcon />
-                </Avatar>
-              </Box>
-              <Button 
-                component={Link} 
-                to="/admin/users"
-                variant="outlined" 
-                size="small"
-                startIcon={<VisibilityIcon fontSize="small" />}
-                sx={{ 
-                  mt: 2,
-                  borderRadius: '8px',
-                  textTransform: 'none',
-                  fontWeight: 500,
-                  borderColor: theme.palette.info.main,
-                  color: theme.palette.info.main,
-                  '&:hover': {
-                    borderColor: theme.palette.info.dark,
-                    bgcolor: 'rgba(3, 169, 244, 0.04)'
-                  }
-                }}
-              >
-                See Details
-              </Button>
-              
-            </CardContent>
-          </Card>
-        </Grid>
-        
+                  {stats[scheme.name]}
+                </Typography>
 
+                <Box sx={{ mb: 3 }}>
+                  <BorderLinearProgress
+                    variant="determinate"
+                    value={scheme.progressValue}
+                    color={scheme.mainColor}
+                  />
+                </Box>
+
+                <Button
+                  component={Link}
+                  to={`/admin/${scheme.name}`}
+                  variant="contained"
+                  fullWidth
+                  sx={{
+                    mt: 1,
+                    py: 1,
+                    borderRadius: "8px",
+                    backgroundColor: scheme.mainColor,
+                    color: "#fff",
+                    textTransform: "none",
+                    fontWeight: 500,
+                    fontSize: "0.875rem",
+                    boxShadow: "none",
+                    "&:hover": {
+                      backgroundColor: alpha(scheme.mainColor, 0.9),
+                      boxShadow: `0 4px 8px ${alpha(scheme.mainColor, 0.25)}`
+                    }
+                  }}
+                >
+                  See Details
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
     </Box>
   );

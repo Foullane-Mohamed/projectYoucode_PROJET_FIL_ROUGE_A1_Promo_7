@@ -61,14 +61,12 @@ const OrderManagement = () => {
 
   const [storageUrl] = useState(import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage');
   
-  // Define counts for each status category
   const statusCounts = orders.reduce((acc, order) => {
     const status = order.status?.toLowerCase() || 'pending';
     acc[status] = (acc[status] || 0) + 1;
     return acc;
   }, {});
   
-  // Filter orders based on status and search query
   const filteredOrders = orders.filter(order => {
     const matchesStatus = statusFilter === 'all' || order.status?.toLowerCase() === statusFilter;
     
@@ -87,18 +85,14 @@ const OrderManagement = () => {
   const fetchOrders = async () => {
     setLoading(true);
     try {
-      // Use the admin API to fetch orders
       const response = await api.admin.getOrders();
       console.log('Orders response:', response);
       
-      // Handle different response formats according to API documentation
       const ordersData = response.data?.data?.orders || 
                       response.data?.orders || 
                       (Array.isArray(response.data) ? response.data : []);
       
-      // Ensure each order has appropriate user data and items
       const processedOrders = ordersData.map(order => {
-        // Create a proper user object if not present but user_name exists
         if (!order.user && order.user_name) {
           order.user = {
             name: order.user_name,
@@ -106,22 +100,18 @@ const OrderManagement = () => {
           };
         }
         
-        // Ensure email is always accessible from both locations
         if (!order.user_email && order.user?.email) {
           order.user_email = order.user.email;
         } else if (order.user_email && order.user && !order.user.email) {
           order.user.email = order.user_email;
         }
         
-        // Ensure order has items array
         if (!order.items || !Array.isArray(order.items)) {
           order.items = [];
         }
         
-        // Ensure valid totals
         if (order.total === undefined || order.total === null) {
           if (order.items && order.items.length > 0) {
-            // Calculate total from order items
             order.total = order.items.reduce(
               (sum, item) => sum + (parseFloat(item.price || 0) * (item.quantity || 0)),
               0
@@ -172,17 +162,14 @@ const OrderManagement = () => {
       const response = await api.admin.updateOrder(orderId, { status: newStatus });
       console.log('Update order response:', response);
       
-      // Extract updated order from response according to API documentation
-      const updatedOrder = response.data?.data?.order || response.data?.order || { id: orderId, status: newStatus };
-      
-      // Update orders in state
+  
       setOrders(prevOrders => 
         prevOrders.map(order => 
           order.id === orderId ? { ...order, status: newStatus } : order
         )
       );
       
-      // Also update current order if details dialog is open
+
       if (currentOrder && currentOrder.id === orderId) {
         setCurrentOrder({
           ...currentOrder,
@@ -198,12 +185,10 @@ const OrderManagement = () => {
     } catch (error) {
       console.error('Error updating order status:', error.response?.data || error);
       
-      // Extract detailed error information
       let errorMessage = 'Unknown error';
       if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.response?.data?.errors) {
-        // Handle Laravel validation errors
         const validationErrors = error.response.data.errors;
         errorMessage = Object.values(validationErrors)
           .flat()
@@ -227,9 +212,7 @@ const OrderManagement = () => {
       user_obj_email: order.user?.email
     });
     
-    // If order items are missing, add a placeholder item for testing
     if (!order.items || order.items.length === 0) {
-      // Create placeholder items based on the order total
       const placeholderItem = {
         id: 1,
         product_id: 1,
@@ -274,7 +257,7 @@ const OrderManagement = () => {
       case 'delivered':
         return 'success';
       case 'cancelled':
-      case 'canceled': // Handle both spellings
+      case 'canceled':
         return 'error';
       default:
         return 'default';
@@ -307,7 +290,6 @@ const OrderManagement = () => {
         </Typography>
       </Box>
 
-      {/* Search and Filter Bar */}
       <Paper sx={{ mb: 3, p: 2, borderRadius: 2, boxShadow: '0 2px 10px rgba(0,0,0,0.05)' }}>
         <Grid container spacing={2} alignItems="center">
           <Grid item xs={12} md={6}>
@@ -366,7 +348,6 @@ const OrderManagement = () => {
         </Grid>
       </Paper>
 
-      {/* Status Tabs */}
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <Tabs 
           value={tabValue} 
@@ -484,7 +465,6 @@ const OrderManagement = () => {
         />
       </TableContainer>
 
-      {/* Order Details Dialog */}
       <Dialog 
         open={openOrderDetails} 
         onClose={handleCloseOrderDetails}
@@ -521,7 +501,6 @@ const OrderManagement = () => {
         <DialogContent sx={{ p: 0 }}>
           {currentOrder && (
             <Box>
-              {/* Info Cards Section */}
               <Box sx={{ p: 3 }}>
                 <Grid container spacing={3}>
                   <Grid item xs={12} md={6}>
@@ -642,7 +621,6 @@ const OrderManagement = () => {
                 </Grid>
               </Box>
               
-              {/* Order Items Section */}
               <Box sx={{ px: 3, pb: 3 }}>
                 <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 2, color: '#1a1a2e' }}>
                   Order Items
@@ -737,7 +715,6 @@ const OrderManagement = () => {
                   </Table>
                 </TableContainer>
                 
-                {/* Update Status Section */}
                 <Paper
                   elevation={0}
                   sx={{
@@ -807,7 +784,6 @@ const OrderManagement = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Snackbar for notifications */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}

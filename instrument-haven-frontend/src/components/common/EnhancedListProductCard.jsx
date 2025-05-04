@@ -86,9 +86,7 @@ const EnhancedListProductCard = ({ product }) => {
     }
   };
 
-  // Get a consistent product image based on product ID
   const getProductImage = () => {
-    // Try to use actual product image first
     if (product.thumbnail) {
       return `/images/products/${product.thumbnail}`;
     }
@@ -97,7 +95,6 @@ const EnhancedListProductCard = ({ product }) => {
       return `/images/products/${product.images[0]}`;
     }
     
-    // Use placeholder image as fallback - ensuring we use product images, not category images
     const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };
@@ -284,12 +281,11 @@ const EnhancedListProductCard = ({ product }) => {
             marginBottom: 2,
             lineHeight: 1.6,
             fontSize: '0.9rem',
-            // Add text overflow handling
             overflow: 'hidden',
             display: '-webkit-box',
             WebkitLineClamp: 3,
             WebkitBoxOrient: 'vertical',
-            maxHeight: '4.8em', // 3 lines x 1.6 line-height
+            maxHeight: '4.8em', 
           }}
         >
           {product.description || 'No description available'}

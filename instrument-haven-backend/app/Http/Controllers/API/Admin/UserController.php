@@ -17,12 +17,7 @@ class UserController extends Controller
         $this->userRepository = $userRepository;
     }
 
-    /**
-     * Display a listing of the users.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 10);
@@ -31,7 +26,6 @@ class UserController extends Controller
         $orderBy = $request->input('order_by', 'id');
         $direction = $request->input('direction', 'asc');
         
-        // Build filters array
         $filters = [];
         if (!empty($search)) {
             $filters['search'] = $search;
@@ -40,7 +34,6 @@ class UserController extends Controller
             $filters['role'] = $role;
         }
         
-        // Get paginated users with filters
         $users = $this->userRepository->paginateWithFilters(
             $perPage,
             $filters,
@@ -56,12 +49,7 @@ class UserController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified user.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         try {
@@ -81,12 +69,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Store a newly created user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -117,13 +100,7 @@ class UserController extends Controller
         ], 201);
     }
 
-    /**
-     * Update the specified user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -163,12 +140,7 @@ class UserController extends Controller
         }
     }
 
-    /**
-     * Remove the specified user.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy($id)
     {
         try {

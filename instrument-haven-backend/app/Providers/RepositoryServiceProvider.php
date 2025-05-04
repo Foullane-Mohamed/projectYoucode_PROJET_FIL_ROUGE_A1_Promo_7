@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-// Interfaces
 use App\Repositories\Interfaces\RepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
@@ -14,8 +13,6 @@ use App\Repositories\Interfaces\OrderRepositoryInterface;
 use App\Repositories\Interfaces\WishlistRepositoryInterface;
 use App\Repositories\Interfaces\ReviewRepositoryInterface;
 use App\Repositories\Interfaces\CouponRepositoryInterface;
-
-// Repositories
 use App\Repositories\BaseRepository;
 use App\Repositories\UserRepository;
 use App\Repositories\ProductRepository;
@@ -28,9 +25,7 @@ use App\Repositories\CouponRepository;
 
 class RepositoryServiceProvider extends ServiceProvider
 {
-    /**
-     * Register services.
-     */
+  
     public function register()
     {
         $this->app->bind(RepositoryInterface::class, BaseRepository::class);
@@ -44,9 +39,7 @@ class RepositoryServiceProvider extends ServiceProvider
         $this->app->bind(CouponRepositoryInterface::class, CouponRepository::class);
     }
 
-    /**
-     * Bootstrap services.
-     */
+  
     public function boot()
     {
         //

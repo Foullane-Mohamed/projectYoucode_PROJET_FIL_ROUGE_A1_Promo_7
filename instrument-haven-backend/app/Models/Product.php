@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Services\Interfaces\ProductServiceInterface;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -37,78 +38,33 @@ class Product extends Model
         'attributes' => 'array'
     ];
 
-    /**
-     * Get the category that owns the product.
-     */
+  
     public function category()
     {
         return $this->belongsTo(Category::class);
     }
 
-    /**
-     * Get the reviews for the product.
-     */
+
     public function reviews()
     {
         return $this->hasMany(Review::class);
     }
-
-    /**
-     * Return the product image URL
-     * 
-     * @return string
-     */
+  
+  
     public function getImageUrlAttribute()
     {
-        if ($this->thumbnail) {
-            // Return just the filename without the path prefix
-            // This will allow the frontend to construct the full path
-            $filename = basename($this->thumbnail);
-            return $filename;
-        }
-        
-        return null;
+        return app(ProductServiceInterface::class)->getImageUrl($this);
     }
     
-    /**
-     * Return all product image URLs
-     * 
-     * @return array
-     */
+
     public function getImageUrlsAttribute()
     {
-        if ($this->images && is_array($this->images)) {
-            return array_map(function($image) {
-                // Return just the filename without the path prefix
-                return basename($image);
-            }, $this->images);
-        }
-        
-        return [];
+        return app(ProductServiceInterface::class)->getImageUrls($this);
     }
-    
-    /**
-     * Calculate the average rating for the product
-     * 
-     * @return float
-     */
+
+  
     public function getAverageRatingAttribute()
     {
-        try {
-            if (!$this->relationLoaded('reviews')) {
-                $this->load('reviews');
-            }
-            
-            $reviewsCount = $this->reviews->count();
-            if ($reviewsCount === 0) {
-                return 0;
-            }
-            
-            $sum = $this->reviews->sum('rating');
-            return round($sum / $reviewsCount, 1);
-        } catch (\Exception $e) {
-            \Log::error('Error calculating average rating: ' . $e->getMessage());
-            return 0;
-        }
+        return app(ProductServiceInterface::class)->calculateAverageRating($this);
     }
 }

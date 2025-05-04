@@ -7,23 +7,12 @@ use Illuminate\Support\Facades\Route;
 
 class ListApiEndpoints extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+    
     protected $signature = 'api:list';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+
     protected $description = 'List all API endpoints with their methods and middlewares';
 
-    /**
-     * Execute the console command.
-     */
     public function handle()
     {
         $this->info("API Endpoints for Instrument Haven");
@@ -47,12 +36,10 @@ class ListApiEndpoints extends Command
             }
         }
         
-        // Sort routes by URI
         usort($apiRoutes, function ($a, $b) {
             return strcmp($a['uri'], $b['uri']);
         });
         
-        // Group routes by endpoint type
         $groups = [
             'Auth Routes' => [],
             'Public Routes' => [],

@@ -1,6 +1,5 @@
 import { useState, useContext } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import axios from 'axios';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import { AuthContext } from '../../context/AuthContext';
@@ -37,47 +36,23 @@ const Login = () => {
     setError('');
     setSuccess('');
     
-    try {
-      // Get CSRF token before login attempt
-      try {
-        await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1'}/csrf-cookie`, {
-          withCredentials: true
-        });
-      } catch (csrfError) {
-        console.error('CSRF token request error:', csrfError);
-        // Continue anyway, as the interceptor might handle it
-      }
+    const result = await login(values.email, values.password);
+    
+    if (result.success) {
+      setSuccess(result.message || 'Login successful');
       
-      const result = await login(values.email, values.password);
-      
-      if (result.success) {
-        setSuccess(result.message || 'Login successful');
-        
-        // Check if user is admin and redirect to admin dashboard
-        if (result.user && result.user.role === 'admin') {
-          // Redirect to admin dashboard
-          setTimeout(() => {
-            navigate('/admin', { replace: true });
-          }, 800);
-        } else {
-          // Redirect to the previous page or home for regular users
-          setTimeout(() => {
-            navigate(from, { replace: true });
-          }, 800);
-        }
+      if (result.user && result.user.role === 'admin') {
+        setTimeout(() => {
+          navigate('/admin', { replace: true });
+        }, 800);
       } else {
-        setError(result.message || 'Login failed. Please check your credentials.');
+        setTimeout(() => {
+          navigate(from, { replace: true });
+        }, 800);
       }
-    } catch (err) {
-      console.error('Login form error:', err);
-      if (err.response?.status === 419) {
-        setError('CSRF token mismatch. Please refresh the page and try again.');
-      } else {
-        setError(err.response?.data?.message || 'An unexpected error occurred. Please try again.');
-      }
-    } finally {
-      setLoading(false);
     }
+    
+    setLoading(false);
   };
 
   return (

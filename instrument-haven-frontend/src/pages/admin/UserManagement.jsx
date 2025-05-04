@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import api from '../../services/api';
-import { toast } from 'react-toastify';
+import { useState, useEffect } from "react";
+import api from "../../services/api";
+import { toast } from "react-toastify";
 import {
   Typography,
   Box,
@@ -28,13 +28,13 @@ import {
   InputAdornment,
   Snackbar,
   Alert,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Add as AddIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
@@ -42,52 +42,50 @@ const UserManagement = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [totalItems, setTotalItems] = useState(0);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [openDialog, setOpenDialog] = useState(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
-  const [dialogMode, setDialogMode] = useState('add'); // 'add' or 'edit'
+  const [dialogMode, setDialogMode] = useState("add");
   const [currentUser, setCurrentUser] = useState(null);
   const [userToDelete, setUserToDelete] = useState(null);
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success'
+    message: "",
+    severity: "success",
   });
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async (currentPage = page, currentRowsPerPage = rowsPerPage, currentSearchTerm = searchTerm) => {
+  const fetchUsers = async (
+    currentPage = page,
+    currentRowsPerPage = rowsPerPage,
+    currentSearchTerm = searchTerm
+  ) => {
     setLoading(true);
     try {
-      // Build params for API request
       const params = {
-        page: currentPage + 1, // API uses 1-based pagination
+        page: currentPage + 1,
         per_page: currentRowsPerPage,
-        order_by: 'id',
-        direction: 'asc'
+        order_by: "id",
+        direction: "asc",
       };
-      
-      // Add search param if there's a search term
+
       if (currentSearchTerm && currentSearchTerm.trim()) {
         params.search = currentSearchTerm.trim();
       }
-      
-      // Get users from API
+
       const response = await api.admin.getUsers(params);
-      
-      // Extract data based on API response format
+
       let usersData = [];
       let paginationData = null;
-      
+
       if (response.data?.data?.users) {
         if (response.data.data.users.data) {
-          // Laravel paginated format
           usersData = response.data.data.users.data;
           paginationData = response.data.data.users;
         } else {
-          // Not paginated
           usersData = response.data.data.users;
         }
       } else if (response.data?.users) {
@@ -100,25 +98,25 @@ const UserManagement = () => {
       } else if (Array.isArray(response.data)) {
         usersData = response.data;
       }
-      
+
       setUsers(usersData);
-      
-      // Update total items if pagination info is available
+
       if (paginationData && paginationData.total !== undefined) {
         setTotalItems(paginationData.total);
       } else {
         setTotalItems(usersData.length);
       }
-      
-      toast.success('Users loaded successfully');
+
+      toast.success("Users loaded successfully");
     } catch (error) {
-      const errorDetail = error.response?.data?.message || error.message || 'Unknown error';
+      const errorDetail =
+        error.response?.data?.message || error.message || "Unknown error";
       toast.error(`Failed to fetch users: ${errorDetail}`);
-      
+
       setSnackbar({
         open: true,
         message: `Failed to fetch users. Please try again. (${errorDetail})`,
-        severity: 'error'
+        severity: "error",
       });
     } finally {
       setLoading(false);
@@ -133,38 +131,36 @@ const UserManagement = () => {
   const handleChangeRowsPerPage = (event) => {
     const newRowsPerPage = parseInt(event.target.value, 10);
     setRowsPerPage(newRowsPerPage);
-    setPage(0); // Reset to first page when changing rows per page
+    setPage(0);
     fetchUsers(0, newRowsPerPage, searchTerm);
   };
-  
-  // Search handler with debounce
+
   const handleSearch = (event) => {
     const value = event.target.value;
     setSearchTerm(value);
-    // Debounce search to prevent too many API calls
     if (window.searchTimeout) {
       clearTimeout(window.searchTimeout);
     }
     window.searchTimeout = setTimeout(() => {
-      setPage(0); // Reset to first page when searching
+      setPage(0);
       fetchUsers(0, rowsPerPage, value);
-    }, 500); // Wait 500ms after user stops typing
+    }, 500);
   };
 
   const handleOpenAddDialog = () => {
-    setDialogMode('add');
+    setDialogMode("add");
     setCurrentUser({
-      name: '',
-      email: '',
-      password: '',
-      role: 'customer'
+      name: "",
+      email: "",
+      password: "",
+      role: "customer",
     });
     setOpenDialog(true);
   };
 
   const handleOpenEditDialog = (user) => {
-    setDialogMode('edit');
-    setCurrentUser({ ...user, password: '' }); // Clear password field for security
+    setDialogMode("edit");
+    setCurrentUser({ ...user, password: "" });
     setOpenDialog(true);
   };
 
@@ -186,99 +182,99 @@ const UserManagement = () => {
     const { name, value } = e.target;
     setCurrentUser({
       ...currentUser,
-      [name]: value
+      [name]: value,
     });
   };
 
   const handleSaveUser = async () => {
     try {
-      // Validate the form data
       if (!currentUser?.name) {
-        toast.error('Name is required');
+        toast.error("Name is required");
         return;
       }
       if (!currentUser?.email) {
-        toast.error('Email is required');
+        toast.error("Email is required");
         return;
       }
-      if (dialogMode === 'add' && !currentUser?.password) {
-        toast.error('Password is required for new users');
+      if (dialogMode === "add" && !currentUser?.password) {
+        toast.error("Password is required for new users");
         return;
       }
       if (!currentUser?.role) {
-        toast.error('Role is required');
+        toast.error("Role is required");
         return;
       }
 
-      if (dialogMode === 'add') {
-        // Create a new user
+      if (dialogMode === "add") {
         await api.admin.createUser(currentUser);
-        toast.success('User created successfully!');
+        toast.success("User created successfully!");
         setSnackbar({
           open: true,
-          message: 'User created successfully!',
-          severity: 'success'
+          message: "User created successfully!",
+          severity: "success",
         });
       } else {
-        // Update an existing user
-        // Don't send password if it's empty (unchanged)
         const userData = { ...currentUser };
         if (!userData.password) {
           delete userData.password;
         }
-        
+
         await api.admin.updateUser(currentUser.id, userData);
-        toast.success('User updated successfully!');
+        toast.success("User updated successfully!");
         setSnackbar({
           open: true,
-          message: 'User updated successfully!',
-          severity: 'success'
+          message: "User updated successfully!",
+          severity: "success",
         });
       }
-      
-      // Refresh the user list
+
       fetchUsers();
       handleCloseDialog();
     } catch (error) {
-      // Handle validation errors
       if (error.response?.data?.errors) {
-        const errorMessages = Object.values(error.response.data.errors).flat().join(', ');
+        const errorMessages = Object.values(error.response.data.errors)
+          .flat()
+          .join(", ");
         toast.error(`Validation error: ${errorMessages}`);
       } else {
-        toast.error(error.response?.data?.message || 'Failed to save user');
+        toast.error(error.response?.data?.message || "Failed to save user");
       }
-      
+
       setSnackbar({
         open: true,
-        message: `Failed to ${dialogMode === 'add' ? 'create' : 'update'} user: ${error.response?.data?.message || error.message || 'Unknown error'}`,
-        severity: 'error'
+        message: `Failed to ${
+          dialogMode === "add" ? "create" : "update"
+        } user: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`,
+        severity: "error",
       });
     }
   };
 
   const handleDeleteUser = async () => {
     try {
-      // Delete the user
       await api.admin.deleteUser(userToDelete.id);
-      
-      // Filter out the deleted user from the current list
-      setUsers(users.filter(user => user.id !== userToDelete.id));
-      
-      toast.success('User deleted successfully!');
+
+      setUsers(users.filter((user) => user.id !== userToDelete.id));
+
+      toast.success("User deleted successfully!");
       setSnackbar({
         open: true,
-        message: 'User deleted successfully!',
-        severity: 'success'
+        message: "User deleted successfully!",
+        severity: "success",
       });
-      
+
       handleCloseDeleteDialog();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to delete user');
-      
+      toast.error(error.response?.data?.message || "Failed to delete user");
+
       setSnackbar({
         open: true,
-        message: `Failed to delete user: ${error.response?.data?.message || error.message || 'Unknown error'}`,
-        severity: 'error'
+        message: `Failed to delete user: ${
+          error.response?.data?.message || error.message || "Unknown error"
+        }`,
+        severity: "error",
       });
     }
   };
@@ -286,13 +282,12 @@ const UserManagement = () => {
   const handleCloseSnackbar = () => {
     setSnackbar({
       ...snackbar,
-      open: false
+      open: false,
     });
   };
 
-  // Get role display chip
   const getRoleChip = (role) => {
-    if (role === 'admin') {
+    if (role === "admin") {
       return <Chip label="Admin" color="primary" size="small" />;
     } else {
       return <Chip label="Customer" color="success" size="small" />;
@@ -301,7 +296,15 @@ const UserManagement = () => {
 
   if (loading && users.length === 0) {
     return (
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '400px' }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          minHeight: "400px",
+        }}
+      >
         <CircularProgress color="error" size={60} />
         <Typography sx={{ mt: 2 }}>Loading users...</Typography>
       </Box>
@@ -310,7 +313,7 @@ const UserManagement = () => {
 
   return (
     <Box>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 3 }}>
         <div>
           <Typography variant="h4" component="h1">
             User Management
@@ -324,15 +327,18 @@ const UserManagement = () => {
           color="error"
           startIcon={<AddIcon />}
           onClick={handleOpenAddDialog}
-          sx={{ borderRadius: '25px', backgroundColor: '#ff445a', '&:hover': { backgroundColor: '#e03a4f' } }}
+          sx={{
+            borderRadius: "25px",
+            backgroundColor: "#ff445a",
+            "&:hover": { backgroundColor: "#e03a4f" },
+          }}
         >
           Add New User
         </Button>
       </Box>
-      
-      {/* Search Bar */}
-      <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-        <Box sx={{ flexGrow: 1, position: 'relative' }}>
+
+      <Box sx={{ display: "flex", gap: 2, mb: 3 }}>
+        <Box sx={{ flexGrow: 1, position: "relative" }}>
           <TextField
             fullWidth
             variant="outlined"
@@ -346,7 +352,7 @@ const UserManagement = () => {
                   <SearchIcon />
                 </InputAdornment>
               ),
-              sx: { borderRadius: '25px' }
+              sx: { borderRadius: "25px" },
             }}
           />
         </Box>
@@ -373,10 +379,10 @@ const UserManagement = () => {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{getRoleChip(user.role)}</TableCell>
                   <TableCell>
-                    {new Date(user.created_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
+                    {new Date(user.created_at).toLocaleDateString("en-US", {
+                      year: "numeric",
+                      month: "short",
+                      day: "numeric",
                     })}
                   </TableCell>
                   <TableCell>
@@ -416,9 +422,14 @@ const UserManagement = () => {
       </TableContainer>
 
       {/* User Form Dialog */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={handleCloseDialog}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
-          {dialogMode === 'add' ? 'Add New User' : 'Edit User'}
+          {dialogMode === "add" ? "Add New User" : "Edit User"}
         </DialogTitle>
         <DialogContent>
           <Box component="form" sx={{ mt: 2 }}>
@@ -426,7 +437,7 @@ const UserManagement = () => {
               fullWidth
               label="Name"
               name="name"
-              value={currentUser?.name || ''}
+              value={currentUser?.name || ""}
               onChange={handleInputChange}
               margin="normal"
               required
@@ -436,26 +447,30 @@ const UserManagement = () => {
               label="Email"
               name="email"
               type="email"
-              value={currentUser?.email || ''}
+              value={currentUser?.email || ""}
               onChange={handleInputChange}
               margin="normal"
               required
             />
             <TextField
               fullWidth
-              label={dialogMode === 'add' ? 'Password' : 'New Password (leave blank to keep current)'}
+              label={
+                dialogMode === "add"
+                  ? "Password"
+                  : "New Password (leave blank to keep current)"
+              }
               name="password"
               type="password"
-              value={currentUser?.password || ''}
+              value={currentUser?.password || ""}
               onChange={handleInputChange}
               margin="normal"
-              required={dialogMode === 'add'}
+              required={dialogMode === "add"}
             />
             <FormControl fullWidth margin="normal">
               <InputLabel>Role</InputLabel>
               <Select
                 name="role"
-                value={currentUser?.role || 'customer'}
+                value={currentUser?.role || "customer"}
                 onChange={handleInputChange}
                 label="Role"
               >
@@ -468,7 +483,7 @@ const UserManagement = () => {
         <DialogActions>
           <Button onClick={handleCloseDialog}>Cancel</Button>
           <Button onClick={handleSaveUser} variant="contained" color="primary">
-            {dialogMode === 'add' ? 'Add User' : 'Save Changes'}
+            {dialogMode === "add" ? "Add User" : "Save Changes"}
           </Button>
         </DialogActions>
       </Dialog>
@@ -478,7 +493,8 @@ const UserManagement = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the user "{userToDelete?.name}" with email {userToDelete?.email}?
+            Are you sure you want to delete the user "{userToDelete?.name}" with
+            email {userToDelete?.email}?
           </Typography>
         </DialogContent>
         <DialogActions>
@@ -494,9 +510,13 @@ const UserManagement = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

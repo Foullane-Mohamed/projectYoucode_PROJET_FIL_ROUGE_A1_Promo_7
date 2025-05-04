@@ -21,12 +21,7 @@ class ProductController extends Controller
         $this->reviewRepository = $reviewRepository;
     }
 
-    /**
-     * Display a listing of the products.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function index(Request $request)
     {
         $filters = $request->only([
@@ -51,12 +46,7 @@ class ProductController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified product.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         try {
@@ -69,18 +59,14 @@ class ProductController extends Controller
                 ], 404);
             }
             
-            // Load relationships
             $product->load(['category', 'reviews.user']);
             
-            // Add average rating - making sure method exists
             $product->average_rating = 0;
             if (method_exists($product, 'getAverageRatingAttribute')) {
                 $product->average_rating = $product->getAverageRatingAttribute();
             }
             
-            // Ensure images have correct paths for local storage
             if ($product->images) {
-                // Handle string JSON if necessary
                 if (is_string($product->images)) {
                     try {
                         $product->images = json_decode($product->images, true);
@@ -94,7 +80,6 @@ class ProductController extends Controller
                     $fixedImages = [];
                     foreach ($product->images as $image) {
                         if (is_string($image)) {
-                            // Keep only the filename part, removing any path information
                             $fixedImages[] = basename($image);
                         }
                     }
@@ -107,7 +92,6 @@ class ProductController extends Controller
             }
             
             if ($product->thumbnail) {
-                // Keep only the filename part, removing any path information
                 $product->thumbnail = basename($product->thumbnail);
             }
             
@@ -118,7 +102,7 @@ class ProductController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            report($e); // Log the error
+            report($e); 
             return response()->json([
                 'status' => 'error',
                 'message' => 'Product not found: ' . $e->getMessage()
@@ -126,12 +110,7 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Get reviews for a product
-     *
-     * @param  int  $productId
-     * @return \Illuminate\Http\Response
-     */
+
     public function getReviews($productId)
     {
         try {
@@ -151,13 +130,7 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Create a review for a product
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $productId
-     * @return \Illuminate\Http\Response
-     */
+
     public function createReview(Request $request, $productId)
     {
         $validator = Validator::make($request->all(), [
@@ -198,14 +171,7 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Update a review for a product
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $productId
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function updateReview(Request $request, $productId, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -260,14 +226,7 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Delete a review for a product
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $productId
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function deleteReview(Request $request, $productId, $id)
     {
         try {

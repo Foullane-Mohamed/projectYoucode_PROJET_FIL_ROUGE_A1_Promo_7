@@ -18,12 +18,7 @@ class ProductController extends Controller
         $this->productRepository = $productRepository;
     }
 
-    /**
-     * Create a new product.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -50,35 +45,27 @@ class ProductController extends Controller
         $productData = $request->except(['images']);
         $productData['slug'] = Str::slug($request->name);
         
-        // Handle image uploads
         $images = [];
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $index => $image) {
-                // Check if we should use local storage
                 $useLocalStorage = $request->has('use_local_storage') && $request->use_local_storage === 'true';
                 
-                // Get original filename if provided
                 $originalFilename = $request->has('image_names') && isset($request->image_names[$index]) 
                     ? $request->image_names[$index] 
                     : $image->getClientOriginalName();
                 
-                // Use original filename if requested, otherwise generate a timestamp-based name
                 $filename = $useLocalStorage 
                     ? $originalFilename 
                     : time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
                 
-                // Remove spaces and special characters in filename
                 $filename = preg_replace('/[^a-zA-Z0-9_.-]/', '-', $filename);
                 
-                // Store the file properly using public disk
                 $path = $image->storeAs('products', $filename, 'public');
                 
-                // Set image_url for direct access - this is the primary image source path
                 if (!isset($productData['image_url']) && $index === 0) {
                     $productData['image_url'] = $path;
                 }
                 
-                // Log image upload details
                 \Log::info('Product image uploaded:', [
                     'product' => $request->name,
                     'filename' => $filename,
@@ -86,23 +73,18 @@ class ProductController extends Controller
                     'image_url' => $productData['image_url'] ?? 'not set'
                 ]);
                 
-                // If using local storage, also copy to public/images/products
                 if ($useLocalStorage) {
-                    // Create directory if it doesn't exist
                     $publicDir = public_path('images/products');
                     if (!file_exists($publicDir)) {
                         mkdir($publicDir, 0755, true);
                     }
                     
-                    // Copy file to public directory
                     $image->move($publicDir, $filename);
                 }
                 
-                // Remove the 'products/' prefix when saving to DB
                 $images[] = basename($filename);
             }
             $productData['images'] = $images;
-            // Set thumbnail to the first image
             if (!empty($images)) {
                 $productData['thumbnail'] = $images[0];
             }
@@ -110,7 +92,6 @@ class ProductController extends Controller
         
         $product = $this->productRepository->create($productData);
         
-        // Load relationships
         $product->load(['category']);
         
         return response()->json([
@@ -122,13 +103,6 @@ class ProductController extends Controller
         ], 201);
     }
 
-    /**
-     * Update the specified product.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -157,40 +131,31 @@ class ProductController extends Controller
         try {
             $productData = $request->except(['images']);
             
-            // Update slug if name is provided
             if (isset($productData['name'])) {
                 $productData['slug'] = Str::slug($productData['name']);
             }
             
-            // Handle image uploads
             $images = [];
             if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $index => $image) {
-                    // Check if we should use local storage
                     $useLocalStorage = $request->has('use_local_storage') && $request->use_local_storage === 'true';
                     
-                    // Get original filename if provided
                     $originalFilename = $request->has('image_names') && isset($request->image_names[$index]) 
                         ? $request->image_names[$index] 
                         : $image->getClientOriginalName();
                     
-                    // Use original filename if requested, otherwise generate a timestamp-based name
                     $filename = $useLocalStorage 
                         ? $originalFilename 
                         : time() . '_' . Str::slug(pathinfo($image->getClientOriginalName(), PATHINFO_FILENAME)) . '.' . $image->getClientOriginalExtension();
                     
-                    // Remove spaces and special characters in filename
                     $filename = preg_replace('/[^a-zA-Z0-9_.-]/', '-', $filename);
                     
-                    // Store the file properly using public disk
                     $path = $image->storeAs('products', $filename, 'public');
                     
-                    // Set image_url for direct access - this is the primary image source path
                     if (!isset($productData['image_url']) && $index === 0) {
                         $productData['image_url'] = $path;
                     }
                     
-                    // Log image upload details
                     \Log::info('Product image uploaded:', [
                         'product_id' => $id,
                         'filename' => $filename,
@@ -198,46 +163,36 @@ class ProductController extends Controller
                         'image_url' => $productData['image_url'] ?? 'not set'
                     ]);
                     
-                    // If using local storage, also copy to public/images/products
                     if ($useLocalStorage) {
-                        // Create directory if it doesn't exist
                         $publicDir = public_path('images/products');
                         if (!file_exists($publicDir)) {
                             mkdir($publicDir, 0755, true);
                         }
                         
-                        // Copy file to public directory
                         $image->move($publicDir, $filename);
                     }
                     
-                    // Remove the 'products/' prefix when saving to DB
                     $images[] = basename($filename);
                 }
                 
-                // If replace_images flag is set, update images array
                 if ($request->has('replace_images') && $request->replace_images === 'true') {
                     $productData['images'] = $images;
-                    // Set thumbnail to the first image
                     if (!empty($images)) {
                         $productData['thumbnail'] = $images[0];
                     }
                 } else {
-                    // Otherwise append to existing images
                     $product = $this->productRepository->find($id);
                     $existingImages = $product->images ?? [];
                     $productData['images'] = array_merge($existingImages, $images);
                     
-                    // If no thumbnail exists, set it to the first image
                     if (empty($product->thumbnail) && !empty($productData['images'])) {
                         $productData['thumbnail'] = $productData['images'][0];
                     }
                 }
             } elseif ($request->has('keep_existing_images') && $request->keep_existing_images === 'true') {
-                // Maintain existing images
                 $product = $this->productRepository->find($id);
                 $existingImages = $product->images ?? [];
                 
-                // If there are existing images in the request, use those
                 if ($request->has('existing_images')) {
                     $productData['images'] = $request->existing_images;
                     if (!empty($request->existing_images)) {
@@ -269,12 +224,7 @@ class ProductController extends Controller
         }
     }
 
-    /**
-     * Remove the specified product.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy($id)
     {
         try {

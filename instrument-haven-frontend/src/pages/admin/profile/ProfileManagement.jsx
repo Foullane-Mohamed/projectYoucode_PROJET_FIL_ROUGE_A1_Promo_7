@@ -1,6 +1,5 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../../../context/AuthContext';
-import api from '../../../services/api';
 import {
   Box,
   Typography,
@@ -13,7 +12,6 @@ import {
   Alert,
   InputAdornment,
   CircularProgress,
-  useTheme,
   IconButton,
 } from '@mui/material';
 import {
@@ -28,7 +26,6 @@ import {
 
 const ProfileManagement = () => {
   const { user, updateUser } = useContext(AuthContext);
-  const theme = useTheme();
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
@@ -71,7 +68,6 @@ const ProfileManagement = () => {
     setSuccess(false);
     setError('');
 
-    // Validation for password change
     if (profile.new_password && profile.new_password !== profile.confirm_password) {
       setError('New password and confirmation do not match');
       setLoading(false);
@@ -79,13 +75,10 @@ const ProfileManagement = () => {
     }
 
     try {
-      // In a real implementation, you would make an API call to update the profile
-      // For demonstration purposes, we'll simulate a successful update
       setTimeout(() => {
         setSuccess(true);
         setLoading(false);
         
-        // Clear password fields after successful update
         setProfile(prev => ({
           ...prev,
           current_password: '',
@@ -93,7 +86,6 @@ const ProfileManagement = () => {
           confirm_password: '',
         }));
         
-        // Update the user context with the new profile information
         if (updateUser) {
           updateUser({
             ...user,
@@ -105,14 +97,6 @@ const ProfileManagement = () => {
         }
       }, 1000);
       
-      // In a real application, you would use an API call like this:
-      // const response = await api.users.updateProfile(updateData);
-      // if (response.status === 200) {
-      //   setSuccess(true);
-      //   if (updateUser && response.data?.user) {
-      //     updateUser(response.data.user);
-      //   }
-      // }
     } catch (err) {
       console.error('Error updating profile:', err);
       setError('Failed to update profile. Please try again.');

@@ -31,7 +31,7 @@ import {
   LocalShipping,
   Star
 } from '@mui/icons-material';
-// Using MUI components instead of external carousel
+
 import FeaturesRow from '../../components/common/FeaturesRow';
 import EnhancedProductCard from '../../components/common/EnhancedProductCard';
 import { CATEGORY_IMAGES } from '../../components/common/constants';
@@ -229,7 +229,7 @@ const HeroCarousel = () => {
     }
   ];
 
-  // Auto-advance slides
+
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveSlide((prev) => (prev + 1) % heroSlides.length);
@@ -351,11 +351,11 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Ref for scrolling
+
   const featuredRef = useRef(null);
   const categoriesRef = useRef(null);
 
-  // Fetch data on component mount
+
   useEffect(() => {
     const fetchHomeData = async () => {
       setLoading(true);
@@ -391,7 +391,6 @@ const Home = () => {
     }
   };
 
-  // Helper function to get a valid category image
   const getCategoryImage = (category) => {
     if (category && category.image_url) {
       const storageUrl = import.meta.env.VITE_STORAGE_URL || 'http://localhost:8000/storage';
@@ -480,16 +479,14 @@ const Home = () => {
 
         <Grid container spacing={4}>
           {loading ? (
-            // Skeleton loading for categories
-            Array(6).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} key={`category-skeleton-${index}`}>
-                <Skeleton variant="rectangular" height={180} sx={{ borderRadius: '16px', mb: 1 }} />
-                <Skeleton width="60%" height={24} />
-              </Grid>
-            ))
-          ) : (
-            // Actual categories
-            categories.map((category) => (
+        Array(6).fill(0).map((_, index) => (
+          <Grid item xs={12} sm={6} md={4} key={`category-skeleton-${index}`}>
+          <Skeleton variant="rectangular" height={180} sx={{ borderRadius: '16px', mb: 1 }} />
+        <Skeleton width="60%" height={24} />
+        </Grid>
+        ))
+        ) : (
+          categories.map((category) => (
               <Grid item xs={12} sm={6} md={4} key={category.id}>
                 <Card 
                   sx={styles.categoryCard}
@@ -568,7 +565,6 @@ const Home = () => {
 
         <Grid container spacing={4}>
           {loading ? (
-            // Skeleton loading for products
             Array(8).fill(0).map((_, index) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={`featured-skeleton-${index}`}>
                 <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px', mb: 1 }} />
@@ -578,14 +574,12 @@ const Home = () => {
               </Grid>
             ))
           ) : featuredProducts.length > 0 ? (
-            // Actual featured products
             featuredProducts.map((product) => (
               <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
                 <EnhancedProductCard product={product} />
               </Grid>
             ))
           ) : (
-            // Display a message if no featured products
             <Grid item xs={12}>
               <Typography variant="body1" textAlign="center" sx={{ py: 4, color: '#666' }}>
                 Featured products coming soon!

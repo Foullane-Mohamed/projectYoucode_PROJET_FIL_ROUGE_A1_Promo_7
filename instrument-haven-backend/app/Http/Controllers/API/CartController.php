@@ -16,12 +16,7 @@ class CartController extends Controller
         $this->cartRepository = $cartRepository;
     }
 
-    /**
-     * Get the user's cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function getCart(Request $request)
     {
         $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
@@ -40,12 +35,7 @@ class CartController extends Controller
         ]);
     }
 
-    /**
-     * Add an item to the cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function addItem(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -91,13 +81,7 @@ class CartController extends Controller
         }
     }
 
-    /**
-     * Update an item quantity.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function updateItem(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -142,13 +126,7 @@ class CartController extends Controller
         }
     }
 
-    /**
-     * Remove an item from the cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function removeItem(Request $request, $id)
     {
         try {
@@ -177,12 +155,7 @@ class CartController extends Controller
         }
     }
 
-    /**
-     * Apply a coupon to the cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function applyCoupon(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -197,11 +170,9 @@ class CartController extends Controller
             ], 422);
         }
         
-        // Log the coupon code for debugging
         \Log::info('Attempting to apply coupon: ' . $request->code);
 
         try {
-            // Check if coupon exists first
             $coupon = \App\Models\Coupon::where('code', $request->code)->first();
             
             if (!$coupon) {
@@ -211,7 +182,6 @@ class CartController extends Controller
                 ], 404);
             }
             
-            // Check if coupon is valid
             if (!$coupon->is_active) {
                 return response()->json([
                     'status' => 'error',
@@ -240,7 +210,6 @@ class CartController extends Controller
                 ], 400);
             }
             
-            // Apply coupon to cart
             $this->cartRepository->applyCoupon($request->user()->id, $request->code);
             
             $cart = $this->cartRepository->getWithItemsByUserId($request->user()->id);
@@ -267,12 +236,7 @@ class CartController extends Controller
         }
     }
 
-    /**
-     * Remove the coupon from the cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function removeCoupon(Request $request)
     {
         try {

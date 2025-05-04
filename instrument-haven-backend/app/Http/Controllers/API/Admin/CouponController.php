@@ -16,11 +16,7 @@ class CouponController extends Controller
         $this->couponRepository = $couponRepository;
     }
 
-    /**
-     * Display a listing of the coupons.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         $coupons = $this->couponRepository->all();
@@ -33,12 +29,7 @@ class CouponController extends Controller
         ]);
     }
 
-    /**
-     * Create a new coupon.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -75,13 +66,7 @@ class CouponController extends Controller
         ], 201);
     }
 
-    /**
-     * Update the specified coupon.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+  
     public function update(Request $request, $id)
     {
         $validator = Validator::make($request->all(), [
@@ -124,12 +109,7 @@ class CouponController extends Controller
         }
     }
 
-    /**
-     * Remove the specified coupon.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function destroy($id)
     {
         try {

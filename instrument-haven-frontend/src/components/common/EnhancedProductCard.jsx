@@ -87,9 +87,7 @@ const EnhancedProductCard = ({ product }) => {
     }
   };
 
-  // Get a consistent product image based on product ID
   const getProductImage = () => {
-    // Try to use actual product image first
     if (product.thumbnail) {
       return `/images/products/${product.thumbnail}`;
     }
@@ -98,7 +96,6 @@ const EnhancedProductCard = ({ product }) => {
       return `/images/products/${product.images[0]}`;
     }
     
-    // Use placeholder image as fallback - ensuring we use product images, not category images
     const index = Math.abs((product.id % PRODUCT_IMAGES.length)) || 0;
     return PRODUCT_IMAGES[index];
   };

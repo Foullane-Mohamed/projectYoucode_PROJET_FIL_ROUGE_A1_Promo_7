@@ -4,38 +4,37 @@ namespace App\Repositories;
 
 use App\Models\Product;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
+use App\Services\Interfaces\ProductServiceInterface;
 
 class ProductRepository extends BaseRepository implements ProductRepositoryInterface
 {
-    /**
-     * Set model
-     */
+    protected $productService;
+
+
+    public function __construct(ProductServiceInterface $productService)
+    {
+        parent::__construct();
+        $this->productService = $productService;
+    }
+
+
     public function setModel()
     {
         $this->model = new Product();
     }
 
-    /**
-     * Find product by id with error handling
-     * 
-     * @param int $id
-     * @param array $columns
-     * @return mixed
-     */
+
     public function find($id, $columns = ['*'])
     {
         try {
-            // Find the product or throw ModelNotFoundException
+
             $product = $this->model->findOrFail($id, $columns);
             
-            // Set default values for safety
             if (!isset($product->average_rating)) {
                 $product->average_rating = 0;
             }
             
-            // If images exist, ensure they are properly formatted
             if ($product->images) {
-                // Handle different format cases
                 if (is_string($product->images)) {
                     try {
                         $product->images = json_decode($product->images, true);
@@ -53,10 +52,8 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
                         }
                     }
                     
-                    // Re-index the array after potential removals
                     $product->images = array_values(array_filter($product->images));
                 } else {
-                    // Set to empty array if not an array
                     $product->images = [];
                 }
             }
@@ -71,23 +68,13 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
         }
     }
 
-    /**
-     * Find products by category id
-     * 
-     * @param int $categoryId
-     * @return mixed
-     */
+
     public function findByCategoryId($categoryId)
     {
         return $this->model->where('category_id', $categoryId)->get();
     }
     
-    /**
-     * Search products
-     * 
-     * @param string $term
-     * @return mixed
-     */
+
     public function search($term)
     {
         return $this->model->where('name', 'like', "%{$term}%")
@@ -96,22 +83,15 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             ->get();
     }
     
-    /**
-     * Filter products
-     * 
-     * @param array $filters
-     * @return mixed
-     */
+
     public function filter($filters)
     {
         $query = $this->model->query();
         
-        // Category filter
         if (isset($filters['category_id']) && $filters['category_id']) {
             $query->where('category_id', $filters['category_id']);
         }
         
-        // Price range filter
         if (isset($filters['price_min']) && $filters['price_min']) {
             $query->where('price', '>=', $filters['price_min']);
         }
@@ -120,7 +100,6 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $query->where('price', '<=', $filters['price_max']);
         }
         
-        // Search filter
         if (isset($filters['search']) && $filters['search']) {
             $query->where(function ($q) use ($filters) {
                 $q->where('name', 'like', "%{$filters['search']}%")
@@ -129,7 +108,6 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             });
         }
         
-        // Sort filter
         if (isset($filters['sort_by']) && $filters['sort_by']) {
             $direction = isset($filters['sort_direction']) && $filters['sort_direction'] === 'desc' ? 'desc' : 'asc';
             $query->orderBy($filters['sort_by'], $direction);
@@ -137,7 +115,6 @@ class ProductRepository extends BaseRepository implements ProductRepositoryInter
             $query->orderBy('created_at', 'desc');
         }
         
-        // Get paginated results
         $perPage = isset($filters['per_page']) ? (int) $filters['per_page'] : 15;
         
         return $query->paginate($perPage);

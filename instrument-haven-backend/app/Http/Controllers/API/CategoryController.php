@@ -15,16 +15,11 @@ class CategoryController extends Controller
         $this->categoryRepository = $categoryRepository;
     }
 
-    /**
-     * Display a listing of the categories.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function index()
     {
         $categories = $this->categoryRepository->all();
         
-        // Add product count for each category
         $categories->each(function ($category) {
             $category->product_count = $category->getProductCountAttribute();
         });
@@ -37,12 +32,7 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Display the specified category with products.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show($id)
     {
         try {

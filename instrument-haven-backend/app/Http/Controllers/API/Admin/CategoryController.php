@@ -17,26 +17,19 @@ class CategoryController extends Controller
         $this->categoryRepository = $categoryRepository;
     }
     
-    /**
-     * Display a paginated listing of the categories.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+  
     public function index(Request $request)
     {
-        $perPage = $request->input('per_page', 10); // Default to 10 items per page
+        $perPage = $request->input('per_page', 10); 
         $search = $request->input('search', '');
         $orderBy = $request->input('order_by', 'id');
         $direction = $request->input('direction', 'asc');
         
-        // Build filters array - now only for search
         $filters = [];
         if (!empty($search)) {
             $filters['search'] = $search;
         }
         
-        // Get paginated categories with filters
         $categories = $this->categoryRepository->paginateWithFilters(
             $perPage,
             $filters,
@@ -44,7 +37,6 @@ class CategoryController extends Controller
             $direction
         );
         
-        // Add product count for each category
         $categories->getCollection()->each(function ($category) {
             $category->product_count = $category->products()->count();
         });
@@ -57,15 +49,9 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Create a new category.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
-        // Log the complete request for debugging
         \Log::info('Category create request:', $request->all());
         \Log::info('Files in request:', $request->allFiles());
         
@@ -86,23 +72,18 @@ class CategoryController extends Controller
         $categoryData = $request->except('image');
         $categoryData['slug'] = Str::slug($request->name);
         
-        // Handle image upload
         if ($request->hasFile('image')) {
             try {
                 $image = $request->file('image');
                 
-                // Create a simple, unique filename with timestamp
                 $timestamp = time();
                 $extension = $image->getClientOriginalExtension();
                 $filename = "category_{$timestamp}_{$request->name}.{$extension}";
                 
-                // Store in the public disk
                 $path = $image->storeAs('categories', $filename, 'public');
                 
-                // Log successful upload
                 \Log::info("Image stored successfully at: {$path}");
                 
-                // Set the image_url - set only the path part without 'public/'
                 $categoryData['image_url'] = $path;
             } catch (\Exception $e) {
                 \Log::error("Failed to store image: " . $e->getMessage());
@@ -121,16 +102,8 @@ class CategoryController extends Controller
         ], 201);
     }
 
-    /**
-     * Update the specified category.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function update(Request $request, $id)
     {
-        // Log the complete request for debugging
         \Log::info("Category update request for ID {$id}:", $request->all());
         \Log::info('Files in update request:', $request->allFiles());
         
@@ -150,35 +123,27 @@ class CategoryController extends Controller
         }
 
         try {
-            // Find current category for reference
             $existingCategory = $this->categoryRepository->find($id);
             
-            // Get data except image
             $categoryData = $request->except('image');
             
-            // Update slug if name is provided
             if (isset($categoryData['name'])) {
                 $categoryData['slug'] = Str::slug($categoryData['name']);
             }
             
-            // Handle image upload
             if ($request->hasFile('image')) {
                 try {
                     $image = $request->file('image');
                     
-                    // Create a simple, unique filename with timestamp and ID
                     $timestamp = time();
                     $categoryName = isset($categoryData['name']) ? $categoryData['name'] : $existingCategory->name;
                     $extension = $image->getClientOriginalExtension();
                     $filename = "category_{$timestamp}_{$id}_{$categoryName}.{$extension}";
                     
-                    // Store in the public disk
                     $path = $image->storeAs('categories', $filename, 'public');
                     
-                    // Log successful upload
                     \Log::info("Update image stored successfully at: {$path}");
                     
-                    // Set the image_url - set only the path part without 'public/'
                     $categoryData['image_url'] = $path;
                 } catch (\Exception $e) {
                     \Log::error("Failed to store update image: " . $e->getMessage());
@@ -208,16 +173,10 @@ class CategoryController extends Controller
         }
     }
 
-    /**
-     * Remove the specified category.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+  
     public function destroy($id)
     {
         try {
-            // Check if category has products
             $category = $this->categoryRepository->find($id);
             
             if ($category->products()->count() > 0) {

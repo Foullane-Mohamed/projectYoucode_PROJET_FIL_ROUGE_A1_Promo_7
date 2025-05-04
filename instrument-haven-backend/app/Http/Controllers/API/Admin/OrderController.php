@@ -17,12 +17,7 @@ class OrderController extends Controller
         $this->orderRepository = $orderRepository;
     }
 
-    /**
-     * Display a listing of the orders.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function index(Request $request)
     {
         $perPage = $request->input('per_page', 15);
@@ -32,12 +27,10 @@ class OrderController extends Controller
         
         $query = Order::with('user:id,name');
         
-        // Apply status filter if provided
         if ($status) {
             $query->where('status', $status);
         }
         
-        // Apply search if provided
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('order_number', 'like', "%{$search}%")
@@ -49,7 +42,6 @@ class OrderController extends Controller
         
         $orders = $query->paginate($perPage);
         
-        // Format the response
         $formattedOrders = $orders->map(function ($order) {
             return [
                 'id' => $order->id,
@@ -85,13 +77,7 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Update the specified order.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function update(Request $request, $id)
     {
         try {
@@ -158,11 +144,7 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Get order statistics.
-     *
-     * @return \Illuminate\Http\Response
-     */
+
     public function statistics()
     {
         $statistics = $this->orderRepository->getStatistics();

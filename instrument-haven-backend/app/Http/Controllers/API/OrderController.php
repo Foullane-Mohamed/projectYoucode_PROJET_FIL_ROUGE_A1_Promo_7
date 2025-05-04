@@ -16,17 +16,11 @@ class OrderController extends Controller
         $this->orderRepository = $orderRepository;
     }
 
-    /**
-     * Get all orders for the authenticated user.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+  
     public function index(Request $request)
     {
         $orders = $this->orderRepository->getByUserId($request->user()->id);
         
-        // Make sure we load the relationship data
         $orders->each(function ($order) {
             $order->load('items.product');
         });
@@ -37,19 +31,12 @@ class OrderController extends Controller
         ]);
     }
 
-    /**
-     * Get a specific order with items.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
+
     public function show(Request $request, $id)
     {
         try {
             $order = $this->orderRepository->getWithItems($id);
             
-            // Check if the order belongs to the authenticated user
             if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
                 return response()->json([
                     'status' => 'error',
@@ -71,12 +58,7 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Create a new order from the cart.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
-     */
+
     public function store(Request $request)
     {
         $validator = Validator::make($request->all(), [
@@ -132,19 +114,11 @@ class OrderController extends Controller
         }
     }
 
-    /**
-     * Cancel an order.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
     public function cancel(Request $request, $id)
     {
         try {
             $order = $this->orderRepository->find($id);
             
-            // Check if the order belongs to the authenticated user
             if ($order->user_id !== $request->user()->id && !$request->user()->isAdmin()) {
                 return response()->json([
                     'status' => 'error',
@@ -152,7 +126,6 @@ class OrderController extends Controller
                 ], 403);
             }
             
-            // Check if the order can be cancelled
             if (!in_array($order->status, ['pending', 'processing'])) {
                 return response()->json([
                     'status' => 'error',

@@ -1,4 +1,4 @@
-import { useContext, useState } from 'react';
+import { useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { CartContext } from '../../context/CartContext';
 import { WishlistContext } from '../../context/WishlistContext';
@@ -60,26 +60,19 @@ const ProductCard = ({ product }) => {
 
     const inWishlist = isInWishlist(product.id);
     
-    try {
+  
       if (inWishlist) {
         const result = await removeFromWishlist(product.id);
         if (result.success) {
           toast.success(`${product.name} removed from wishlist!`);
-        } else {
-          toast.error(result.message || 'Failed to remove from wishlist');
-        }
+        } 
       } else {
         const result = await addToWishlist(product.id);
         if (result.success) {
           toast.success(`${product.name} added to wishlist!`);
-        } else {
-          toast.error(result.message || 'Failed to add to wishlist');
-        }
+        } 
       }
-    } catch (error) {
-      console.error('Wishlist operation error:', error);
-      toast.error('An error occurred while updating wishlist');
-    }
+    
   };
 
   return (
@@ -144,7 +137,7 @@ const ProductCard = ({ product }) => {
               }
             }}
             onError={(e) => {
-              e.target.onerror = null; // Prevent infinite error loop
+              e.target.onerror = null; 
               e.target.src = '/images/categories/placeholder.jpg';
             }}
           />

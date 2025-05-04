@@ -27,7 +27,7 @@ body {
   min-height: 100vh;
 }
 
-/* Custom category card styles */
+
 .category-card {
   transition: all 0.3s ease;
   position: relative;
@@ -177,7 +177,7 @@ body {
   margin-left: 10px;
 }
 
-/* Adjust Material UI components for Temu-like design */
+
 .MuiButton-root {
   text-transform: none !important;
   border-radius: 20px !important;
@@ -207,7 +207,7 @@ body {
   box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Make inputs and forms more Temu-like */
+
 .MuiOutlinedInput-root {
   border-radius: 30px !important;
 }
@@ -220,7 +220,7 @@ body {
   color: var(--primary-color) !important;
 }
 
-/* Custom scrollbar for a more polished look */
+
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -240,7 +240,7 @@ body {
   background: #a8a8a8;
 }
 
-/* Add a subtle animation to various elements */
+
 .animate-hover {
   transition: all 0.3s ease;
 }
@@ -249,7 +249,7 @@ body {
   transform: translateY(-5px);
 }
 
-/* Category card specific styles */
+
 .category-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -278,7 +278,7 @@ body {
 
 .category-image-container {
   position: relative;
-  padding-top: 100%; /* Square aspect ratio */
+  padding-top: 100%; 
   width: 100%;
 }
 

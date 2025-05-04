@@ -1,4 +1,4 @@
-/* Enhanced Product Card Styles */
+
 .enhanced-product-card {
   position: relative;
   border-radius: 16px !important;
@@ -20,10 +20,9 @@
   box-shadow: 0 16px 32px rgba(0, 0, 0, 0.12) !important;
 }
 
-/* Product Header (Image Container) */
 .product-header {
   position: relative;
-  padding-top: 80%; /* 4:5 aspect ratio */
+  padding-top: 80%; 
   overflow: hidden;
   background-color: #f7f9fc;
   display: flex;
@@ -49,7 +48,7 @@
   object-fit: contain;
 }
 
-/* Discount Badge */
+
 .discount-badge {
   position: absolute;
   top: 16px;
@@ -64,7 +63,7 @@
   z-index: 2;
 }
 
-/* Out of Stock Overlay */
+
 .out-of-stock-overlay {
   position: absolute;
   top: 0;
@@ -83,7 +82,7 @@
   z-index: 2;
 }
 
-/* Wishlist Button */
+
 .wishlist-button {
   position: absolute !important;
   top: 12px !important;
@@ -112,7 +111,7 @@
   font-size: 1.2rem;
 }
 
-/* Product Content */
+
 .product-content {
   padding: 16px !important;
   display: flex !important;
@@ -120,7 +119,7 @@
   flex-grow: 1 !important;
 }
 
-/* Product Rating */
+
 .product-rating {
   display: flex;
   align-items: center;
@@ -132,7 +131,7 @@
   color: #666;
 }
 
-/* Product Title */
+
 .product-title {
   font-weight: 600 !important;
   color: #333 !important;
@@ -150,7 +149,7 @@
   color: #ff2b52 !important;
 }
 
-/* Product Description */
+
 .product-description {
   color: #666 !important;
   margin-bottom: 16px !important;
@@ -162,7 +161,7 @@
   flex-grow: 1 !important;
 }
 
-/* Pricing Container */
+
 .pricing-container {
   display: flex !important;
   align-items: baseline !important;
@@ -187,12 +186,12 @@
   color: #ff2b52 !important;
 }
 
-/* Stock Status */
+
 .stock-status {
   margin-bottom: 16px !important;
 }
 
-/* Product Actions */
+
 .product-actions {
   display: flex !important;
   flex-direction: column !important;
@@ -232,7 +231,7 @@
   background-color: rgba(255, 43, 82, 0.04) !important;
 }
 
-/* Responsive styles for list view */
+
 .enhanced-product-card.list-view {
   flex-direction: row !important;
   height: auto !important;
@@ -257,7 +256,7 @@
   width: 100% !important;
 }
 
-/* Responsive adjustments */
+
 @media (max-width: 768px) {
   .enhanced-product-card.list-view {
     flex-direction: column !important;
@@ -274,7 +273,7 @@
   }
 }
 
-/* Enhanced list product card */
+
 .enhanced-list-product-card {
   display: flex;
   flex-direction: row;
@@ -403,7 +402,7 @@
   gap: 12px;
 }
 
-/* Media queries for responsive design */
+
 @media (max-width: 768px) {
   .enhanced-list-product-card {
     flex-direction: column;

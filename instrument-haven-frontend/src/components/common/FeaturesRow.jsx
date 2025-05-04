@@ -1,11 +1,6 @@
 import React from 'react';
 import { Box, Grid, Typography, Container } from '@mui/material';
-import { 
-  MusicNote as MusicNoteIcon, 
-  LocalShipping as ShippingIcon,
-  Security as SecurityIcon,
-  Support as SupportIcon 
-} from '@mui/icons-material';
+// Icons replaced with font icons to avoid SVG usage
 import '../../styles/featuresRow.css';
 
 const FeaturesRow = () => {
@@ -24,7 +19,7 @@ const FeaturesRow = () => {
         <Box className="features-row">
           <Box className="feature-item quality">
             <Box className="feature-icon-container">
-              <MusicNoteIcon className="feature-icon" />
+              <Box className="feature-icon">🎵</Box>
             </Box>
             <Typography variant="h6" className="feature-name">
               Quality Instruments
@@ -36,7 +31,7 @@ const FeaturesRow = () => {
           
           <Box className="feature-item delivery">
             <Box className="feature-icon-container">
-              <ShippingIcon className="feature-icon" />
+              <Box className="feature-icon">🚚</Box>
             </Box>
             <Typography variant="h6" className="feature-name">
               Fast Delivery
@@ -48,7 +43,7 @@ const FeaturesRow = () => {
           
           <Box className="feature-item payment">
             <Box className="feature-icon-container">
-              <SecurityIcon className="feature-icon" />
+              <Box className="feature-icon">🔒</Box>
             </Box>
             <Typography variant="h6" className="feature-name">
               Secure Payment
@@ -60,7 +55,7 @@ const FeaturesRow = () => {
           
           <Box className="feature-item support">
             <Box className="feature-icon-container">
-              <SupportIcon className="feature-icon" />
+              <Box className="feature-icon">👨‍💻</Box>
             </Box>
             <Typography variant="h6" className="feature-name">
               Expert Support

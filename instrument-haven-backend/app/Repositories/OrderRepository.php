@@ -4,64 +4,43 @@ namespace App\Repositories;
 
 use App\Models\Order;
 use App\Repositories\Interfaces\OrderRepositoryInterface;
+use App\Services\Interfaces\OrderServiceInterface;
 use Illuminate\Support\Facades\DB;
 
 class OrderRepository extends BaseRepository implements OrderRepositoryInterface
 {
-    /**
-     * Set model
-     */
+    protected $orderService;
+
+
+    public function __construct(OrderServiceInterface $orderService)
+    {
+        parent::__construct();
+        $this->orderService = $orderService;
+    }
+
+  
     public function setModel()
     {
         $this->model = new Order();
     }
 
-    /**
-     * Get orders by user id
-     * 
-     * @param int $userId
-     * @return mixed
-     */
     public function getByUserId($userId)
     {
         return $this->model->where('user_id', $userId)->orderBy('created_at', 'desc')->get();
     }
-    
-    /**
-     * Get order with items
-     * 
-     * @param int $id
-     * @return mixed
-     */
+
     public function getWithItems($id)
     {
         return $this->model->with('items')->findOrFail($id);
     }
     
-    /**
-     * Create order from cart
-     * 
-     * @param int $userId
-     * @param string $paymentMethod
-     * @param string $paymentId
-     * @param array $shippingAddress
-     * @param array $billingAddress
-     * @return mixed
-     */
+
     public function createFromCart($userId, $paymentMethod, $paymentId, $shippingAddress, $billingAddress)
     {
-        return Order::createFromCart($userId, $paymentMethod, $paymentId, $shippingAddress, $billingAddress);
+        return $this->orderService->createFromCart($userId, $paymentMethod, $paymentId, $shippingAddress, $billingAddress);
     }
     
-    /**
-     * Update order status
-     * 
-     * @param int $id
-     * @param string $status
-     * @param string $paymentStatus
-     * @param string $trackingNumber
-     * @return mixed
-     */
+
     public function updateStatus($id, $status, $paymentStatus = null, $trackingNumber = null)
     {
         $order = $this->find($id);
@@ -79,22 +58,13 @@ class OrderRepository extends BaseRepository implements OrderRepositoryInterface
         return $order->update($data);
     }
     
-    /**
-     * Cancel order
-     * 
-     * @param int $id
-     * @return mixed
-     */
+
     public function cancelOrder($id)
     {
         return $this->updateStatus($id, 'cancelled');
     }
     
-    /**
-     * Get order statistics
-     * 
-     * @return mixed
-     */
+
     public function getStatistics()
     {
         $totalOrders = $this->model->count();
