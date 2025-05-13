@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import '../../styles/featuredProducts.css';
 import { Link, useNavigate } from 'react-router-dom';
 import apiService from '../../services/api';
 import {
@@ -554,59 +555,46 @@ const Home = () => {
 
       {/* Featured Products Section */}
       <Container maxWidth="xl" sx={{ mt: 8 }} ref={featuredRef}>
-        <Box sx={{ mb: 4 }}>
-          <Typography variant="h4" component="h2" sx={styles.sectionTitle}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Typography variant="h4" component="h2" className="featured-section-title">
             Featured Products
           </Typography>
-          <Typography variant="subtitle1" sx={styles.sectionSubtitle}>
+          <Typography variant="subtitle1" className="featured-section-subtitle">
             Handpicked by our music experts
           </Typography>
         </Box>
 
-        <Grid container spacing={4}>
+        <Box className="featured-products-container">
           {loading ? (
             Array(8).fill(0).map((_, index) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={`featured-skeleton-${index}`}>
+              <Box key={`featured-skeleton-${index}`} className="featured-product-card">
                 <Skeleton variant="rectangular" height={200} sx={{ borderRadius: '16px', mb: 1 }} />
                 <Skeleton width="60%" height={24} sx={{ mb: 1 }} />
                 <Skeleton width="40%" height={20} sx={{ mb: 1 }} />
                 <Skeleton width="30%" height={20} />
-              </Grid>
+              </Box>
             ))
           ) : featuredProducts.length > 0 ? (
             featuredProducts.map((product) => (
-              <Grid item xs={12} sm={6} md={4} lg={3} key={product.id}>
+              <Box key={product.id} className="featured-product-card">
                 <EnhancedProductCard product={product} />
-              </Grid>
+              </Box>
             ))
           ) : (
-            <Grid item xs={12}>
-              <Typography variant="body1" textAlign="center" sx={{ py: 4, color: '#666' }}>
-                Featured products coming soon!
-              </Typography>
-            </Grid>
+            <Typography variant="body1" textAlign="center" sx={{ py: 4, color: '#666' }}>
+              Featured products coming soon!
+            </Typography>
           )}
-        </Grid>
+        </Box>
 
         {featuredProducts.length > 0 && (
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'center' }}>
             <Button
               variant="outlined"
               size="large"
               endIcon={<ArrowForward />}
               onClick={() => navigate('/products?featured=true')}
-              sx={{
-                borderRadius: '30px',
-                px: 4,
-                py: 1.5,
-                borderColor: '#FF2B52',
-                color: '#FF2B52',
-                fontWeight: 'bold',
-                '&:hover': {
-                  borderColor: '#e01641',
-                  backgroundColor: 'rgba(255, 43, 82, 0.04)'
-                }
-              }}
+              className="view-all-button"
             >
               View All Featured Products
             </Button>

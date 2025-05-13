@@ -12,7 +12,7 @@ class UsersTableSeeder extends Seeder
   
     public function run(): void
     {
-        // Create admin user
+    
         User::create([
             'name' => 'foullane mohamed',
             'email' => 'foullane@gmail.com',
@@ -21,7 +21,7 @@ class UsersTableSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Create customer user
+
         User::create([
             'name' => 'John Doe',
             'email' => 'john@example.com',
@@ -36,7 +36,7 @@ class UsersTableSeeder extends Seeder
             'is_active' => true,
         ]);
 
-        // Create more test users
+    
         User::factory(10)->create();
     }
 }

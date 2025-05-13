@@ -1,8 +1,8 @@
-# 🎸 Instrument Haven - Site de vente d’instruments de musique
+# 🎸 ADINAN STORE - Site de vente d’instruments de musique
 
 ## 📝 Description du projet
 
-Instrument Haven est une plateforme de commerce électronique pour la vente d’instruments de musique. Ce projet full-stack combine **React.js** (frontend) avec **Laravel 10** (backend) pour offrir une expérience utilisateur moderne, rapide et sécurisée.
+ADINAN STORE est une plateforme de commerce électronique pour la vente d’instruments de musique. Ce projet full-stack combine **React.js** (frontend) avec **Laravel 10** (backend) pour offrir une expérience utilisateur moderne, rapide et sécurisée.
 
 ---
 

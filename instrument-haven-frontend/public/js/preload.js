@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  // Force recalculation of styles to ensure proper rendering
   const categoryCards = document.querySelectorAll('.category-card');
   if (categoryCards) {
     categoryCards.forEach(card => {

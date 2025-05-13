@@ -1,39 +1,53 @@
-import { useState } from 'react';
-import { Box, Container, Grid, Typography, Link, Divider, TextField, Button, IconButton, useTheme, useMediaQuery, Paper, InputAdornment } from '@mui/material';
-import { Link as RouterLink, useLocation } from 'react-router-dom';
-import { 
-  Facebook, 
-  Twitter, 
-  Instagram, 
-  YouTube, 
-  Pinterest, 
-  LocationOn, 
-  Phone, 
-  Email, 
-  MusicNote, 
-  Send, 
-  KeyboardArrowUp, 
+import { useState } from "react";
+import {
+  Box,
+  Container,
+  Grid,
+  Typography,
+  Link,
+  Divider,
+  TextField,
+  Button,
+  IconButton,
+  useTheme,
+  useMediaQuery,
+  Paper,
+  InputAdornment,
+} from "@mui/material";
+import { Link as RouterLink, useLocation } from "react-router-dom";
+import {
+  Facebook,
+  Twitter,
+  Instagram,
+  YouTube,
+  Pinterest,
+  LocationOn,
+  Phone,
+  Email,
+  MusicNote,
+  Send,
+  KeyboardArrowUp,
   CreditCard,
   Security,
   LocalShipping,
-  Autorenew
-} from '@mui/icons-material';
-import { toast } from 'react-toastify';
+  Autorenew,
+} from "@mui/icons-material";
+import { toast } from "react-toastify";
 
 const Footer = () => {
   const location = useLocation();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const isTablet = useMediaQuery(theme.breakpoints.down('md'));
-  
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+
   // Check if we're in the admin section
-  const isAdmin = location.pathname.startsWith('/admin');
+  const isAdmin = location.pathname.startsWith("/admin");
 
   // Scroll to top
   const scrollToTop = () => {
     window.scrollTo({
       top: 0,
-      behavior: 'smooth'
+      behavior: "smooth",
     });
   };
 
@@ -44,46 +58,48 @@ const Footer = () => {
 
   // Footer links
   const quickLinks = [
-    { name: 'Home', path: '/' },
-    { name: 'Products', path: '/products' },
-    { name: 'Categories', path: '/categories' },
-    { name: 'Contact Us', path: '/contact' }
+    { name: "Home", path: "/" },
+    { name: "Products", path: "/products" },
+    { name: "Categories", path: "/categories" },
+    { name: "Contact Us", path: "/contact" },
   ];
 
   const customerService = [
-    { name: 'My Account', path: '/profile' },
-    { name: 'Track Order', path: '/my-orders' },
-    { name: 'Shipping Policy', path: '/shipping' },
-    { name: 'Return Policy', path: '/returns' },
-    { name: 'FAQs', path: '/faq' }
+    { name: "My Account", path: "/profile" },
+    { name: "Track Order", path: "/my-orders" },
+    { name: "Shipping Policy", path: "/shipping" },
+    { name: "Return Policy", path: "/returns" },
+    { name: "FAQs", path: "/faq" },
   ];
 
   return (
     <>
       {/* Features Section */}
-      <Box 
-        sx={{ 
-          bgcolor: '#f7f9fc',
+      <Box
+        sx={{
+          bgcolor: "#f7f9fc",
           py: 4,
-          borderTop: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden'
+          borderTop: "1px solid",
+          borderColor: "divider",
+          overflow: "hidden",
         }}
       >
         <Container maxWidth="xl">
           <Grid container spacing={3} justifyContent="center">
             <Grid item xs={12} sm={6} md={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  textAlign: 'center',
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
                   px: 2,
-                  py: 2
+                  py: 2,
                 }}
               >
-                <LocalShipping sx={{ fontSize: 44, color: 'primary.main', mb: 2 }} />
+                <LocalShipping
+                  sx={{ fontSize: 44, color: "primary.main", mb: 2 }}
+                />
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   Free Shipping
                 </Typography>
@@ -92,19 +108,21 @@ const Footer = () => {
                 </Typography>
               </Box>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  textAlign: 'center',
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
                   px: 2,
-                  py: 2
+                  py: 2,
                 }}
               >
-                <Autorenew sx={{ fontSize: 44, color: 'primary.main', mb: 2 }} />
+                <Autorenew
+                  sx={{ fontSize: 44, color: "primary.main", mb: 2 }}
+                />
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   30-Day Returns
                 </Typography>
@@ -113,19 +131,19 @@ const Footer = () => {
                 </Typography>
               </Box>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  textAlign: 'center',
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
                   px: 2,
-                  py: 2
+                  py: 2,
                 }}
               >
-                <Security sx={{ fontSize: 44, color: 'primary.main', mb: 2 }} />
+                <Security sx={{ fontSize: 44, color: "primary.main", mb: 2 }} />
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   Secure Payments
                 </Typography>
@@ -134,19 +152,21 @@ const Footer = () => {
                 </Typography>
               </Box>
             </Grid>
-            
+
             <Grid item xs={12} sm={6} md={3}>
-              <Box 
-                sx={{ 
-                  display: 'flex', 
-                  flexDirection: 'column', 
-                  alignItems: 'center', 
-                  textAlign: 'center',
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  textAlign: "center",
                   px: 2,
-                  py: 2
+                  py: 2,
                 }}
               >
-                <CreditCard sx={{ fontSize: 44, color: 'primary.main', mb: 2 }} />
+                <CreditCard
+                  sx={{ fontSize: 44, color: "primary.main", mb: 2 }}
+                />
                 <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                   Multiple Payment Options
                 </Typography>
@@ -162,156 +182,178 @@ const Footer = () => {
       {/* Main Footer */}
       <Box
         sx={{
-          bgcolor: '#1a1a2e',
-          color: 'white',
+          bgcolor: "#1a1a2e",
+          color: "white",
           py: { xs: 6, md: 8 },
-          position: 'relative'
+          position: "relative",
         }}
       >
         <Container maxWidth="lg">
           <Grid container spacing={4}>
             {/* Company Info */}
             <Grid item xs={12} md={4}>
-              <Box sx={{ mb: 3, display: 'flex', alignItems: 'center' }}>
-                <MusicNote sx={{ fontSize: 36, color: theme.palette.primary.main, mr: 1 }} />
-                <Typography 
-                  variant="h5" 
-                  sx={{ 
+              <Box sx={{ mb: 3, display: "flex", alignItems: "center" }}>
+                <MusicNote
+                  sx={{
+                    fontSize: 36,
+                    color: theme.palette.primary.main,
+                    mr: 1,
+                  }}
+                />
+                <Typography
+                  variant="h5"
+                  sx={{
                     fontWeight: 800,
-                    color: 'white',
-                    letterSpacing: '1px'
+                    color: "white",
+                    letterSpacing: "1px",
                   }}
                 >
-                  INSTRUMENT HAVEN
+                  ADINAN STORE
                 </Typography>
               </Box>
-              
-              <Typography variant="body2" sx={{ mb: 3, color: 'rgba(255,255,255,0.7)', lineHeight: 1.8 }}>
-                Your one-stop shop for all musical instruments. Whether you're a beginner or a professional, we have instruments that will suit your needs and ignite your passion for music.
+
+              <Typography
+                variant="body2"
+                sx={{ mb: 3, color: "rgba(255,255,255,0.7)", lineHeight: 1.8 }}
+              >
+                Your one-stop shop for all musical instruments. Whether you're a
+                beginner or a professional, we have instruments that will suit
+                your needs and ignite your passion for music.
               </Typography>
-              
+
               <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', mb: 2 }}>
-                  <LocationOn sx={{ color: theme.palette.primary.main, mr: 2 }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Box sx={{ display: "flex", mb: 2 }}>
+                  <LocationOn
+                    sx={{ color: theme.palette.primary.main, mr: 2 }}
+                  />
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     Agadir International Airport, Morocco
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', mb: 2 }}>
+                <Box sx={{ display: "flex", mb: 2 }}>
                   <Phone sx={{ color: theme.palette.primary.main, mr: 2 }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     +212 647932975
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex' }}>
+                <Box sx={{ display: "flex" }}>
                   <Email sx={{ color: theme.palette.primary.main, mr: 2 }} />
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     mohamedfoullane4@gmail.com
                   </Typography>
                 </Box>
               </Box>
-              
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <IconButton 
-                  aria-label="Facebook" 
-                  sx={{ 
-                    color: 'white', 
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.main 
-                    } 
+
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <IconButton
+                  aria-label="Facebook"
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                    },
                   }}
                 >
                   <Facebook fontSize="small" />
                 </IconButton>
-                <IconButton 
-                  aria-label="Twitter" 
-                  sx={{ 
-                    color: 'white', 
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.main 
-                    } 
+                <IconButton
+                  aria-label="Twitter"
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                    },
                   }}
                 >
                   <Twitter fontSize="small" />
                 </IconButton>
-                <IconButton 
-                  aria-label="Instagram" 
-                  sx={{ 
-                    color: 'white', 
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.main 
-                    } 
+                <IconButton
+                  aria-label="Instagram"
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                    },
                   }}
                 >
                   <Instagram fontSize="small" />
                 </IconButton>
-                <IconButton 
-                  aria-label="YouTube" 
-                  sx={{ 
-                    color: 'white', 
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.main 
-                    } 
+                <IconButton
+                  aria-label="YouTube"
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                    },
                   }}
                 >
                   <YouTube fontSize="small" />
                 </IconButton>
-                <IconButton 
-                  aria-label="Pinterest" 
-                  sx={{ 
-                    color: 'white', 
-                    bgcolor: 'rgba(255,255,255,0.1)',
-                    '&:hover': { 
-                      bgcolor: theme.palette.primary.main 
-                    } 
+                <IconButton
+                  aria-label="Pinterest"
+                  sx={{
+                    color: "white",
+                    bgcolor: "rgba(255,255,255,0.1)",
+                    "&:hover": {
+                      bgcolor: theme.palette.primary.main,
+                    },
                   }}
                 >
                   <Pinterest fontSize="small" />
                 </IconButton>
               </Box>
             </Grid>
-            
+
             {/* Quick Links */}
             <Grid item xs={12} sm={6} md={2}>
-              <Typography 
-                variant="h6" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 600, 
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  fontWeight: 600,
                   mb: 3,
-                  position: 'relative',
-                  '&:after': {
+                  position: "relative",
+                  "&:after": {
                     content: '""',
-                    position: 'absolute',
+                    position: "absolute",
                     left: 0,
                     bottom: -8,
                     width: 40,
                     height: 2,
                     backgroundColor: theme.palette.primary.main,
-                  }
+                  },
                 }}
               >
                 Quick Links
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {quickLinks.map((link) => (
-                  <Link 
-                    key={link.name} 
-                    component={RouterLink} 
-                    to={link.path} 
+                  <Link
+                    key={link.name}
+                    component={RouterLink}
+                    to={link.path}
                     underline="none"
-                    sx={{ 
-                      color: 'rgba(255,255,255,0.7)', 
-                      transition: 'all 0.3s ease',
-                      '&:hover': { 
+                    sx={{
+                      color: "rgba(255,255,255,0.7)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
                         color: theme.palette.primary.main,
-                        transform: 'translateX(5px)',
+                        transform: "translateX(5px)",
                       },
-                      display: 'inline-block',
+                      display: "inline-block",
                     }}
                   >
                     {link.name}
@@ -319,44 +361,44 @@ const Footer = () => {
                 ))}
               </Box>
             </Grid>
-            
+
             {/* Customer Service */}
             <Grid item xs={12} sm={6} md={2}>
-              <Typography 
-                variant="h6" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 600, 
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  fontWeight: 600,
                   mb: 3,
-                  position: 'relative',
-                  '&:after': {
+                  position: "relative",
+                  "&:after": {
                     content: '""',
-                    position: 'absolute',
+                    position: "absolute",
                     left: 0,
                     bottom: -8,
                     width: 40,
                     height: 2,
                     backgroundColor: theme.palette.primary.main,
-                  }
+                  },
                 }}
               >
                 Customer Service
               </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+              <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
                 {customerService.map((link) => (
-                  <Link 
-                    key={link.name} 
-                    component={RouterLink} 
-                    to={link.path} 
+                  <Link
+                    key={link.name}
+                    component={RouterLink}
+                    to={link.path}
                     underline="none"
-                    sx={{ 
-                      color: 'rgba(255,255,255,0.7)', 
-                      transition: 'all 0.3s ease',
-                      '&:hover': { 
+                    sx={{
+                      color: "rgba(255,255,255,0.7)",
+                      transition: "all 0.3s ease",
+                      "&:hover": {
                         color: theme.palette.primary.main,
-                        transform: 'translateX(5px)',
+                        transform: "translateX(5px)",
                       },
-                      display: 'inline-block',
+                      display: "inline-block",
                     }}
                   >
                     {link.name}
@@ -364,52 +406,82 @@ const Footer = () => {
                 ))}
               </Box>
             </Grid>
-            
+
             {/* Opening Hours */}
             <Grid item xs={12} sm={6} md={4}>
-              <Typography 
-                variant="h6" 
-                gutterBottom 
-                sx={{ 
-                  fontWeight: 600, 
+              <Typography
+                variant="h6"
+                gutterBottom
+                sx={{
+                  fontWeight: 600,
                   mb: 3,
-                  position: 'relative',
-                  '&:after': {
+                  position: "relative",
+                  "&:after": {
                     content: '""',
-                    position: 'absolute',
+                    position: "absolute",
                     left: 0,
                     bottom: -8,
                     width: 40,
                     height: 2,
                     backgroundColor: theme.palette.primary.main,
-                  }
+                  },
                 }}
               >
                 Opening Hours
               </Typography>
-              
+
               <Box sx={{ mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     Monday - Friday:
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: "white" }}
+                  >
                     9:00 AM - 6:00 PM
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    mb: 1,
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     Saturday:
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: "white" }}
+                  >
                     10:00 AM - 4:00 PM
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between" }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ color: "rgba(255,255,255,0.7)" }}
+                  >
                     Sunday:
                   </Typography>
-                  <Typography variant="body2" sx={{ fontWeight: 600, color: 'white' }}>
+                  <Typography
+                    variant="body2"
+                    sx={{ fontWeight: 600, color: "white" }}
+                  >
                     Closed
                   </Typography>
                 </Box>
@@ -422,22 +494,22 @@ const Footer = () => {
       {/* Bottom Bar */}
       <Box
         sx={{
-          bgcolor: '#141428',
-          color: 'rgba(255,255,255,0.7)',
+          bgcolor: "#141428",
+          color: "rgba(255,255,255,0.7)",
           py: 3,
-          position: 'relative'
+          position: "relative",
         }}
       >
         <Container maxWidth="lg">
-          <Grid 
-            container 
-            alignItems="center" 
+          <Grid
+            container
+            alignItems="center"
             justifyContent="center"
             spacing={2}
           >
             <Grid item xs={12}>
               <Typography variant="body2" textAlign="center">
-                © {new Date().getFullYear()} Instrument Haven. All rights reserved.
+                © {new Date().getFullYear()} ADINAN STORE. All rights reserved.
               </Typography>
             </Grid>
           </Grid>
@@ -447,15 +519,15 @@ const Footer = () => {
         <IconButton
           onClick={scrollToTop}
           sx={{
-            position: 'absolute',
+            position: "absolute",
             right: 20,
             top: -25,
             bgcolor: theme.palette.primary.main,
-            color: 'white',
-            '&:hover': {
+            color: "white",
+            "&:hover": {
               bgcolor: theme.palette.primary.dark,
             },
-            boxShadow: '0 4px 14px rgba(0,0,0,0.25)',
+            boxShadow: "0 4px 14px rgba(0,0,0,0.25)",
             width: 50,
             height: 50,
           }}

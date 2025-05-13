@@ -236,7 +236,7 @@ const ProductList = () => {
 
   return (
     <ErrorBoundary onReset={handleReset}>
-      <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Container maxWidth="xl" sx={{ py: 5, px: { xs: 2, sm: 4, md: 6 } }}>
         <Typography 
           variant="h4" 
           component="h1" 
@@ -607,13 +607,29 @@ const ProductList = () => {
             ) : products.length > 0 ? (
               <>
                 {viewMode === 'grid' ? (
-                  <Grid container spacing={2}>
-                    {products.map((product) => (
-                      <Grid item xs={12} sm={6} md={4} key={product.id}>
-                        <EnhancedProductCard product={product} />
-                      </Grid>
-                    ))}
-                  </Grid>
+                  <Box sx={{ p: 3 }}>
+                    <Grid container spacing={8} sx={{ mt: 2, mb: 4 }}>
+                      {products.map((product) => (
+                        <Grid 
+                          item 
+                          xs={12} 
+                          sm={6} 
+                          md={4}
+                          key={product.id} 
+                          sx={{ 
+                            mb: 6, 
+                            p: { xs: 2, sm: 3 },
+                            display: 'flex',
+                            justifyContent: 'center'
+                          }}
+                        >
+                          <Box sx={{ width: '100%', maxWidth: '380px' }}>
+                            <EnhancedProductCard product={product} />
+                          </Box>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  </Box>
                 ) : (
                   <Box>
                     {products.map((product) => (

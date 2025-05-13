@@ -154,7 +154,7 @@ const Dashboard = () => {
                   fontSize: { xs: '1rem', sm: '1.25rem' } 
                 }}
               >
-                InsHav
+                Dashboard
               </Typography>
             </Box>
           )}

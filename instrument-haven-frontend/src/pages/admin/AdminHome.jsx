@@ -149,18 +149,9 @@ const AdminHome = () => {
             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.125rem" },
           }}
         >
-          Dashboard
+        Statistique
         </Typography>
-        <Typography
-          variant="subtitle1"
-          color="text.secondary"
-          sx={{
-            mt: 1,
-            fontSize: { xs: "0.875rem", sm: "1rem" },
-          }}
-        >
-          Welcome to your Instrument Haven Admin Dashboard
-        </Typography>
+
       </Box>
 
       <Grid container spacing={3}>

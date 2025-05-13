@@ -1,0 +1,88 @@
+/* Featured Products Section Styles */
+.featured-products-container {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 40px;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: 40px 0;
+}
+
+.featured-product-card {
+  width: 300px;
+  transition: all 0.35s ease;
+  position: relative;
+  margin: 0 10px 20px;
+}
+
+.featured-product-card:hover {
+  transform: translateY(-10px);
+}
+
+.featured-section-title {
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  position: relative;
+  display: inline-block;
+}
+
+.featured-section-title::after {
+  content: "";
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 4px;
+  background-color: #FF2B52;
+  border-radius: 2px;
+}
+
+.featured-section-subtitle {
+  text-align: center;
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.view-all-button {
+  display: inline-block;
+  padding: 12px 28px;
+  border-radius: 30px;
+  font-weight: bold;
+  background-color: white;
+  color: #FF2B52;
+  border: 2px solid #FF2B52;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.view-all-button:hover {
+  background-color: rgba(255, 43, 82, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 43, 82, 0.15);
+}
+
+/* Animation effects */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.featured-product-card {
+  animation: fadeIn 0.5s ease forwards;
+  opacity: 0;
+}
+
+.featured-product-card:nth-child(1) { animation-delay: 0.1s; }
+.featured-product-card:nth-child(2) { animation-delay: 0.2s; }
+.featured-product-card:nth-child(3) { animation-delay: 0.3s; }
+.featured-product-card:nth-child(4) { animation-delay: 0.4s; }
+.featured-product-card:nth-child(5) { animation-delay: 0.5s; }
+.featured-product-card:nth-child(6) { animation-delay: 0.6s; }
+.featured-product-card:nth-child(7) { animation-delay: 0.7s; }
+.featured-product-card:nth-child(8) { animation-delay: 0.8s; }

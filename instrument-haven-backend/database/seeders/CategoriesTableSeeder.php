@@ -13,7 +13,7 @@ class CategoriesTableSeeder extends Seeder
      */
     public function run(): void
     {
-        // Main categories
+  
         $guitars = Category::create([
             'name' => 'Guitars',
             'slug' => 'guitars',

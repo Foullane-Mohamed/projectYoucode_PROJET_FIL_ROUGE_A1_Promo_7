@@ -15,7 +15,7 @@ class ListApiEndpoints extends Command
 
     public function handle()
     {
-        $this->info("API Endpoints for Instrument Haven");
+        $this->info("API Endpoints for ADINAN STORE");
         $this->info("============================");
         
         $routes = Route::getRoutes();
